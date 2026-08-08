@@ -10,6 +10,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "imgui.h"
@@ -127,6 +128,11 @@ void SortRows(std::vector<AppStats>& rows, int column, bool ascending) {
     };
     std::sort(rows.begin(), rows.end(),
               [&](const AppStats& a, const AppStats& b) { return ascending ? compare(a, b) < 0 : compare(a, b) > 0; });
+}
+
+std::string ToLowerAscii(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+    return s;
 }
 
 // Processes we never want to auto-block, even if they briefly spike over
@@ -362,6 +368,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     bool autoBlockEnabled = false;
     double autoBlockThresholdValue = 1.0;
     int autoBlockUnitIdx = 1; // MB/s default
+    std::unordered_set<std::string> autoBlockExempt; // lowercased exe names the user marked immune, e.g. via right-click
     int limitModalPid = -1;
     std::string limitModalName;
     bool openLimitModal = false;
@@ -416,6 +423,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     if (r.pid == kUnknownPID) continue;
                     if (pidMgr.IsBlocked(r.pid)) continue;
                     if (IsAutoBlockProtected(r.name)) continue;
+                    if (autoBlockExempt.count(ToLowerAscii(r.name))) continue;
                     if (r.rateDown + r.rateUp <= thresholdBytesPerSec) continue;
                     std::string err = pidMgr.Block(r.pid);
                     if (err.empty()) {
@@ -512,8 +520,13 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                                ImGui::GetContentRegionAvail())) {
             ImGui::TableSetupColumn("App", ImGuiTableColumnFlags_WidthStretch, 2.2f);
             ImGui::TableSetupColumn("PID", ImGuiTableColumnFlags_WidthFixed, 70);
-            ImGui::TableSetupColumn("Down/s", ImGuiTableColumnFlags_WidthFixed, 100);
-            ImGui::TableSetupColumn("Up/s", ImGuiTableColumnFlags_WidthFixed, 100);
+            // PreferSortDescending on the rate/total columns: these jump
+            // around a lot second to second, so the useful sort direction
+            // is always "busiest first" - defaulting to ascending (as
+            // ImGui does without this flag) surfaces a wall of idle 0 B/s
+            // rows instead, which looks like the numbers are stuck at 0.
+            ImGui::TableSetupColumn("Down/s", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending, 100);
+            ImGui::TableSetupColumn("Up/s", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending, 100);
             ImGui::TableSetupColumn("Total", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort |
                                                  ImGuiTableColumnFlags_PreferSortDescending,
                                      100);
@@ -582,19 +595,48 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     if (limited && ImGui::MenuItem("Remove traffic limit")) {
                         pidMgr.ClearLimit(r.pid);
                     }
+                    ImGui::Separator();
+                    {
+                        std::string lname = ToLowerAscii(r.name);
+                        bool exempt = autoBlockExempt.count(lname) != 0;
+                        if (ImGui::MenuItem("Exempt from auto-block", nullptr, exempt)) {
+                            if (exempt) autoBlockExempt.erase(lname);
+                            else autoBlockExempt.insert(lname);
+                        }
+                    }
                     ImGui::EndPopup();
                 }
                 ImGui::SameLine(0, 0);
 
                 ID3D11ShaderResourceView* tex = icons.Get(r.exePath);
                 if (tex) {
-                    ImGui::Image((ImTextureID)(intptr_t)tex, ImVec2(16, 16));
+                    // Icon is a fixed-pixel bitmap, not scaled by
+                    // ImGui::GetStyle().ScaleAllSizes() like everything
+                    // else, so on a scaled display it ends up smaller than
+                    // the surrounding (DPI-scaled) text. Also, the name
+                    // next to it is a CopyableText (an InputText under the
+                    // hood), which is taller than a plain text line - it
+                    // has frame padding around the text - so centering
+                    // against GetTextLineHeight() undershot and still left
+                    // the icon sitting high. GetFrameHeight() is what
+                    // InputText/Button actually render at, so center
+                    // against that instead.
+                    float iconSize = 16.0f * dpiScale;
+                    float itemH = ImGui::GetFrameHeight();
+                    float startY = ImGui::GetCursorPosY();
+                    ImGui::SetCursorPosY(startY + std::max(0.0f, (itemH - iconSize) * 0.5f));
+                    ImGui::Image((ImTextureID)(intptr_t)tex, ImVec2(iconSize, iconSize));
                     ImGui::SameLine();
+                    ImGui::SetCursorPosY(startY);
                 }
                 CopyableText("name", r.name);
                 if (pidMgr.IsLimited(r.pid)) {
                     ImGui::SameLine();
                     ImGui::TextDisabled("(limited to %s)", FormatRate((double)pidMgr.GetLimit(r.pid)).c_str());
+                }
+                if (autoBlockExempt.count(ToLowerAscii(r.name))) {
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(auto-block exempt)");
                 }
 
                 ImGui::TableSetColumnIndex(1);
