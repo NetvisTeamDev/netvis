@@ -1,8 +1,15 @@
-// DNS-based ad/tracker blocker. Intercepts (not sniffs) three cases:
-//   - plain DNS (UDP 53): parses the question, and if the domain matches
-//     the blocklist (and isn't allowlisted), spoofs an NXDOMAIN response
-//     instead of letting the query reach a real DNS server. IPv4 only -
-//     IPv6 DNS queries are passed through unchanged (fail-open).
+// DNS-based ad/tracker blocker. Intercepts (not sniffs) these cases:
+//   - plain DNS over UDP 53, IPv4: parses the question, and if the domain
+//     matches the blocklist (and isn't allowlisted), spoofs an NXDOMAIN
+//     response instead of letting the query reach a real DNS server.
+//   - plain DNS over UDP 53, IPv6: same lookup, but the query is simply
+//     dropped rather than answered - building a spoofed IPv6 reply is a
+//     lot more work for a case that resolves to "the lookup fails" either
+//     way. Previously IPv6 DNS passed through untouched, which was a
+//     straightforward way to bypass blocking entirely.
+//   - plain DNS over TCP 53 (both families): same, dropped. Used as a
+//     fallback by resolvers when a UDP reply is truncated, and by anything
+//     deliberately avoiding UDP.
 //   - DNS-over-TLS (TCP 853): can't inspect the query (it's encrypted), so
 //     just drops the connection attempt outright. Rare in practice but
 //     some apps use it to bypass DNS-level blocking entirely.
@@ -38,8 +45,12 @@ public:
 
     // When disabled, every packet is passed straight through - the
     // WinDivert handle stays open (so toggling is instant), it just stops
-    // doing anything.
-    void SetEnabled(bool enabled) { enabled_.store(enabled); }
+    // doing anything. Also flushes the OS DNS cache, in both directions:
+    // turning blocking ON otherwise appears to do nothing until cached
+    // ad-domain lookups expire, and turning it OFF leaves cached spoofed
+    // NXDOMAIN results behind, so sites stay broken. Flushing makes the
+    // toggle take effect immediately either way.
+    void SetEnabled(bool enabled);
     bool Enabled() const { return enabled_.load(); }
 
 private:

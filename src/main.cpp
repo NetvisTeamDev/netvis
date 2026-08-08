@@ -364,6 +364,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     TrafficGraph graph(60);
 
     std::vector<AppStats> rows;
+    bool showClosedProcesses = false;
     double lastTickTime = ImGui::GetTime();
     bool autoBlockEnabled = false;
     double autoBlockThresholdValue = 1.0;
@@ -514,6 +515,19 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         ImGui::Spacing();
         ImGui::Spacing();
 
+        // Small, right-aligned, sitting right above the table rather than
+        // in the busier toolbar above - it's a display filter for this
+        // table specifically, not an app-wide behavior toggle like the
+        // ad-blocker/auto-block checkboxes.
+        if (monOk) {
+            const char* label = "Show closed processes";
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3, 3));
+            float boxW = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::CalcTextSize(label).x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - boxW));
+            ImGui::Checkbox(label, &showClosedProcesses);
+            ImGui::PopStyleVar();
+        }
+
         if (ImGui::BeginTable("apps", 6,
                                ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
                                    ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable,
@@ -554,8 +568,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             }
 
             for (const auto& r : rows) {
+                // Closed (exited) processes stay in the data for a while
+                // (see Monitor::kDeadTicksToForget) so this checkbox can
+                // show them, but by default they just disappear - nobody
+                // wants a table that still lists "Brave" five minutes
+                // after closing it.
+                if (!r.alive && !showClosedProcesses) continue;
+
                 ImGui::TableNextRow();
                 ImGui::PushID((int)r.pid);
+                if (!r.alive) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.635f, 0.659f, 0.694f, 1.0f));
 
                 ImGui::TableSetColumnIndex(0);
 
@@ -655,6 +677,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::TableSetColumnIndex(5);
                 if (r.pid == kUnknownPID) {
                     ImGui::TextDisabled("-");
+                } else if (!r.alive) {
+                    ImGui::TextDisabled("closed");
                 } else {
                     ImGui::PushID((int)r.pid);
                     bool blocked = pidMgr.IsBlocked(r.pid);
@@ -666,6 +690,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     }
                     ImGui::PopID();
                 }
+                if (!r.alive) ImGui::PopStyleColor();
                 ImGui::PopID();
             }
             ImGui::EndTable();

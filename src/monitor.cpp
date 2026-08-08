@@ -3,6 +3,25 @@
 #include "log.h"
 #include <chrono>
 #include <algorithm>
+#include <windows.h>
+
+namespace {
+
+// OS-level "is this PID still a real, running process" check - distinct
+// from "has it sent traffic recently", which is all counters_ tracks on
+// its own. A process that exits mid-session should disappear (or be
+// marked closed) even though its historical byte counts are still sitting
+// in counters_.
+bool IsProcessAlive(uint32_t pid) {
+    HANDLE h = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (!h) return false;
+    DWORD exitCode = 0;
+    bool alive = ::GetExitCodeProcess(h, &exitCode) && exitCode == STILL_ACTIVE;
+    ::CloseHandle(h);
+    return alive;
+}
+
+} // namespace
 
 Monitor::~Monitor() { Stop(); }
 
@@ -85,6 +104,7 @@ void Monitor::TickLoop() {
         std::vector<AppStats> rows;
         rows.reserve(cur.size());
         std::unordered_map<uint32_t, bool> alive;
+        std::vector<uint32_t> toForget;
         for (const auto& [pid, c] : cur) {
             alive[pid] = true;
             AppStats s;
@@ -101,10 +121,35 @@ void Monitor::TickLoop() {
                 s.exePath = names_.Path(pid);
             }
             if (s.name.empty()) s.name = (pid == kUnknownPID) ? "(unknown)" : ("pid " + std::to_string(pid));
+
+            // "(unknown)" isn't a real single process, so liveness doesn't
+            // apply to it - always show it (existing behavior).
+            s.alive = (pid == kUnknownPID) || IsProcessAlive(pid);
+            if (s.alive) {
+                deadTicks_.erase(pid); // handles the (rare) PID-reuse case
+            } else {
+                int& ticks = deadTicks_[pid];
+                ticks++;
+                if (ticks > kDeadTicksToForget) toForget.push_back(pid);
+            }
             rows.push_back(std::move(s));
         }
         names_.Prune(alive);
         prev = std::move(cur);
+
+        if (!toForget.empty()) {
+            std::lock_guard<std::mutex> lock(countersMu_);
+            for (uint32_t pid : toForget) {
+                counters_.erase(pid);
+                deadTicks_.erase(pid);
+                prev.erase(pid);
+            }
+            rows.erase(std::remove_if(rows.begin(), rows.end(),
+                                       [&](const AppStats& s) {
+                                           return std::find(toForget.begin(), toForget.end(), s.pid) != toForget.end();
+                                       }),
+                       rows.end());
+        }
 
         std::sort(rows.begin(), rows.end(), [](const AppStats& a, const AppStats& b) {
             return (a.totalDown + a.totalUp) > (b.totalDown + b.totalUp);

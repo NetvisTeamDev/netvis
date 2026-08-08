@@ -20,6 +20,7 @@ struct AppStats {
     double rateUp = 0;
     uint64_t totalDown = 0; // bytes, since netvis started
     uint64_t totalUp = 0;
+    bool alive = true; // false once the OS confirms the process has exited
 };
 
 constexpr uint32_t kUnknownPID = 0xFFFFFFFF;
@@ -57,6 +58,15 @@ private:
     };
     std::mutex countersMu_;
     std::unordered_map<uint32_t, Counters> counters_; // written by capture thread, read by tick thread
+
+    // Consecutive ticks a PID has been confirmed dead (OS-level, not just
+    // "no traffic this second"). Once a PID crosses kDeadTicksToForget it's
+    // dropped from counters_ entirely, so a long session with lots of
+    // process churn (browser tabs opening/closing, etc) doesn't grow
+    // unbounded - "show closed processes" still means "recently closed",
+    // not "everything that ever ran".
+    std::unordered_map<uint32_t, int> deadTicks_;
+    static constexpr int kDeadTicksToForget = 300; // ~5 minutes at 1 tick/sec
 
     std::mutex snapshotMu_;
     std::vector<AppStats> snapshot_;

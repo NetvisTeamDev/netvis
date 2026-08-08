@@ -56,3 +56,141 @@
 2026/08/08 14:28:29 monitor: capture started
 2026/08/08 14:28:29 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
 2026/08/08 14:29:15 netvis shutting down
+2026/08/08 15:19:03 netvis starting
+2026/08/08 15:19:03 netvis: DnsFlushResolverCache -> ok
+2026/08/08 15:19:03 netvis: DPI scale = 1.25
+2026/08/08 15:19:03 monitor: capture started
+2026/08/08 15:19:03 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 15:34:35 netvis shutting down
+2026/08/08 15:34:45 netvis starting
+2026/08/08 15:34:45 netvis: DnsFlushResolverCache -> ok
+2026/08/08 15:34:45 netvis: DPI scale = 1.25
+2026/08/08 15:34:45 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/08 15:34:46 blocker: Start failed
+2026/08/08 15:34:48 netvis shutting down
+2026/08/08 15:35:06 netvis starting
+2026/08/08 15:35:06 netvis: DnsFlushResolverCache -> ok
+2026/08/08 15:35:06 netvis: DPI scale = 1.25
+2026/08/08 15:35:06 monitor: capture started
+2026/08/08 15:35:06 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 15:35:42 netvis shutting down
+2026/08/08 15:37:40 netvis starting
+2026/08/08 15:37:40 netvis: DnsFlushResolverCache -> ok
+2026/08/08 15:37:40 netvis: DPI scale = 1.25
+2026/08/08 15:37:40 monitor: capture started
+2026/08/08 15:37:40 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 15:38:31 netvis shutting down
+2026/08/08 18:03:26 netvis starting
+2026/08/08 18:03:26 netvis: DnsFlushResolverCache -> ok
+2026/08/08 18:03:26 netvis: DPI scale = 1.25
+2026/08/08 18:03:26 monitor: capture started
+2026/08/08 18:03:26 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 18:04:00 netvis shutting down
+2026/08/08 18:04:30 netvis starting
+2026/08/08 18:04:30 netvis: DnsFlushResolverCache -> ok
+2026/08/08 18:04:30 netvis: DPI scale = 1.25
+2026/08/08 18:04:30 monitor: capture started
+2026/08/08 18:04:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 18:04:49 netvis shutting down
+2026/08/08 18:04:54 netvis starting
+2026/08/08 18:04:54 netvis: DnsFlushResolverCache -> ok
+2026/08/08 18:04:54 netvis: DPI scale = 1.25
+2026/08/08 18:04:54 monitor: capture started
+2026/08/08 18:04:54 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 18:05:59 pidblock: network-layer enforcement started
+2026/08/08 18:05:59 pidblock: Block(2676): socket-layer handle opened, now blocked
+2026/08/08 18:05:59 pidblock: dropping udp port 5353 (pid 2676)
+2026/08/08 18:06:01 pidblock: dropping udp port 5353 (pid 2676)
+2026/08/08 18:06:04 pidblock: dropping udp port 5353 (pid 2676)
+2026/08/08 18:06:13 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:06:13 pidblock: Unblock(2676): unblocked
+2026/08/08 18:06:15 netvis shutting down
+2026/08/08 18:07:02 netvis starting
+2026/08/08 18:07:02 netvis: DnsFlushResolverCache -> ok
+2026/08/08 18:07:02 netvis: DPI scale = 1.25
+2026/08/08 18:07:02 monitor: capture started
+2026/08/08 18:07:02 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 18:07:44 blocker: disabled, passing everything through
+2026/08/08 18:08:01 pidblock: network-layer enforcement started
+2026/08/08 18:08:01 pidblock: Block(5244): socket-layer handle opened, now blocked
+2026/08/08 18:08:04 blocker: disabled, passing everything through
+2026/08/08 18:08:35 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:08:35 pidblock: Unblock(5244): unblocked
+2026/08/08 18:08:59 pidblock: network-layer enforcement started
+2026/08/08 18:08:59 pidblock: Block(3552): socket-layer handle opened, now blocked
+2026/08/08 18:08:59 pidblock: dropping tcp port 61960 (pid 3552)
+2026/08/08 18:09:00 pidblock: Block(5244): socket-layer handle opened, now blocked
+2026/08/08 18:09:01 pidblock: dropping udp port 5353 (pid 5244)
+2026/08/08 18:09:03 pidblock: dropping udp port 5353 (pid 5244)
+2026/08/08 18:09:05 blocker: disabled, passing everything through
+2026/08/08 18:09:05 pidblock: dropping udp port 5353 (pid 5244)
+2026/08/08 18:09:07 pidblock: dropping tcp port 57058 (pid 3552)
+2026/08/08 18:09:10 pidblock: dropping udp port 5353 (pid 5244)
+2026/08/08 18:09:12 pidblock: dropping tcp port 53868 (pid 3552)
+2026/08/08 18:09:12 blocker: disabled, passing everything through
+2026/08/08 18:09:14 pidblock: dropping tcp port 64939 (pid 3552)
+2026/08/08 18:09:16 pidblock: dropping tcp port 58232 (pid 3552)
+2026/08/08 18:09:18 pidblock: Unblock(3552): unblocked
+2026/08/08 18:09:18 pidblock: dropping udp port 5353 (pid 5244)
+2026/08/08 18:09:19 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:09:19 pidblock: Unblock(5244): unblocked
+2026/08/08 18:09:39 blocker: disabled, passing everything through
+2026/08/08 18:10:09 pidblock: network-layer enforcement started
+2026/08/08 18:10:09 pidblock: SetLimit(12360) = 524288 bytes/sec
+2026/08/08 18:10:09 pidblock: throttling pid 12360 (over 524288 B/s cap)
+2026/08/08 18:10:16 pidblock: throttling pid 12360 (over 524288 B/s cap)
+2026/08/08 18:10:23 pidblock: throttling pid 12360 (over 524288 B/s cap)
+2026/08/08 18:10:30 pidblock: throttling pid 12360 (over 524288 B/s cap)
+2026/08/08 18:10:37 pidblock: throttling pid 12360 (over 524288 B/s cap)
+2026/08/08 18:10:40 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:10:40 pidblock: ClearLimit(12360)
+2026/08/08 18:10:51 pidblock: network-layer enforcement started
+2026/08/08 18:10:51 pidblock: Block(12360): socket-layer handle opened, now blocked
+2026/08/08 18:10:51 auto-block: trafficgen.exe (pid 12360) exceeded 1.00 MB/s, blocked
+2026/08/08 18:10:55 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:10:55 pidblock: Unblock(12360): unblocked
+2026/08/08 18:10:56 pidblock: network-layer enforcement started
+2026/08/08 18:10:56 pidblock: Block(12360): socket-layer handle opened, now blocked
+2026/08/08 18:10:56 auto-block: trafficgen.exe (pid 12360) exceeded 1.00 MB/s, blocked
+2026/08/08 18:10:56 pidblock: dropping tcp port 53902 (pid 12360)
+2026/08/08 18:10:58 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:10:58 pidblock: Unblock(12360): unblocked
+2026/08/08 18:11:05 pidblock: network-layer enforcement started
+2026/08/08 18:11:05 pidblock: Block(12360): socket-layer handle opened, now blocked
+2026/08/08 18:11:05 auto-block: trafficgen.exe (pid 12360) exceeded 1.00 MB/s, blocked
+2026/08/08 18:11:05 pidblock: dropping tcp port 53903 (pid 12360)
+2026/08/08 18:11:09 pidblock: dropping tcp port 53903 (pid 12360)
+2026/08/08 18:11:13 pidblock: dropping tcp port 53903 (pid 12360)
+2026/08/08 18:11:21 pidblock: dropping tcp port 53903 (pid 12360)
+2026/08/08 18:11:37 pidblock: dropping tcp port 53903 (pid 12360)
+2026/08/08 18:11:40 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:11:40 pidblock: Unblock(12360): unblocked
+2026/08/08 18:12:05 pidblock: network-layer enforcement started
+2026/08/08 18:12:05 pidblock: Block(3552): socket-layer handle opened, now blocked
+2026/08/08 18:12:05 auto-block: chrome.exe (pid 3552) exceeded 1.00 MB/s, blocked
+2026/08/08 18:12:05 pidblock: dropping udp port 59464 (pid 3552)
+2026/08/08 18:12:05 blocker: disabled, passing everything through
+2026/08/08 18:12:07 pidblock: dropping udp port 59464 (pid 3552)
+2026/08/08 18:12:09 pidblock: dropping tcp port 61053 (pid 3552)
+2026/08/08 18:12:11 pidblock: dropping tcp port 54751 (pid 3552)
+2026/08/08 18:12:13 pidblock: dropping tcp port 57150 (pid 3552)
+2026/08/08 18:12:15 blocker: disabled, passing everything through
+2026/08/08 18:12:15 pidblock: dropping tcp port 54034 (pid 3552)
+2026/08/08 18:12:18 pidblock: dropping tcp port 65058 (pid 3552)
+2026/08/08 18:12:20 pidblock: dropping tcp port 54034 (pid 3552)
+2026/08/08 18:12:22 pidblock: dropping tcp port 65314 (pid 3552)
+2026/08/08 18:12:24 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:12:24 pidblock: Unblock(3552): unblocked
+2026/08/08 18:12:26 blocker: disabled, passing everything through
+2026/08/08 18:12:32 blocker: disabled, passing everything through
+2026/08/08 18:12:33 netvis shutting down
+2026/08/08 18:16:08 netvis starting
+2026/08/08 18:16:08 netvis: DnsFlushResolverCache -> ok
+2026/08/08 18:16:08 netvis: DPI scale = 1.25
+2026/08/08 18:16:08 monitor: capture started
+2026/08/08 18:16:08 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 18:19:24 pidblock: network-layer enforcement started
+2026/08/08 18:19:24 pidblock: Block(12360): socket-layer handle opened, now blocked
+2026/08/08 18:19:42 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 18:19:42 pidblock: Unblock(12360): unblocked
+2026/08/08 18:19:54 netvis shutting down

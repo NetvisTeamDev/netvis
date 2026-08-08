@@ -51,10 +51,23 @@ inline const std::vector<std::string>& DefaultBlocklist() {
 inline const std::vector<std::string>& KnownDoHIPs() {
     static const std::vector<std::string> ips = {
         "1.1.1.1", "1.0.0.1",                   // Cloudflare
+        "1.1.1.2", "1.0.0.2",                   // Cloudflare (malware-blocking)
+        "1.1.1.3", "1.0.0.3",                   // Cloudflare (family)
         "8.8.8.8", "8.8.4.4",                   // Google
         "9.9.9.9", "149.112.112.112",           // Quad9
+        "9.9.9.10", "149.112.112.10",           // Quad9 (unsecured)
+        "9.9.9.11", "149.112.112.11",           // Quad9 (ECS)
         "208.67.222.222", "208.67.220.220",     // OpenDNS
+        "208.67.222.123", "208.67.220.123",     // OpenDNS FamilyShield
         "45.90.28.0", "45.90.30.0",             // NextDNS (representative)
+        "94.140.14.14", "94.140.15.15",         // AdGuard DNS
+        "94.140.14.15", "94.140.15.16",         // AdGuard (family)
+        "76.76.2.0", "76.76.10.0",              // ControlD
+        "194.242.2.2",                          // Mullvad
+        "185.228.168.9", "185.228.169.9",       // CleanBrowsing
+        "76.76.19.19", "76.223.122.150",        // Alternate DNS
+        "45.11.45.11",                          // DNS.SB
+        "193.110.81.0", "185.253.5.0",          // dns0.eu
     };
     return ips;
 }

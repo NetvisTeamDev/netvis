@@ -131,7 +131,10 @@ void Blocker::LoadLists() {
 
 std::string Blocker::BuildFilter() const {
     std::ostringstream ss;
-    ss << "outbound and (udp.DstPort == 53 or tcp.DstPort == 853 or (tcp.DstPort == 443 and (";
+    // tcp.DstPort == 53 is included alongside udp: resolvers fall back to
+    // DNS-over-TCP whenever a UDP answer comes back truncated, and some
+    // clients use it directly - without it that's an easy bypass.
+    ss << "outbound and (udp.DstPort == 53 or tcp.DstPort == 53 or tcp.DstPort == 853 or (tcp.DstPort == 443 and (";
     bool first = true;
     for (const auto& ip : dohIPs_) {
         if (!first) ss << " or ";
@@ -141,6 +144,23 @@ std::string Blocker::BuildFilter() const {
     if (first) ss << "false"; // no DoH IPs configured - shouldn't happen, but stay valid
     ss << ")))";
     return ss.str();
+}
+
+void Blocker::SetEnabled(bool enabled) {
+    enabled_.store(enabled);
+    Log("blocker: %s", enabled ? "enabled" : "disabled");
+
+    // Both directions need a cache flush to take effect promptly - see the
+    // note on the declaration in blocker.h. DnsFlushResolverCache isn't in
+    // the public SDK headers, so it's resolved dynamically (same approach
+    // as the startup flush in main.cpp).
+    HMODULE dnsapi = ::LoadLibraryW(L"dnsapi.dll");
+    if (!dnsapi) return;
+    using FlushFn = BOOL(WINAPI*)();
+    if (auto flush = reinterpret_cast<FlushFn>(::GetProcAddress(dnsapi, "DnsFlushResolverCache"))) {
+        Log("blocker: DNS cache flush on toggle -> %s", flush() ? "ok" : "failed");
+    }
+    ::FreeLibrary(dnsapi);
 }
 
 bool Blocker::Start(std::string* error) {
@@ -197,10 +217,51 @@ void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address&
     ParsedPacket pkt = ParsePacket(raw.data(), len);
     if (!pkt.ok) { Reinject(raw, len, addr); return; }
 
+    // DNS over TCP 53: the DNS message is prefixed with a 2-byte length,
+    // and it may be split across segments. Rather than reassembling a TCP
+    // stream, parse the common case (whole query in one segment) and drop
+    // it if blocked - a dropped query means the lookup fails, same end
+    // result as NXDOMAIN. Anything unparseable passes through (fail-open).
+    if (pkt.isTcp && pkt.dstPort == 53) {
+        if (pkt.transportLen > 20) {
+            uint32_t tcpHdrLen = (uint32_t)((pkt.transport[12] >> 4) * 4);
+            if (tcpHdrLen >= 20 && pkt.transportLen > tcpHdrLen + 2) {
+                const uint8_t* dns = pkt.transport + tcpHdrLen + 2; // skip the 2-byte length prefix
+                uint32_t dnsLen = pkt.transportLen - tcpHdrLen - 2;
+                DnsQuestion q = ParseDNSQuestion(dns, dnsLen);
+                if (q.ok) {
+                    std::string domain = ToLowerCopy(q.domain);
+                    if (!MatchesSuffixSet(domain, allowlist_) && MatchesSuffixSet(domain, blocklist_)) {
+                        RecordBlock("[DNS-TCP] " + domain);
+                        return; // drop
+                    }
+                }
+            }
+        }
+        Reinject(raw, len, addr);
+        return;
+    }
+
     if (pkt.isUdp && pkt.dstPort == 53) {
-        if (pkt.isIPv6) { Reinject(raw, len, addr); return; } // IPv4-only spoofing (v1)
         const uint8_t* dns = pkt.transport + 8;
         uint32_t dnsLen = pkt.transportLen - 8;
+
+        // IPv6: same blocklist decision, but drop instead of spoofing -
+        // fabricating a valid IPv6 reply is substantially more work and
+        // "query dropped" already means the lookup fails.
+        if (pkt.isIPv6) {
+            DnsQuestion q6 = ParseDNSQuestion(dns, dnsLen);
+            if (q6.ok) {
+                std::string domain6 = ToLowerCopy(q6.domain);
+                if (!MatchesSuffixSet(domain6, allowlist_) && MatchesSuffixSet(domain6, blocklist_)) {
+                    RecordBlock("[DNS-IPv6] " + domain6);
+                    return; // drop
+                }
+            }
+            Reinject(raw, len, addr);
+            return;
+        }
+
         DnsQuestion q = ParseDNSQuestion(dns, dnsLen);
         if (!q.ok) { Reinject(raw, len, addr); return; }
         std::string domain = ToLowerCopy(q.domain);
