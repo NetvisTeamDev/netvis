@@ -42,21 +42,48 @@ public:
     std::vector<uint32_t> BlockedPIDs();
     void UnblockAll();
 
-    // Rate-limits a PID to bytesPerSec (combined up+down), instead of a
-    // full block. Returns "" on success, otherwise an error message.
-    std::string SetLimit(uint32_t pid, uint64_t bytesPerSec);
+    // A rate limit: download and upload are capped independently (either,
+    // both, or neither), and the whole thing can optionally auto-expire
+    // after durationSecs (0 = forever).
+    struct LimitSpec {
+        bool limitDown = false;
+        uint64_t downBps = 0;
+        bool limitUp = false;
+        uint64_t upBps = 0;
+        bool hasDuration = false;
+        int durationSecs = 0;
+        int remainingSecs = 0; // output only, from GetLimit
+    };
+
+    // Applies a rate limit to a PID instead of a full block. Returns "" on
+    // success, otherwise an error message. A spec that limits neither
+    // direction clears any existing limit.
+    std::string SetLimit(uint32_t pid, const LimitSpec& spec);
     void ClearLimit(uint32_t pid);
     bool IsLimited(uint32_t pid);
-    uint64_t GetLimit(uint32_t pid); // 0 if not limited
+    bool GetLimit(uint32_t pid, LimitSpec* out); // false if not limited
+
+    // Drops any limits whose duration has elapsed, stopping enforcement if
+    // that leaves nothing blocked or limited. Call periodically (e.g. once
+    // a second) from the UI thread - safe to join threads there.
+    void PurgeExpired();
 
 private:
     struct LimitState {
-        uint64_t capBytesPerSec = 0;
-        uint64_t usedThisWindow = 0;
+        bool limitDown = false;
+        uint64_t capDown = 0;
+        bool limitUp = false;
+        uint64_t capUp = 0;
+        uint64_t usedDown = 0;
+        uint64_t usedUp = 0;
         std::chrono::steady_clock::time_point windowStart;
+        bool hasExpiry = false;
+        std::chrono::steady_clock::time_point expiry;
     };
 
     bool StartEnforcementLocked(std::string* error); // caller holds mu_
+    void StopEnforcementIfIdleLocked(HANDLE* outHandle, bool* outStop); // caller holds mu_
+    void JoinEnforcement(HANDLE stopHandle);
     void EnforceLoop(HANDLE handle);
     bool ShouldDrop(const uint8_t* raw, uint32_t len, const wd::Address& addr);
 

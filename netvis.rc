@@ -1,0 +1,4 @@
+// Embeds the app icon into netvis.exe. Icon ID 1 is the lowest numeric
+// ID, which is what Windows Explorer uses as the file's display icon, and
+// what the app loads at runtime for its window/taskbar/tray icon.
+1 ICON "netvis.ico"

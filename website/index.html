@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>netvis — bandwidth monitor & firewall for Windows</title>
+<meta name="description" content="netvis is a lightweight Windows bandwidth monitor, ad/tracker blocker, and per-process firewall.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="../netvis.ico">
+</head>
+<body>
+
+<!-- The netvis logo, inline so the page has no image dependency -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="netvis-logo" viewBox="0 0 96 96">
+    <rect x="0" y="0" width="96" height="96" rx="22" fill="#0d1017"/>
+    <rect x="0.75" y="0.75" width="94.5" height="94.5" rx="21" fill="none" stroke="#2b3140" stroke-width="1.5"/>
+    <path d="M14 74 L28 60 L40 66 L52 40 L64 56 L82 30 L82 78 L14 78 Z" fill="#35c75f" fill-opacity="0.28"/>
+    <path d="M14 74 L28 60 L40 66 L52 40 L64 56 L82 30" fill="none" stroke="#46e076" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M14 82 L30 76 L44 80 L60 70 L82 76" fill="none" stroke="#6696fa" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="82" cy="30" r="5" fill="#beffd6"/>
+  </symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;padding:0 24px;">
+    <svg class="logo" aria-hidden="true"><use href="#netvis-logo"/></svg>
+    <div class="brand">netvis <span>for Windows</span></div>
+    <div class="spacer"></div>
+    <nav class="links">
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero" id="download">
+    <svg class="icon" aria-label="netvis logo"><use href="#netvis-logo"/></svg>
+    <h1>See your network.<br>Control it.</h1>
+    <p class="tag">A lightweight bandwidth monitor, ad &amp; tracker blocker, and per-process
+       firewall for Windows — in one small app.</p>
+
+    <div class="cta">
+      <a id="downloadBtn" class="btn btn-primary" href="downloads/netvis.exe" download>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="downloadLabel">Download for Windows</span>
+      </a>
+      <a class="btn btn-ghost" href="#features">See what it does</a>
+    </div>
+    <div class="dl-note" id="dlNote">Free · Windows 10 &amp; 11 · requires Administrator</div>
+
+    <div class="shot">
+      <!-- Drop a real screenshot here as screenshot.png to replace the placeholder -->
+      <div class="placeholder" id="shot"><img src="./screenshot.png"/></div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <h2>Everything, on one screen</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="dot" style="background:#46e076"></div>
+        <h3>Live bandwidth monitor</h3>
+        <p>A real-time graph plus a per-process table showing exactly which app is using
+           your connection, up and down, right now.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:#4c8bf5"></div>
+        <h3>Ad &amp; tracker blocker</h3>
+        <p>Blocks ads and trackers at the DNS level across your whole PC — not just one
+           browser — from a built-in list you can extend.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:#e08f3a"></div>
+        <h3>Per-process firewall</h3>
+        <p>Cut any app off the internet with one click, or cap its download and upload
+           speed — permanently or for a set time.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:#c75be0"></div>
+        <h3>Connection inspector</h3>
+        <p>See every connection a process holds open — remote address, port, protocol —
+           with hostnames resolved for you.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:#e05b6b"></div>
+        <h3>Security alerts</h3>
+        <p>Get told when an app connects for the first time, starts listening for
+           incoming connections, or your DNS changes.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:#2fb2c7"></div>
+        <h3>Runs in the background</h3>
+        <p>Tuck it into the tray and it keeps monitoring, blocking and limiting while
+           staying out of your way.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;padding:0 24px;flex-wrap:wrap;">
+    <svg class="logo" style="width:22px;height:22px;border-radius:6px" aria-hidden="true"><use href="#netvis-logo"/></svg>
+    <span>netvis</span>
+    <span class="spacer"></span>
+    <span class="req">Windows 10 / 11 · 64-bit</span>
+  </div>
+</footer>
+
+<script>
+  // Only offer the download to Windows visitors; on anything else the
+  // button is disabled and the label/note explain why.
+  (function () {
+    var ua = navigator.userAgent || "";
+    var uaData = navigator.userAgentData;
+    var isWindows = uaData
+      ? uaData.platform === "Windows"
+      : /Windows|Win32|Win64|WOW64/i.test(ua);
+
+    if (!isWindows) {
+      var btn = document.getElementById("downloadBtn");
+      btn.classList.add("disabled");
+      btn.removeAttribute("href");
+      btn.removeAttribute("download");
+      btn.setAttribute("aria-disabled", "true");
+      btn.addEventListener("click", function (e) { e.preventDefault(); });
+      document.getElementById("downloadLabel").textContent = "Not available for download";
+      document.getElementById("dlNote").textContent = "netvis is Windows-only. Open this page on a Windows PC to download.";
+    }
+  })();
+</script>
+
+</body>
+</html>

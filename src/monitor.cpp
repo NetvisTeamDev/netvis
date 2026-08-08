@@ -3,6 +3,7 @@
 #include "log.h"
 #include <chrono>
 #include <algorithm>
+#include <cstring>
 #include <windows.h>
 
 namespace {
@@ -12,6 +13,22 @@ namespace {
 // its own. A process that exits mid-session should disappear (or be
 // marked closed) even though its historical byte counts are still sitting
 // in counters_.
+// Classifies by whichever endpoint looks like a well-known service port.
+// The remote port is the meaningful one (the local side is an ephemeral
+// high port), but we check both since direction isn't always obvious.
+TrafficType ClassifyPorts(bool isTcp, uint16_t a, uint16_t b) {
+    auto either = [&](uint16_t p) { return a == p || b == p; };
+
+    if (either(53) || either(853) || either(5353)) return TrafficType::DNS;
+    if (either(443)) return isTcp ? TrafficType::HTTPS : TrafficType::QUIC;
+    if (either(80) || either(8080) || either(8000)) return TrafficType::HTTP;
+    if (either(25) || either(110) || either(143) || either(465) || either(587) || either(993) || either(995))
+        return TrafficType::Email;
+    if (either(445) || either(139) || either(20) || either(21)) return TrafficType::FileShare;
+    if (either(3389) || either(5900)) return TrafficType::RemoteDesktop;
+    return TrafficType::Other;
+}
+
 bool IsProcessAlive(uint32_t pid) {
     HANDLE h = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
     if (!h) return false;
@@ -22,6 +39,19 @@ bool IsProcessAlive(uint32_t pid) {
 }
 
 } // namespace
+
+const char* TrafficTypeName(TrafficType t) {
+    switch (t) {
+        case TrafficType::HTTPS: return "HTTPS";
+        case TrafficType::QUIC: return "QUIC";
+        case TrafficType::HTTP: return "HTTP";
+        case TrafficType::DNS: return "DNS";
+        case TrafficType::Email: return "Email";
+        case TrafficType::FileShare: return "File sharing";
+        case TrafficType::RemoteDesktop: return "Remote desktop";
+        default: return "Other";
+    }
+}
 
 Monitor::~Monitor() { Stop(); }
 
@@ -80,12 +110,15 @@ void Monitor::CaptureLoop() {
         uint32_t pid;
         if (!netmap_.Lookup(proto, localPort, &pid)) pid = kUnknownPID;
 
+        TrafficType type = ClassifyPorts(pkt.isTcp, pkt.srcPort, pkt.dstPort);
+
         std::lock_guard<std::mutex> lock(countersMu_);
         Counters& c = counters_[pid];
         if (outbound)
             c.up += recvLen;
         else
             c.down += recvLen;
+        c.byType[(size_t)type] += recvLen;
     }
 }
 
@@ -111,6 +144,7 @@ void Monitor::TickLoop() {
             s.pid = pid;
             s.totalDown = c.down;
             s.totalUp = c.up;
+            memcpy(s.byType, c.byType, sizeof(s.byType));
             auto pit = prev.find(pid);
             if (pit != prev.end()) {
                 s.rateDown = double(c.down - pit->second.down);

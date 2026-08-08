@@ -1,0 +1,139 @@
+:root {
+  --bg: #0b0d12;
+  --bg-2: #12141a;
+  --panel: #171a21;
+  --panel-2: #1f232c;
+  --border: #2b3140;
+  --text: #eef0f4;
+  --text-dim: #9aa0ac;
+  --accent: #4c8bf5;
+  --accent-hover: #6aa0ff;
+  --green: #46e076;
+  --blue: #6696fa;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+/* ---- top nav ---- */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--border);
+}
+.nav .logo { width: 34px; height: 34px; border-radius: 9px; }
+.nav .brand { font-size: 20px; font-weight: 600; letter-spacing: -0.2px; }
+.nav .brand span { color: var(--text-dim); font-weight: 400; font-size: 15px; margin-left: 8px; }
+.nav .spacer { flex: 1; }
+.nav .links a { color: var(--text-dim); margin-left: 24px; font-size: 15px; transition: color 0.15s; }
+.nav .links a:hover { color: var(--text); }
+
+/* ---- hero ---- */
+.hero { padding: 84px 0 64px; text-align: center; }
+.hero .icon { width: 104px; height: 104px; border-radius: 26px; margin: 0 auto 30px; display: block; }
+.hero h1 { font-size: 52px; font-weight: 700; letter-spacing: -1.2px; line-height: 1.1; }
+.hero .tag { font-size: 21px; color: var(--text-dim); margin: 18px auto 0; max-width: 640px; }
+
+.cta { margin-top: 40px; display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 15px 30px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.btn-primary { background: var(--accent); color: #08101f; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background: var(--panel-2);
+  color: var(--text-dim);
+  border-color: var(--border);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+.btn-ghost:hover { border-color: var(--text-dim); }
+
+.dl-note { margin-top: 14px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
+
+/* ---- screenshot ---- */
+.shot {
+  margin: 56px auto 0;
+  max-width: 900px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-2);
+  padding: 10px;
+}
+.shot img { width: 100%; display: block; border-radius: 8px; }
+.shot .placeholder {
+  border-radius: 8px;
+  background: linear-gradient(180deg, #14171e, #0f1218);
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 15px;
+}
+
+/* ---- features ---- */
+.features { padding: 88px 0 40px; }
+.features h2 { font-size: 30px; font-weight: 600; text-align: center; letter-spacing: -0.5px; }
+.grid {
+  margin-top: 44px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px 24px;
+}
+.card .dot { width: 12px; height: 12px; border-radius: 4px; margin-bottom: 16px; }
+.card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 15px; color: var(--text-dim); }
+
+/* ---- footer ---- */
+.foot {
+  margin-top: 72px;
+  border-top: 1px solid var(--border);
+  padding: 34px 0 60px;
+  color: var(--text-dim);
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.foot .spacer { flex: 1; }
+.req { color: var(--text-dim); font-size: 13px; }
+
+@media (max-width: 760px) {
+  .hero h1 { font-size: 38px; }
+  .hero .tag { font-size: 18px; }
+  .grid { grid-template-columns: 1fr; }
+  .nav .links { display: none; }
+}

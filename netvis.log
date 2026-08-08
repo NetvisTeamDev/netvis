@@ -194,3 +194,437 @@
 2026/08/08 18:19:42 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
 2026/08/08 18:19:42 pidblock: Unblock(12360): unblocked
 2026/08/08 18:19:54 netvis shutting down
+2026/08/08 20:30:38 netvis starting
+2026/08/08 20:30:38 netvis: DnsFlushResolverCache -> ok
+2026/08/08 20:30:38 netvis: DPI scale = 1.25
+2026/08/08 20:30:38 monitor: capture started
+2026/08/08 20:30:38 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 20:31:58 blocker: disabled
+2026/08/08 20:31:58 blocker: DNS cache flush on toggle -> ok
+2026/08/08 20:32:00 blocker: disabled, passing everything through
+2026/08/08 20:32:19 blocker: disabled, passing everything through
+2026/08/08 20:32:34 blocker: disabled, passing everything through
+2026/08/08 20:32:45 blocker: disabled, passing everything through
+2026/08/08 20:33:01 blocker: disabled, passing everything through
+2026/08/08 20:33:08 blocker: disabled, passing everything through
+2026/08/08 20:33:16 blocker: disabled, passing everything through
+2026/08/08 20:33:21 blocker: disabled, passing everything through
+2026/08/08 20:33:29 blocker: disabled, passing everything through
+2026/08/08 20:33:36 blocker: disabled, passing everything through
+2026/08/08 20:34:02 blocker: disabled, passing everything through
+2026/08/08 20:34:17 blocker: disabled, passing everything through
+2026/08/08 20:34:38 blocker: disabled, passing everything through
+2026/08/08 20:34:44 blocker: disabled, passing everything through
+2026/08/08 20:35:07 blocker: disabled, passing everything through
+2026/08/08 20:35:12 blocker: disabled, passing everything through
+2026/08/08 20:35:20 blocker: disabled, passing everything through
+2026/08/08 20:36:09 blocker: disabled, passing everything through
+2026/08/08 20:36:25 blocker: disabled, passing everything through
+2026/08/08 20:36:40 blocker: disabled, passing everything through
+2026/08/08 20:37:07 blocker: disabled, passing everything through
+2026/08/08 20:37:22 blocker: disabled, passing everything through
+2026/08/08 20:37:38 blocker: disabled, passing everything through
+2026/08/08 20:37:54 blocker: disabled, passing everything through
+2026/08/08 20:37:59 blocker: disabled, passing everything through
+2026/08/08 20:38:11 blocker: disabled, passing everything through
+2026/08/08 20:38:16 blocker: disabled, passing everything through
+2026/08/08 20:38:30 blocker: disabled, passing everything through
+2026/08/08 20:38:43 blocker: disabled, passing everything through
+2026/08/08 20:38:44 blocker: enabled
+2026/08/08 20:38:44 blocker: DNS cache flush on toggle -> ok
+2026/08/08 20:38:44 blocker: disabled
+2026/08/08 20:38:44 blocker: DNS cache flush on toggle -> ok
+2026/08/08 20:38:58 netvis shutting down
+2026/08/08 20:39:30 netvis starting
+2026/08/08 20:39:30 netvis: DnsFlushResolverCache -> ok
+2026/08/08 20:39:30 netvis: DPI scale = 1.25
+2026/08/08 20:39:30 monitor: capture started
+2026/08/08 20:39:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 20:44:34 netvis shutting down
+2026/08/08 20:46:12 netvis starting
+2026/08/08 20:46:12 netvis: DnsFlushResolverCache -> ok
+2026/08/08 20:46:12 netvis: DPI scale = 1.25
+2026/08/08 20:46:12 monitor: capture started
+2026/08/08 20:46:12 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:03:20 pidblock: network-layer enforcement started
+2026/08/08 21:03:20 pidblock: Block(2576): socket-layer handle opened, now blocked
+2026/08/08 21:03:22 pidblock: dropping tcp port 64833 (pid 2576)
+2026/08/08 21:03:24 pidblock: dropping udp port 61860 (pid 2576)
+2026/08/08 21:03:26 pidblock: dropping tcp port 64833 (pid 2576)
+2026/08/08 21:03:28 pidblock: dropping udp port 55566 (pid 2576)
+2026/08/08 21:03:30 pidblock: dropping tcp port 64833 (pid 2576)
+2026/08/08 21:03:33 netvis shutting down
+2026/08/08 21:03:33 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 21:03:33 pidblock: Unblock(2576): unblocked
+2026/08/08 21:20:13 netvis starting
+2026/08/08 21:20:13 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:20:13 netvis: DPI scale = 1.25
+2026/08/08 21:20:13 monitor: capture started
+2026/08/08 21:20:13 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:20:13 blocker: enabled
+2026/08/08 21:20:13 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:21:08 alert: chrome.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 21:21:28 blocker: disabled
+2026/08/08 21:21:28 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:21:36 blocker: disabled, passing everything through
+2026/08/08 21:21:49 blocker: disabled, passing everything through
+2026/08/08 21:21:56 blocker: disabled, passing everything through
+2026/08/08 21:22:07 blocker: disabled, passing everything through
+2026/08/08 21:22:14 blocker: disabled, passing everything through
+2026/08/08 21:22:21 blocker: disabled, passing everything through
+2026/08/08 21:22:28 blocker: disabled, passing everything through
+2026/08/08 21:22:36 blocker: disabled, passing everything through
+2026/08/08 21:22:45 blocker: disabled, passing everything through
+2026/08/08 21:22:46 netvis shutting down
+2026/08/08 21:22:46 settings: saved
+2026/08/08 21:23:00 netvis starting
+2026/08/08 21:23:00 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:23:00 netvis: DPI scale = 1.25
+2026/08/08 21:23:00 monitor: capture started
+2026/08/08 21:23:00 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:23:00 settings: loaded 0 pins, 0 exempt, 0 limits, 6 known exes
+2026/08/08 21:23:00 blocker: disabled
+2026/08/08 21:23:00 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:23:07 blocker: disabled, passing everything through
+2026/08/08 21:23:16 blocker: disabled, passing everything through
+2026/08/08 21:23:22 blocker: disabled, passing everything through
+2026/08/08 21:24:05 blocker: disabled, passing everything through
+2026/08/08 21:24:26 blocker: disabled, passing everything through
+2026/08/08 21:24:49 blocker: disabled, passing everything through
+2026/08/08 21:25:02 alert: MpDefenderCoreService.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 21:25:10 blocker: disabled, passing everything through
+2026/08/08 21:25:20 blocker: disabled, passing everything through
+2026/08/08 21:25:31 blocker: disabled, passing everything through
+2026/08/08 21:25:36 blocker: disabled, passing everything through
+2026/08/08 21:26:21 blocker: disabled, passing everything through
+2026/08/08 21:26:38 blocker: disabled, passing everything through
+2026/08/08 21:26:57 netvis shutting down
+2026/08/08 21:26:57 settings: saved
+2026/08/08 21:27:28 netvis starting
+2026/08/08 21:27:28 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:27:28 netvis: DPI scale = 1.25
+2026/08/08 21:27:28 monitor: capture started
+2026/08/08 21:27:28 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:27:28 settings: loaded 0 pins, 0 exempt, 0 limits, 7 known exes
+2026/08/08 21:27:28 blocker: disabled
+2026/08/08 21:27:28 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:27:29 blocker: disabled, passing everything through
+2026/08/08 21:28:27 blocker: disabled, passing everything through
+2026/08/08 21:28:35 blocker: disabled, passing everything through
+2026/08/08 21:28:53 blocker: disabled, passing everything through
+2026/08/08 21:29:12 blocker: enabled
+2026/08/08 21:29:12 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:29:13 blocker: disabled
+2026/08/08 21:29:13 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:29:30 blocker: disabled, passing everything through
+2026/08/08 21:29:34 netvis shutting down
+2026/08/08 21:29:34 settings: saved
+2026/08/08 21:36:40 netvis starting
+2026/08/08 21:36:40 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:36:40 netvis: DPI scale = 1.25
+2026/08/08 21:36:40 monitor: capture started
+2026/08/08 21:36:40 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:36:40 settings: loaded 0 pins, 0 exempt, 0 limits, 7 known exes
+2026/08/08 21:36:40 blocker: disabled
+2026/08/08 21:36:40 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:36:44 blocker: disabled, passing everything through
+2026/08/08 21:36:49 blocker: disabled, passing everything through
+2026/08/08 21:37:02 blocker: disabled, passing everything through
+2026/08/08 21:37:19 tlsinspect: capturing to C:\Users\David\Desktop\Programming\Go\netvis\netvis_captures\20260808_213719
+2026/08/08 21:37:20 blocker: disabled, passing everything through
+2026/08/08 21:37:29 blocker: disabled, passing everything through
+2026/08/08 21:37:37 blocker: disabled, passing everything through
+2026/08/08 21:37:42 blocker: disabled, passing everything through
+2026/08/08 21:37:47 blocker: disabled, passing everything through
+2026/08/08 21:37:52 blocker: disabled, passing everything through
+2026/08/08 21:37:57 blocker: disabled, passing everything through
+2026/08/08 21:37:59 tlsinspect: stopped, 71163 packets
+2026/08/08 21:38:03 blocker: disabled, passing everything through
+2026/08/08 21:38:55 tlsinspect: capturing to C:\Users\David\Desktop\Programming\Go\netvis\netvis_captures\20260808_213855
+2026/08/08 21:38:55 blocker: disabled, passing everything through
+2026/08/08 21:39:23 blocker: disabled, passing everything through
+2026/08/08 21:39:34 blocker: disabled, passing everything through
+2026/08/08 21:39:37 tlsinspect: stopped, 5247 packets
+2026/08/08 21:39:47 blocker: disabled, passing everything through
+2026/08/08 21:39:47 netvis shutting down
+2026/08/08 21:39:47 settings: saved
+2026/08/08 21:44:04 netvis starting
+2026/08/08 21:44:04 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:44:04 netvis: DPI scale = 1.25
+2026/08/08 21:44:04 monitor: capture started
+2026/08/08 21:44:05 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:44:05 settings: loaded 0 pins, 0 exempt, 0 limits, 7 known exes
+2026/08/08 21:44:05 blocker: disabled
+2026/08/08 21:44:05 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:44:05 blocker: disabled, passing everything through
+2026/08/08 21:44:23 blocker: disabled, passing everything through
+2026/08/08 21:44:32 blocker: disabled, passing everything through
+2026/08/08 21:44:39 blocker: disabled, passing everything through
+2026/08/08 21:44:51 blocker: disabled, passing everything through
+2026/08/08 21:45:09 blocker: disabled, passing everything through
+2026/08/08 21:45:21 netvis shutting down
+2026/08/08 21:45:21 settings: saved
+2026/08/08 21:45:45 netvis starting
+2026/08/08 21:45:45 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:45:46 netvis: DPI scale = 1.25
+2026/08/08 21:45:46 monitor: capture started
+2026/08/08 21:45:46 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:45:46 settings: loaded 0 pins, 0 exempt, 0 limits, 7 known exes
+2026/08/08 21:45:46 blocker: disabled
+2026/08/08 21:45:46 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:45:54 blocker: disabled, passing everything through
+2026/08/08 21:46:00 blocker: disabled, passing everything through
+2026/08/08 21:46:23 blocker: disabled, passing everything through
+2026/08/08 21:46:29 blocker: disabled, passing everything through
+2026/08/08 21:46:54 blocker: enabled
+2026/08/08 21:46:54 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:46:54 blocker: disabled
+2026/08/08 21:46:54 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:46:59 netvis shutting down
+2026/08/08 21:46:59 settings: saved
+2026/08/08 21:55:10 netvis starting
+2026/08/08 21:55:10 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:55:10 netvis: DPI scale = 1.25
+2026/08/08 21:55:10 monitor: capture started
+2026/08/08 21:55:10 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:55:10 settings: loaded 0 pins, 0 exempt, 0 limits, 7 known exes
+2026/08/08 21:55:10 blocker: disabled
+2026/08/08 21:55:10 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:55:16 blocker: disabled, passing everything through
+2026/08/08 21:55:27 blocker: disabled, passing everything through
+2026/08/08 21:55:32 blocker: disabled, passing everything through
+2026/08/08 21:55:35 blocker: enabled
+2026/08/08 21:55:35 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:55:39 blocker: disabled
+2026/08/08 21:55:39 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:55:46 blocker: disabled, passing everything through
+2026/08/08 21:55:55 blocker: disabled, passing everything through
+2026/08/08 21:56:10 blocker: disabled, passing everything through
+2026/08/08 21:56:38 blocker: disabled, passing everything through
+2026/08/08 21:56:56 blocker: disabled, passing everything through
+2026/08/08 21:57:02 blocker: disabled, passing everything through
+2026/08/08 21:57:02 alert: GlassWire.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 21:57:08 blocker: disabled, passing everything through
+2026/08/08 21:57:36 blocker: disabled, passing everything through
+2026/08/08 21:57:42 blocker: disabled, passing everything through
+2026/08/08 21:57:59 blocker: disabled, passing everything through
+2026/08/08 21:58:33 blocker: disabled, passing everything through
+2026/08/08 21:59:24 blocker: disabled, passing everything through
+2026/08/08 21:59:25 netvis shutting down
+2026/08/08 21:59:25 settings: saved
+2026/08/08 21:59:30 netvis starting
+2026/08/08 21:59:30 netvis: DnsFlushResolverCache -> ok
+2026/08/08 21:59:30 netvis: DPI scale = 1.25
+2026/08/08 21:59:30 monitor: capture started
+2026/08/08 21:59:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 21:59:30 settings: loaded 0 pins, 0 exempt, 0 limits, 12 known exes
+2026/08/08 21:59:30 blocker: disabled
+2026/08/08 21:59:30 blocker: DNS cache flush on toggle -> ok
+2026/08/08 21:59:47 blocker: disabled, passing everything through
+2026/08/08 21:59:54 blocker: disabled, passing everything through
+2026/08/08 22:00:03 blocker: disabled, passing everything through
+2026/08/08 22:00:35 blocker: disabled, passing everything through
+2026/08/08 22:00:40 blocker: disabled, passing everything through
+2026/08/08 22:01:04 netvis shutting down
+2026/08/08 22:01:04 settings: saved
+2026/08/08 22:03:25 netvis starting
+2026/08/08 22:03:25 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:03:25 netvis: DPI scale = 1.25
+2026/08/08 22:03:25 monitor: capture started
+2026/08/08 22:03:25 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:03:25 settings: loaded 0 pins, 0 exempt, 0 limits, 12 known exes
+2026/08/08 22:03:25 blocker: disabled
+2026/08/08 22:03:25 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:03:45 blocker: disabled, passing everything through
+2026/08/08 22:04:26 blocker: disabled, passing everything through
+2026/08/08 22:04:26 alert: trafficgen.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 22:04:34 blocker: disabled, passing everything through
+2026/08/08 22:04:50 blocker: disabled, passing everything through
+2026/08/08 22:04:58 blocker: disabled, passing everything through
+2026/08/08 22:05:25 netvis shutting down
+2026/08/08 22:05:25 settings: saved
+2026/08/08 22:17:10 netvis starting
+2026/08/08 22:17:10 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:17:10 netvis: DPI scale = 1.25
+2026/08/08 22:17:10 monitor: capture started
+2026/08/08 22:17:10 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:17:10 settings: loaded 0 pins, 0 exempt, 0 limits, 13 known exes
+2026/08/08 22:17:10 blocker: disabled
+2026/08/08 22:17:10 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:17:53 pidblock: network-layer enforcement started
+2026/08/08 22:17:53 pidblock: Block(2576): socket-layer handle opened, now blocked
+2026/08/08 22:17:53 pidblock: dropping udp port 58469 (pid 2576)
+2026/08/08 22:17:53 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 22:17:53 pidblock: Unblock(2576): unblocked
+2026/08/08 22:17:59 blocker: disabled, passing everything through
+2026/08/08 22:18:13 netvis shutting down
+2026/08/08 22:18:13 settings: saved
+2026/08/08 22:23:17 netvis starting
+2026/08/08 22:23:17 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:23:17 netvis: DPI scale = 1.25
+2026/08/08 22:23:17 monitor: capture started
+2026/08/08 22:23:17 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:23:17 settings: loaded 0 pins, 0 exempt, 0 limits, 13 known exes
+2026/08/08 22:23:17 blocker: disabled
+2026/08/08 22:23:17 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:23:21 blocker: disabled, passing everything through
+2026/08/08 22:24:10 blocker: disabled, passing everything through
+2026/08/08 22:24:35 blocker: disabled, passing everything through
+2026/08/08 22:24:38 alert: WinStore.App.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 22:24:40 alert: WindowsPackageManagerServer.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 22:24:43 blocker: disabled, passing everything through
+2026/08/08 22:24:52 blocker: disabled, passing everything through
+2026/08/08 22:24:59 blocker: disabled, passing everything through
+2026/08/08 22:25:31 blocker: disabled, passing everything through
+2026/08/08 22:25:48 blocker: disabled, passing everything through
+2026/08/08 22:26:53 blocker: disabled, passing everything through
+2026/08/08 22:27:00 netvis shutting down
+2026/08/08 22:27:00 settings: saved
+2026/08/08 22:28:04 netvis starting
+2026/08/08 22:28:04 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:28:04 netvis: DPI scale = 1.25
+2026/08/08 22:28:04 monitor: capture started
+2026/08/08 22:28:04 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:28:04 settings: loaded 0 pins, 0 exempt, 0 limits, 15 known exes
+2026/08/08 22:28:04 blocker: disabled
+2026/08/08 22:28:04 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:28:05 blocker: disabled, passing everything through
+2026/08/08 22:28:20 blocker: disabled, passing everything through
+2026/08/08 22:28:46 blocker: disabled, passing everything through
+2026/08/08 22:28:53 blocker: disabled, passing everything through
+2026/08/08 22:29:19 blocker: disabled, passing everything through
+2026/08/08 22:29:34 blocker: disabled, passing everything through
+2026/08/08 22:29:53 blocker: disabled, passing everything through
+2026/08/08 22:30:00 blocker: disabled, passing everything through
+2026/08/08 22:30:09 blocker: disabled, passing everything through
+2026/08/08 22:30:55 blocker: disabled, passing everything through
+2026/08/08 22:31:17 netvis shutting down
+2026/08/08 22:31:17 settings: saved
+2026/08/08 22:32:37 netvis starting
+2026/08/08 22:32:37 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:32:37 netvis: DPI scale = 1.25
+2026/08/08 22:32:37 monitor: capture started
+2026/08/08 22:32:38 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:32:38 settings: loaded 0 pins, 0 exempt, 0 limits, 15 known exes
+2026/08/08 22:32:38 blocker: disabled
+2026/08/08 22:32:38 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:32:40 blocker: disabled, passing everything through
+2026/08/08 22:32:47 blocker: disabled, passing everything through
+2026/08/08 22:33:09 netvis shutting down
+2026/08/08 22:33:09 settings: saved
+2026/08/08 22:36:56 netvis starting
+2026/08/08 22:36:56 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:36:56 netvis: DPI scale = 1.25
+2026/08/08 22:36:56 monitor: capture started
+2026/08/08 22:36:56 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:36:56 settings: loaded 0 pins, 0 exempt, 0 limits, 15 known exes
+2026/08/08 22:36:56 blocker: disabled
+2026/08/08 22:36:56 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:37:21 blocker: disabled, passing everything through
+2026/08/08 22:37:34 blocker: disabled, passing everything through
+2026/08/08 22:37:56 blocker: disabled, passing everything through
+2026/08/08 22:38:08 blocker: disabled, passing everything through
+2026/08/08 22:38:41 blocker: disabled, passing everything through
+2026/08/08 22:38:51 blocker: disabled, passing everything through
+2026/08/08 22:39:47 blocker: disabled, passing everything through
+2026/08/08 22:40:00 blocker: disabled, passing everything through
+2026/08/08 22:40:13 netvis shutting down
+2026/08/08 22:40:13 settings: saved
+2026/08/08 22:44:05 netvis starting
+2026/08/08 22:44:05 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:44:05 netvis: DPI scale = 1.25
+2026/08/08 22:44:05 monitor: capture started
+2026/08/08 22:44:05 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:44:05 settings: loaded 0 pins, 0 exempt, 0 limits, 15 known exes
+2026/08/08 22:44:05 blocker: disabled
+2026/08/08 22:44:05 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:44:29 blocker: disabled, passing everything through
+2026/08/08 22:44:35 blocker: disabled, passing everything through
+2026/08/08 22:44:40 blocker: disabled, passing everything through
+2026/08/08 22:44:49 blocker: disabled, passing everything through
+2026/08/08 22:45:00 blocker: disabled, passing everything through
+2026/08/08 22:45:06 blocker: disabled, passing everything through
+2026/08/08 22:46:26 blocker: disabled, passing everything through
+2026/08/08 22:46:46 blocker: disabled, passing everything through
+2026/08/08 22:47:33 blocker: disabled, passing everything through
+2026/08/08 22:48:07 blocker: disabled, passing everything through
+2026/08/08 22:48:23 blocker: disabled, passing everything through
+2026/08/08 22:48:31 blocker: disabled, passing everything through
+2026/08/08 22:49:11 blocker: disabled, passing everything through
+2026/08/08 22:49:23 blocker: disabled, passing everything through
+2026/08/08 22:49:51 blocker: disabled, passing everything through
+2026/08/08 22:50:00 blocker: disabled, passing everything through
+2026/08/08 22:50:30 blocker: disabled, passing everything through
+2026/08/08 22:50:41 blocker: disabled, passing everything through
+2026/08/08 22:51:07 blocker: disabled, passing everything through
+2026/08/08 22:51:12 alert: Codium.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 22:51:34 blocker: disabled, passing everything through
+2026/08/08 22:51:49 blocker: disabled, passing everything through
+2026/08/08 22:51:56 blocker: disabled, passing everything through
+2026/08/08 22:52:10 blocker: disabled, passing everything through
+2026/08/08 22:52:15 blocker: disabled, passing everything through
+2026/08/08 22:52:17 netvis shutting down
+2026/08/08 22:52:17 settings: saved
+2026/08/08 22:52:30 netvis starting
+2026/08/08 22:52:30 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:52:30 netvis: DPI scale = 1.25
+2026/08/08 22:52:30 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/08 22:52:30 blocker: Start failed
+2026/08/08 22:52:30 settings: loaded 0 pins, 0 exempt, 0 limits, 17 known exes
+2026/08/08 22:52:32 netvis shutting down
+2026/08/08 22:52:32 settings: saved
+2026/08/08 22:52:36 netvis starting
+2026/08/08 22:52:36 netvis: DnsFlushResolverCache -> ok
+2026/08/08 22:52:37 netvis: DPI scale = 1.25
+2026/08/08 22:52:37 monitor: capture started
+2026/08/08 22:52:37 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/08 22:52:37 settings: loaded 0 pins, 0 exempt, 0 limits, 17 known exes
+2026/08/08 22:52:37 blocker: disabled
+2026/08/08 22:52:37 blocker: DNS cache flush on toggle -> ok
+2026/08/08 22:52:37 blocker: disabled, passing everything through
+2026/08/08 22:52:46 blocker: disabled, passing everything through
+2026/08/08 22:52:51 blocker: disabled, passing everything through
+2026/08/08 22:53:43 blocker: disabled, passing everything through
+2026/08/08 22:53:48 blocker: disabled, passing everything through
+2026/08/08 22:54:11 blocker: disabled, passing everything through
+2026/08/08 22:54:41 blocker: disabled, passing everything through
+2026/08/08 22:54:47 blocker: disabled, passing everything through
+2026/08/08 22:55:01 blocker: disabled, passing everything through
+2026/08/08 22:55:22 blocker: disabled, passing everything through
+2026/08/08 22:55:31 blocker: disabled, passing everything through
+2026/08/08 22:55:47 blocker: disabled, passing everything through
+2026/08/08 22:55:55 blocker: disabled, passing everything through
+2026/08/08 22:56:20 blocker: disabled, passing everything through
+2026/08/08 22:56:27 blocker: disabled, passing everything through
+2026/08/08 22:56:44 blocker: disabled, passing everything through
+2026/08/08 22:56:55 blocker: disabled, passing everything through
+2026/08/08 22:57:01 blocker: disabled, passing everything through
+2026/08/08 22:57:51 blocker: disabled, passing everything through
+2026/08/08 22:57:59 blocker: disabled, passing everything through
+2026/08/08 22:58:21 blocker: disabled, passing everything through
+2026/08/08 22:58:32 blocker: disabled, passing everything through
+2026/08/08 22:58:41 blocker: disabled, passing everything through
+2026/08/08 22:58:51 blocker: disabled, passing everything through
+2026/08/08 22:59:03 blocker: disabled, passing everything through
+2026/08/08 22:59:10 blocker: disabled, passing everything through
+2026/08/08 22:59:21 blocker: disabled, passing everything through
+2026/08/08 22:59:49 blocker: disabled, passing everything through
+2026/08/08 23:00:01 blocker: disabled, passing everything through
+2026/08/08 23:00:15 blocker: disabled, passing everything through
+2026/08/08 23:00:28 blocker: disabled, passing everything through
+2026/08/08 23:00:37 blocker: disabled, passing everything through
+2026/08/08 23:00:47 blocker: disabled, passing everything through
+2026/08/08 23:01:40 blocker: disabled, passing everything through
+2026/08/08 23:01:57 blocker: disabled, passing everything through
+2026/08/08 23:02:02 blocker: disabled, passing everything through
+2026/08/08 23:02:07 blocker: disabled, passing everything through
+2026/08/08 23:02:14 blocker: disabled, passing everything through
+2026/08/08 23:02:26 blocker: disabled, passing everything through
+2026/08/08 23:02:36 blocker: disabled, passing everything through
+2026/08/08 23:02:42 blocker: disabled, passing everything through
+2026/08/08 23:02:46 blocker: enabled
+2026/08/08 23:02:46 blocker: DNS cache flush on toggle -> ok
+2026/08/08 23:03:01 netvis starting
+2026/08/08 23:03:01 netvis: another instance is already running - signalling it and exiting
+2026/08/08 23:03:07 netvis starting
+2026/08/08 23:03:07 netvis: another instance is already running - signalling it and exiting

@@ -17,6 +17,9 @@ winicon.cpp
 icon_cache.cpp
 log.cpp
 connlist.cpp
+hostcache.cpp
+alerts.cpp
+settings.cpp
 imgui.cpp
 imgui_draw.cpp
 imgui_tables.cpp
