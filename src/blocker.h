@@ -36,6 +36,12 @@ public:
     // Most-recently-blocked entries, newest first, for the UI.
     std::vector<std::string> Recent();
 
+    // When disabled, every packet is passed straight through - the
+    // WinDivert handle stays open (so toggling is instant), it just stops
+    // doing anything.
+    void SetEnabled(bool enabled) { enabled_.store(enabled); }
+    bool Enabled() const { return enabled_.load(); }
+
 private:
     void Run();
     void HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address& addr);
@@ -56,4 +62,6 @@ private:
     std::atomic<int64_t> blockedCount_{0};
     std::mutex recentMu_;
     std::deque<std::string> recent_;
+
+    std::atomic<bool> enabled_{true};
 };

@@ -1,0 +1,185 @@
+2026/08/08 01:57:40 netvis starting
+2026/08/08 01:57:41 monitor: capture started
+2026/08/08 01:57:41 blocker: started, blocklist=80 allowlist=0 dohIPs=10
+2026/08/08 01:59:11 netvis shutting down
+2026/08/08 02:23:44 netvis starting
+2026/08/08 02:23:44 monitor: capture started
+2026/08/08 02:23:44 blocker: started, blocklist=80 allowlist=0 dohIPs=10
+2026/08/08 02:24:01 pidblock: network-layer enforcement started
+2026/08/08 02:24:01 pidblock: Block(14092): socket-layer handle opened, now blocked
+2026/08/08 02:24:08 pidblock: dropping tcp port 61544 (pid 14092)
+2026/08/08 02:24:10 pidblock: dropping udp port 62925 (pid 14092)
+2026/08/08 02:24:12 pidblock: dropping udp port 62925 (pid 14092)
+2026/08/08 02:24:18 pidblock: dropping tcp port 49203 (pid 14092)
+2026/08/08 02:24:21 pidblock: network-layer enforcement stopped (no more blocked PIDs)
+2026/08/08 02:24:21 pidblock: Unblock(14092): unblocked
+2026/08/08 02:24:28 netvis shutting down
+2026/08/08 11:59:30 netvis starting
+2026/08/08 11:59:30 monitor: capture started
+2026/08/08 11:59:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 12:03:48 netvis shutting down
+2026/08/08 12:08:08 netvis starting
+2026/08/08 12:08:08 monitor: capture started
+2026/08/08 12:08:08 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 12:08:35 netvis shutting down
+2026/08/08 12:11:59 netvis starting
+2026/08/08 12:11:59 monitor: capture started
+2026/08/08 12:11:59 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 12:25:39 netvis starting
+2026/08/08 12:25:39 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/08 12:25:39 blocker: Start failed
+2026/08/08 12:29:54 netvis shutting down
+2026/08/08 12:30:19 netvis shutting down
+2026/08/08 12:32:42 netvis starting
+2026/08/08 12:32:42 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/08 12:32:42 blocker: Start failed
+2026/08/08 12:32:55 netvis shutting down
+2026/08/08 12:33:30 netvis starting
+2026/08/08 12:33:30 monitor: capture started
+2026/08/08 12:33:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 12:34:08 blocker: disabled, passing everything through
+2026/08/08 12:34:18 blocker: disabled, passing everything through
+2026/08/08 12:34:32 blocker: disabled, passing everything through
+2026/08/08 12:34:38 blocker: disabled, passing everything through
+2026/08/08 12:34:49 blocker: disabled, passing everything through
+2026/08/08 12:34:55 blocker: disabled, passing everything through
+2026/08/08 12:35:11 blocker: disabled, passing everything through
+2026/08/08 12:35:26 blocker: disabled, passing everything through
+2026/08/08 12:35:37 blocker: disabled, passing everything through
+2026/08/08 12:35:59 blocker: disabled, passing everything through
+2026/08/08 12:36:18 blocker: disabled, passing everything through
+2026/08/08 12:36:27 blocker: disabled, passing everything through
+2026/08/08 12:36:42 blocker: disabled, passing everything through
+2026/08/08 12:36:54 blocker: disabled, passing everything through
+2026/08/08 12:37:11 netvis shutting down
+2026/08/08 12:37:34 netvis starting
+2026/08/08 12:37:34 monitor: capture started
+2026/08/08 12:37:34 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 12:40:30 blocker: disabled, passing everything through
+2026/08/08 12:40:51 blocker: disabled, passing everything through
+2026/08/08 12:41:04 blocker: disabled, passing everything through
+2026/08/08 12:41:15 blocker: disabled, passing everything through
+2026/08/08 12:41:26 blocker: disabled, passing everything through
+2026/08/08 12:42:04 blocker: disabled, passing everything through
+2026/08/08 12:42:10 blocker: disabled, passing everything through
+2026/08/08 12:43:57 blocker: disabled, passing everything through
+2026/08/08 12:44:14 blocker: disabled, passing everything through
+2026/08/08 12:44:45 blocker: disabled, passing everything through
+2026/08/08 12:45:27 blocker: disabled, passing everything through
+2026/08/08 12:46:01 blocker: disabled, passing everything through
+2026/08/08 12:46:34 blocker: disabled, passing everything through
+2026/08/08 12:46:56 blocker: disabled, passing everything through
+2026/08/08 12:47:12 blocker: disabled, passing everything through
+2026/08/08 12:48:05 blocker: disabled, passing everything through
+2026/08/08 12:48:29 blocker: disabled, passing everything through
+2026/08/08 12:48:49 blocker: disabled, passing everything through
+2026/08/08 12:49:04 blocker: disabled, passing everything through
+2026/08/08 12:49:49 blocker: disabled, passing everything through
+2026/08/08 12:50:02 blocker: disabled, passing everything through
+2026/08/08 12:50:26 blocker: disabled, passing everything through
+2026/08/08 12:50:50 blocker: disabled, passing everything through
+2026/08/08 12:51:27 blocker: disabled, passing everything through
+2026/08/08 12:51:32 blocker: disabled, passing everything through
+2026/08/08 12:51:38 blocker: disabled, passing everything through
+2026/08/08 12:51:53 blocker: disabled, passing everything through
+2026/08/08 12:52:12 blocker: disabled, passing everything through
+2026/08/08 12:52:29 blocker: disabled, passing everything through
+2026/08/08 12:52:44 blocker: disabled, passing everything through
+2026/08/08 12:53:31 blocker: disabled, passing everything through
+2026/08/08 12:54:39 blocker: disabled, passing everything through
+2026/08/08 12:54:51 blocker: disabled, passing everything through
+2026/08/08 12:54:57 blocker: disabled, passing everything through
+2026/08/08 12:55:03 blocker: disabled, passing everything through
+2026/08/08 12:55:41 blocker: disabled, passing everything through
+2026/08/08 12:55:53 blocker: disabled, passing everything through
+2026/08/08 12:56:41 blocker: disabled, passing everything through
+2026/08/08 12:56:53 blocker: disabled, passing everything through
+2026/08/08 12:57:00 blocker: disabled, passing everything through
+2026/08/08 12:57:10 blocker: disabled, passing everything through
+2026/08/08 12:57:22 netvis shutting down
+2026/08/08 12:59:10 netvis starting
+2026/08/08 12:59:10 netvis: DnsFlushResolverCache -> ok
+2026/08/08 12:59:10 monitor: capture started
+2026/08/08 12:59:10 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:01:15 netvis shutting down
+2026/08/08 13:03:51 netvis starting
+2026/08/08 13:03:51 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:03:51 monitor: capture started
+2026/08/08 13:03:52 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:04:49 pidblock: network-layer enforcement started
+2026/08/08 13:04:49 pidblock: Block(16264): socket-layer handle opened, now blocked
+2026/08/08 13:04:49 auto-block: trafficgen.exe (pid 16264) exceeded 1024 KB/s, blocked
+2026/08/08 13:05:10 netvis shutting down
+2026/08/08 13:05:10 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 13:05:10 pidblock: Unblock(16264): unblocked
+2026/08/08 13:05:35 netvis starting
+2026/08/08 13:05:35 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:05:35 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/08 13:05:35 blocker: Start failed
+2026/08/08 13:05:37 netvis shutting down
+2026/08/08 13:05:41 netvis starting
+2026/08/08 13:05:41 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:05:41 monitor: capture started
+2026/08/08 13:05:41 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:06:15 netvis shutting down
+2026/08/08 13:13:43 netvis starting
+2026/08/08 13:13:43 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:13:43 monitor: capture started
+2026/08/08 13:13:43 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:14:50 netvis shutting down
+2026/08/08 13:17:58 netvis starting
+2026/08/08 13:17:58 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:17:58 monitor: capture started
+2026/08/08 13:17:58 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:18:46 pidblock: network-layer enforcement started
+2026/08/08 13:18:46 pidblock: Block(460): socket-layer handle opened, now blocked
+2026/08/08 13:18:46 auto-block: trafficgen.exe (pid 460) exceeded 1.00 MB/s, blocked
+2026/08/08 13:19:09 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 13:19:09 pidblock: Unblock(460): unblocked
+2026/08/08 13:19:12 pidblock: network-layer enforcement started
+2026/08/08 13:19:12 pidblock: Block(460): socket-layer handle opened, now blocked
+2026/08/08 13:19:12 auto-block: trafficgen.exe (pid 460) exceeded 1.00 MB/s, blocked
+2026/08/08 13:19:15 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 13:19:15 pidblock: Unblock(460): unblocked
+2026/08/08 13:19:18 pidblock: network-layer enforcement started
+2026/08/08 13:19:18 pidblock: Block(460): socket-layer handle opened, now blocked
+2026/08/08 13:19:18 auto-block: trafficgen.exe (pid 460) exceeded 1.00 MB/s, blocked
+2026/08/08 13:19:18 pidblock: dropping tcp port 64240 (pid 460)
+2026/08/08 13:19:20 pidblock: SetLimit(460) = 524288 bytes/sec
+2026/08/08 13:19:21 pidblock: dropping tcp port 64240 (pid 460)
+2026/08/08 13:19:21 pidblock: Unblock(460): unblocked
+2026/08/08 13:19:30 pidblock: throttling pid 460 (over 524288 B/s cap)
+2026/08/08 13:19:37 pidblock: throttling pid 460 (over 524288 B/s cap)
+2026/08/08 13:19:43 pidblock: throttling pid 460 (over 524288 B/s cap)
+2026/08/08 13:20:01 netvis shutting down
+2026/08/08 13:23:09 netvis starting
+2026/08/08 13:23:09 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:23:09 netvis: DPI scale = 1.25
+2026/08/08 13:23:10 monitor: capture started
+2026/08/08 13:23:10 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:23:44 netvis shutting down
+2026/08/08 13:25:17 netvis starting
+2026/08/08 13:25:17 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:25:17 netvis: DPI scale = 1.25
+2026/08/08 13:25:17 monitor: capture started
+2026/08/08 13:25:17 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:25:47 blocker: disabled, passing everything through
+2026/08/08 13:26:03 netvis shutting down
+2026/08/08 13:33:54 netvis starting
+2026/08/08 13:33:54 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:33:54 netvis: DPI scale = 1.25
+2026/08/08 13:33:55 monitor: capture started
+2026/08/08 13:33:55 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:35:10 netvis shutting down
+2026/08/08 13:38:46 netvis starting
+2026/08/08 13:38:46 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:38:47 netvis: DPI scale = 1.25
+2026/08/08 13:38:47 monitor: capture started
+2026/08/08 13:38:47 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:39:49 netvis shutting down
+2026/08/08 13:41:12 netvis starting
+2026/08/08 13:41:12 netvis: DnsFlushResolverCache -> ok
+2026/08/08 13:41:12 netvis: DPI scale = 1.25
+2026/08/08 13:41:12 monitor: capture started
+2026/08/08 13:41:12 blocker: started, blocklist=99568 allowlist=0 dohIPs=10
+2026/08/08 13:41:40 netvis shutting down

@@ -10,7 +10,7 @@ if not exist obj mkdir obj
 cl.exe /nologo /EHsc /std:c++17 /O2 /DUNICODE /D_UNICODE /DNOMINMAX /DIMGUI_DISABLE_OBSOLETE_FUNCTIONS ^
   /I external\imgui /I external\imgui\backends /I src ^
   src\main.cpp src\monitor.cpp src\netmap.cpp src\procname.cpp src\windivert_shim.cpp ^
-  src\blocker.cpp src\pidblock.cpp src\winicon.cpp src\icon_cache.cpp src\log.cpp ^
+  src\blocker.cpp src\pidblock.cpp src\winicon.cpp src\icon_cache.cpp src\log.cpp src\connlist.cpp ^
   external\imgui\imgui.cpp external\imgui\imgui_draw.cpp external\imgui\imgui_tables.cpp external\imgui\imgui_widgets.cpp ^
   external\imgui\backends\imgui_impl_win32.cpp external\imgui\backends\imgui_impl_dx11.cpp ^
   /Fe:netvis.exe /Fo:obj\ ^

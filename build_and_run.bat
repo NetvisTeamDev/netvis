@@ -29,5 +29,10 @@ if errorlevel 1 (
 )
 
 echo Build OK >> build.log
-netvis.exe > output.log 2>&1
-echo Exit code: %errorlevel% >> output.log
+
+REM netvis.exe needs Administrator privileges for WinDivert (WinDivertOpen
+REM fails otherwise, silently disabling both the bandwidth monitor AND the
+REM ad blocker - no crash, no obvious error, it just does nothing). Launch
+REM elevated via PowerShell so a plain double-click of this .bat still
+REM gets a real, working instance.
+powershell -NoProfile -Command "Start-Process -FilePath '%~dp0netvis.exe' -WorkingDirectory '%~dp0' -Verb RunAs"

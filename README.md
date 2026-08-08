@@ -40,15 +40,43 @@ VS", `cd` into this folder, and run the `cl.exe` command from
 - **Per-process block**: click Block next to any process. This does two
   things at once - opens a SOCKET-layer WinDivert handle scoped to that
   PID so *new* connection attempts fail immediately, and (lazily, only
-  while at least one process is blocked) a broader NETWORK-layer handle
-  that drops any packet - either direction - whose port currently belongs
-  to a blocked PID, which is what actually kills connections the process
-  already had open. The network-layer handle closes again the moment
-  nothing is blocked, so it's not touching your traffic the rest of the
-  time.
+  while at least one process is blocked or rate-limited) a broader
+  NETWORK-layer handle that drops any packet - either direction - whose
+  port currently belongs to a blocked PID, which is what actually kills
+  connections the process already had open. The network-layer handle
+  closes again the moment nothing is blocked/limited, so it's not
+  touching your traffic the rest of the time.
+- **Per-process traffic limit**: right-click a process → "Limit traffic..."
+  and set a KB/s cap. The same network-layer handle above tracks bytes
+  seen per PID in 1-second windows and drops packets once the cap is
+  exceeded for that window, resuming next window. It's a hard cap, not
+  smooth shaping, but it's simple and effective for "keep this app under
+  N KB/s".
+- **Auto-block high-traffic processes**: checkbox above the table. When
+  on, any process whose combined Down/s + Up/s exceeds the configured
+  KB/s threshold gets auto-blocked the same way a manual Block click
+  would (a small built-in denylist protects things like `svchost.exe`/
+  `lsass.exe`/netvis itself from ever being auto-blocked).
+- **Right-click → Open file location**: opens Explorer with the process's
+  exe selected.
+- **DNS cache auto-flush**: on startup, netvis flushes the Windows DNS
+  resolver cache, so stale entries from before the blocker/monitor came up
+  don't skew things (handy when re-testing the ad blocker right after a
+  rebuild).
 
-Blocking is tied to the PID, not the exe path - if a blocked process
-restarts under a new PID you need to block it again.
+Blocking/limiting is tied to the PID, not the exe path - if a blocked
+process restarts under a new PID you need to re-apply it.
+
+## Traffic generator (test tool)
+
+`tools/trafficgen/` is a tiny standalone console exe for testing the
+bandwidth monitor and auto-block feature: every random 10-20 seconds it
+bursts ~1 second of real download traffic (from Cloudflare's public
+speed-test endpoint) and then goes quiet again. Build it with
+`tools\trafficgen\build.bat` (same VS toolchain as the main project), run
+`trafficgen.exe`, and watch it show up as a bursty row in netvis - a good
+way to confirm auto-block actually triggers without needing to open a
+real bandwidth-heavy app.
 
 ## Diagnostics
 

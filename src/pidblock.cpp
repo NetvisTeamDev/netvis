@@ -40,7 +40,7 @@ bool PidBlockManager::StartEnforcementLocked(std::string* error) {
     netHandle_ = h;
     enforcing_ = true;
     netmapRunning_.store(true);
-    netmapThread_ = std::thread(&NetMap::RunPeriodic, &netmap_, 1000, std::cref(netmapRunning_));
+    netmapThread_ = std::thread(&NetMap::RunPeriodic, &netmap_, 250, std::cref(netmapRunning_));
     enforceThread_ = std::thread(&PidBlockManager::EnforceLoop, this, h);
     Log("pidblock: network-layer enforcement started");
     return true;
@@ -65,19 +65,47 @@ bool PidBlockManager::ShouldDrop(const uint8_t* raw, uint32_t len, const wd::Add
     if (!LocalPortOf(raw, len, addr, &proto, &port)) return false;
     uint32_t pid;
     if (!netmap_.Lookup(proto, port, &pid)) return false;
-    if (!IsBlocked(pid)) return false;
 
-    static std::mutex logMu;
-    static std::chrono::steady_clock::time_point nextLog;
-    auto now = std::chrono::steady_clock::now();
-    {
-        std::lock_guard<std::mutex> lock(logMu);
-        if (now >= nextLog) {
-            nextLog = now + std::chrono::seconds(2);
-            Log("pidblock: dropping %s port %u (pid %u)", proto == Proto::TCP ? "tcp" : "udp", port, pid);
+    std::lock_guard<std::mutex> lock(mu_);
+    if (blocks_.count(pid)) {
+        static std::mutex logMu;
+        static std::chrono::steady_clock::time_point nextLog;
+        auto now = std::chrono::steady_clock::now();
+        {
+            std::lock_guard<std::mutex> logLock(logMu);
+            if (now >= nextLog) {
+                nextLog = now + std::chrono::seconds(2);
+                Log("pidblock: dropping %s port %u (pid %u)", proto == Proto::TCP ? "tcp" : "udp", port, pid);
+            }
         }
+        return true;
     }
-    return true;
+
+    auto it = limits_.find(pid);
+    if (it != limits_.end()) {
+        LimitState& st = it->second;
+        auto now = std::chrono::steady_clock::now();
+        if (now - st.windowStart >= std::chrono::seconds(1)) {
+            st.windowStart = now;
+            st.usedThisWindow = 0;
+        }
+        if (st.usedThisWindow + len > st.capBytesPerSec) {
+            static std::mutex logMu;
+            static std::chrono::steady_clock::time_point nextLog;
+            {
+                std::lock_guard<std::mutex> logLock(logMu);
+                if (now >= nextLog) {
+                    nextLog = now + std::chrono::seconds(2);
+                    Log("pidblock: throttling pid %u (over %llu B/s cap)", pid, (unsigned long long)st.capBytesPerSec);
+                }
+            }
+            return true; // over quota for this window - drop, resumes next window
+        }
+        st.usedThisWindow += len;
+        return false;
+    }
+
+    return false;
 }
 
 std::string PidBlockManager::Block(uint32_t pid) {
@@ -133,7 +161,7 @@ std::string PidBlockManager::Unblock(uint32_t pid) {
         h = it->second;
         blocks_.erase(it);
 
-        if (blocks_.empty() && enforcing_) {
+        if (blocks_.empty() && limits_.empty() && enforcing_) {
             stopNetHandle = netHandle_;
             stopEnforcement = true;
             enforcing_ = false;
@@ -148,11 +176,63 @@ std::string PidBlockManager::Unblock(uint32_t pid) {
         api_.Close(stopNetHandle); // unblocks the pending Recv in EnforceLoop
         if (enforceThread_.joinable()) enforceThread_.join();
         if (netmapThread_.joinable()) netmapThread_.join();
-        Log("pidblock: network-layer enforcement stopped (no more blocked PIDs)");
+        Log("pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)");
     }
 
     Log("pidblock: Unblock(%u): %s", pid, ok ? "unblocked" : "WinDivertClose failed");
     return ok ? "" : "WinDivertClose failed while unblocking.";
+}
+
+std::string PidBlockManager::SetLimit(uint32_t pid, uint64_t bytesPerSec) {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (!enforcing_) {
+        std::string err;
+        if (!StartEnforcementLocked(&err)) return err;
+    }
+    LimitState& st = limits_[pid];
+    st.capBytesPerSec = bytesPerSec;
+    st.usedThisWindow = 0;
+    st.windowStart = std::chrono::steady_clock::now();
+    Log("pidblock: SetLimit(%u) = %llu bytes/sec", pid, (unsigned long long)bytesPerSec);
+    return "";
+}
+
+void PidBlockManager::ClearLimit(uint32_t pid) {
+    HANDLE stopNetHandle = nullptr;
+    bool stopEnforcement = false;
+    {
+        std::lock_guard<std::mutex> lock(mu_);
+        if (!limits_.count(pid)) return;
+        limits_.erase(pid);
+
+        if (blocks_.empty() && limits_.empty() && enforcing_) {
+            stopNetHandle = netHandle_;
+            stopEnforcement = true;
+            enforcing_ = false;
+            netHandle_ = nullptr;
+        }
+    }
+
+    if (stopEnforcement) {
+        netmapRunning_.store(false);
+        api_.Close(stopNetHandle);
+        if (enforceThread_.joinable()) enforceThread_.join();
+        if (netmapThread_.joinable()) netmapThread_.join();
+        Log("pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)");
+    }
+
+    Log("pidblock: ClearLimit(%u)", pid);
+}
+
+bool PidBlockManager::IsLimited(uint32_t pid) {
+    std::lock_guard<std::mutex> lock(mu_);
+    return limits_.count(pid) != 0;
+}
+
+uint64_t PidBlockManager::GetLimit(uint32_t pid) {
+    std::lock_guard<std::mutex> lock(mu_);
+    auto it = limits_.find(pid);
+    return it == limits_.end() ? 0 : it->second.capBytesPerSec;
 }
 
 std::vector<uint32_t> PidBlockManager::BlockedPIDs() {

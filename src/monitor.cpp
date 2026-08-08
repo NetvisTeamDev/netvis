@@ -25,7 +25,12 @@ bool Monitor::Start(std::string* error) {
     running_.store(true);
     captureThread_ = std::thread(&Monitor::CaptureLoop, this);
     tickThread_ = std::thread(&Monitor::TickLoop, this);
-    netmapThread_ = std::thread(&NetMap::RunPeriodic, &netmap_, 1000, std::cref(running_));
+    // 250ms rather than 1s: short-lived connections (a quick HTTP request,
+    // a DNS lookup) can open and close within a single second, and a stale
+    // netmap means their traffic gets attributed to "(unknown)" instead of
+    // the right process - which matters a lot for auto-block/limit, since
+    // "(unknown)" rows can't be blocked at all.
+    netmapThread_ = std::thread(&NetMap::RunPeriodic, &netmap_, 250, std::cref(running_));
     return true;
 }
 

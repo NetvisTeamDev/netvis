@@ -5,6 +5,7 @@
 #include "log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -180,6 +181,19 @@ void Blocker::Run() {
 }
 
 void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address& addr) {
+    if (!enabled_.load()) {
+        static std::mutex disabledLogMu;
+        static std::chrono::steady_clock::time_point nextDisabledLog;
+        std::lock_guard<std::mutex> lock(disabledLogMu);
+        auto now = std::chrono::steady_clock::now();
+        if (now >= nextDisabledLog) {
+            nextDisabledLog = now + std::chrono::seconds(5);
+            Log("blocker: disabled, passing everything through");
+        }
+        Reinject(raw, len, addr);
+        return;
+    }
+
     ParsedPacket pkt = ParsePacket(raw.data(), len);
     if (!pkt.ok) { Reinject(raw, len, addr); return; }
 
