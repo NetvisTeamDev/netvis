@@ -127,6 +127,10 @@ void Alerts::CheckConnections() {
             const auto& row = table->table[i];
             uint32_t pid = row.dwOwningPid;
             if (pid == 0 || pid == 4) continue; // System / idle - always has sockets, never interesting
+            // Never alert on ourselves. netvis talking to its own licensing
+            // server is not news, and "netvis connected to the internet" as
+            // the first thing you see is just confusing.
+            if (pid == GetCurrentProcessId()) continue;
 
             std::string exe = names_.Name(pid);
             if (exe.empty()) continue;
@@ -184,6 +188,8 @@ void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_
     a.timestamp = NowHHMMSS();
     a.pid = pid;
     Log("alert: %s - %s", a.title.c_str(), a.detail.c_str());
+
+    if (onAlert_) onAlert_(a); // outside the lock - the handler may do slow UI/shell work
 
     std::lock_guard<std::mutex> lock(mu_);
     alerts_.push_front(std::move(a));

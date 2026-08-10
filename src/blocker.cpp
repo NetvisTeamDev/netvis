@@ -120,13 +120,44 @@ void LoadDomainFile(const std::string& path, std::unordered_set<std::string>& ou
 
 Blocker::~Blocker() { Close(); }
 
-void Blocker::LoadLists() {
-    for (const auto& d : DefaultBlocklist()) blocklist_.insert(d);
+void Blocker::LoadStaticLists() {
     for (const auto& ip : KnownDoHIPs()) dohIPs_.insert(ip);
+    LoadDomainFile(ExeDir() + "\\allowlist.txt", allowlist_);
+}
 
-    std::string dir = ExeDir();
-    LoadDomainFile(dir + "\\blocklist.txt", blocklist_);
-    LoadDomainFile(dir + "\\allowlist.txt", allowlist_);
+void Blocker::RebuildBlocklistLocked() {
+    blocklist_.clear();
+    if (useDefault_) {
+        // The built-in malicious-domain database: the curated defaults plus
+        // the large blocklist.txt that ships next to the exe.
+        for (const auto& d : DefaultBlocklist()) blocklist_.insert(d);
+        LoadDomainFile(ExeDir() + "\\blocklist.txt", blocklist_);
+    }
+    for (const auto& d : userDomains_) blocklist_.insert(ToLowerCopy(d));
+}
+
+bool Blocker::IsBlockedDomain(const std::string& domain) {
+    std::lock_guard<std::mutex> lock(listsMu_);
+    return !MatchesSuffixSet(domain, allowlist_) && MatchesSuffixSet(domain, blocklist_);
+}
+
+void Blocker::FlushDnsCache() {
+    HMODULE dnsapi = ::LoadLibraryW(L"dnsapi.dll");
+    if (!dnsapi) return;
+    using FlushFn = BOOL(WINAPI*)();
+    if (auto flush = reinterpret_cast<FlushFn>(::GetProcAddress(dnsapi, "DnsFlushResolverCache"))) flush();
+    ::FreeLibrary(dnsapi);
+}
+
+void Blocker::Reload(std::vector<std::string> userDomains, bool useDefault) {
+    {
+        std::lock_guard<std::mutex> lock(listsMu_);
+        userDomains_ = std::move(userDomains);
+        useDefault_ = useDefault;
+        RebuildBlocklistLocked();
+        Log("blocker: blocklist reloaded (%zu domains, useDefault=%d)", blocklist_.size(), (int)useDefault_);
+    }
+    FlushDnsCache(); // so removed entries stop being spoofed and new ones start immediately
 }
 
 std::string Blocker::BuildFilter() const {
@@ -149,22 +180,19 @@ std::string Blocker::BuildFilter() const {
 void Blocker::SetEnabled(bool enabled) {
     enabled_.store(enabled);
     Log("blocker: %s", enabled ? "enabled" : "disabled");
-
     // Both directions need a cache flush to take effect promptly - see the
-    // note on the declaration in blocker.h. DnsFlushResolverCache isn't in
-    // the public SDK headers, so it's resolved dynamically (same approach
-    // as the startup flush in main.cpp).
-    HMODULE dnsapi = ::LoadLibraryW(L"dnsapi.dll");
-    if (!dnsapi) return;
-    using FlushFn = BOOL(WINAPI*)();
-    if (auto flush = reinterpret_cast<FlushFn>(::GetProcAddress(dnsapi, "DnsFlushResolverCache"))) {
-        Log("blocker: DNS cache flush on toggle -> %s", flush() ? "ok" : "failed");
-    }
-    ::FreeLibrary(dnsapi);
+    // note on the declaration in blocker.h.
+    FlushDnsCache();
 }
 
-bool Blocker::Start(std::string* error) {
-    LoadLists();
+bool Blocker::Start(std::string* error, std::vector<std::string> userDomains, bool useDefault) {
+    LoadStaticLists();
+    {
+        std::lock_guard<std::mutex> lock(listsMu_);
+        userDomains_ = std::move(userDomains);
+        useDefault_ = useDefault;
+        RebuildBlocklistLocked();
+    }
     if (!wd::LoadApi(api_, error)) return false;
 
     std::string filter = BuildFilter();
@@ -231,7 +259,7 @@ void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address&
                 DnsQuestion q = ParseDNSQuestion(dns, dnsLen);
                 if (q.ok) {
                     std::string domain = ToLowerCopy(q.domain);
-                    if (!MatchesSuffixSet(domain, allowlist_) && MatchesSuffixSet(domain, blocklist_)) {
+                    if (IsBlockedDomain(domain)) {
                         RecordBlock("[DNS-TCP] " + domain);
                         return; // drop
                     }
@@ -253,7 +281,7 @@ void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address&
             DnsQuestion q6 = ParseDNSQuestion(dns, dnsLen);
             if (q6.ok) {
                 std::string domain6 = ToLowerCopy(q6.domain);
-                if (!MatchesSuffixSet(domain6, allowlist_) && MatchesSuffixSet(domain6, blocklist_)) {
+                if (IsBlockedDomain(domain6)) {
                     RecordBlock("[DNS-IPv6] " + domain6);
                     return; // drop
                 }
@@ -266,8 +294,7 @@ void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address&
         if (!q.ok) { Reinject(raw, len, addr); return; }
         std::string domain = ToLowerCopy(q.domain);
 
-        if (MatchesSuffixSet(domain, allowlist_)) { Reinject(raw, len, addr); return; }
-        if (MatchesSuffixSet(domain, blocklist_)) {
+        if (IsBlockedDomain(domain)) {
             auto resp = BuildNXDOMAINResponse(raw.data(), pkt.ipHeaderLen, dns, q.end);
             wd::Address respAddr;
             memcpy(respAddr, addr, sizeof(respAddr));

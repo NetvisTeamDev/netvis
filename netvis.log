@@ -628,3 +628,422 @@
 2026/08/08 23:03:01 netvis: another instance is already running - signalling it and exiting
 2026/08/08 23:03:07 netvis starting
 2026/08/08 23:03:07 netvis: another instance is already running - signalling it and exiting
+2026/08/08 23:06:18 alert: backgroundTaskHost.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 23:06:21 alert: updater.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 23:09:01 alert: git-remote-https.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/08 23:31:23 netvis starting
+2026/08/08 23:31:23 netvis: another instance is already running - signalling it and exiting
+2026/08/08 23:32:57 blocker: disabled
+2026/08/08 23:32:57 blocker: DNS cache flush on toggle -> ok
+2026/08/08 23:32:59 blocker: disabled, passing everything through
+2026/08/08 23:33:06 blocker: enabled
+2026/08/08 23:33:06 blocker: DNS cache flush on toggle -> ok
+2026/08/08 23:34:09 pidblock: network-layer enforcement started
+2026/08/08 23:34:09 pidblock: Block(18000): socket-layer handle opened, now blocked
+2026/08/08 23:34:09 auto-block: trafficgen.exe (pid 18000) exceeded 1.00 MB/s, blocked
+2026/08/08 23:34:28 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/08 23:34:28 pidblock: Unblock(18000): unblocked
+2026/08/08 23:34:48 pidblock: network-layer enforcement started
+2026/08/08 23:34:48 pidblock: SetLimit(18000) down=1/524288 up=1/262144 dur=0
+2026/08/08 23:34:53 pidblock: throttling pid 18000 (down over cap)
+2026/08/08 23:35:00 pidblock: throttling pid 18000 (down over cap)
+2026/08/08 23:35:07 pidblock: throttling pid 18000 (down over cap)
+2026/08/08 23:37:54 alert: BackgroundDownload.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 07:36:43 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/09 11:09:55 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/09 11:09:58 alert: BraveUpdate.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 11:11:44 netvis starting
+2026/08/09 11:11:44 netvis: another instance is already running - signalling it and exiting
+2026/08/09 11:13:25 pidblock: Block(9936): socket-layer handle opened, now blocked
+2026/08/09 11:13:26 pidblock: Unblock(9936): unblocked
+2026/08/09 11:13:48 pidblock: SetLimit(9936) down=0/524288 up=1/268435456 dur=0
+2026/08/09 11:24:33 netvis shutting down
+2026/08/09 11:24:33 settings: saved
+2026/08/09 11:27:14 netvis starting
+2026/08/09 11:27:14 netvis: DnsFlushResolverCache -> ok
+2026/08/09 11:27:14 netvis: DPI scale = 1.25
+2026/08/09 11:27:14 monitor: capture started
+2026/08/09 11:27:14 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/09 11:27:14 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 11:27:14 blocker: enabled
+2026/08/09 11:27:14 blocker: DNS cache flush on toggle -> ok
+2026/08/09 11:52:25 netvis starting
+2026/08/09 11:52:25 netvis: DnsFlushResolverCache -> ok
+2026/08/09 11:52:25 netvis: DPI scale = 1.25
+2026/08/09 11:52:25 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 11:52:25 monitor: capture started
+2026/08/09 11:52:25 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/09 11:52:25 blocker: enabled
+2026/08/09 11:52:48 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 11:52:48 blocker: blocklist reloaded (0 domains, useDefault=0)
+2026/08/09 11:52:50 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 11:52:50 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 11:52:52 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 11:52:52 blocker: blocklist reloaded (0 domains, useDefault=0)
+2026/08/09 11:52:56 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 11:52:56 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 11:53:50 pidblock: network-layer enforcement started
+2026/08/09 11:53:50 pidblock: Block(14396): socket-layer handle opened, now blocked
+2026/08/09 11:53:50 auto-block: trafficgen.exe (pid 14396) exceeded 1.00 MB/s, blocked
+2026/08/09 11:53:53 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 11:53:53 pidblock: Unblock(14396): unblocked
+2026/08/09 11:53:55 pidblock: network-layer enforcement started
+2026/08/09 11:53:55 pidblock: Block(14396): socket-layer handle opened, now blocked
+2026/08/09 11:53:55 auto-block: trafficgen.exe (pid 14396) exceeded 1.00 MB/s, blocked
+2026/08/09 11:53:55 pidblock: dropping tcp port 50258 (pid 14396)
+2026/08/09 11:53:57 pidblock: dropping tcp port 50258 (pid 14396)
+2026/08/09 11:53:59 pidblock: dropping tcp port 50258 (pid 14396)
+2026/08/09 11:54:04 pidblock: dropping tcp port 50258 (pid 14396)
+2026/08/09 11:54:12 pidblock: dropping tcp port 50258 (pid 14396)
+2026/08/09 11:54:22 alert: msedge.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 11:54:23 pidblock: Block(5132): socket-layer handle opened, now blocked
+2026/08/09 11:54:23 auto-block: msedge.exe (pid 5132) exceeded 1.00 MB/s, blocked
+2026/08/09 11:54:23 pidblock: dropping tcp port 64856 (pid 5132)
+2026/08/09 11:54:25 pidblock: dropping tcp port 64856 (pid 5132)
+2026/08/09 11:54:28 pidblock: dropping tcp port 64856 (pid 5132)
+2026/08/09 11:54:31 pidblock: dropping tcp port 64856 (pid 5132)
+2026/08/09 11:54:33 pidblock: dropping tcp port 64856 (pid 5132)
+2026/08/09 11:54:35 pidblock: dropping tcp port 60314 (pid 5132)
+2026/08/09 11:54:38 pidblock: dropping tcp port 60314 (pid 5132)
+2026/08/09 11:54:40 pidblock: dropping tcp port 60314 (pid 5132)
+2026/08/09 11:54:42 pidblock: Unblock(14396): unblocked
+2026/08/09 11:54:44 pidblock: dropping tcp port 60314 (pid 5132)
+2026/08/09 11:54:48 pidblock: Block(14396): socket-layer handle opened, now blocked
+2026/08/09 11:54:48 auto-block: trafficgen.exe (pid 14396) exceeded 1.00 MB/s, blocked
+2026/08/09 11:55:10 pidblock: Unblock(14396): unblocked
+2026/08/09 11:55:15 pidblock: Block(14396): socket-layer handle opened, now blocked
+2026/08/09 11:55:15 auto-block: trafficgen.exe (pid 14396) exceeded 1.00 MB/s, blocked
+2026/08/09 11:55:27 pidblock: SetLimit(7204) down=1/524288 up=0/262144 dur=0
+2026/08/09 11:55:45 pidblock: ClearLimit(7204)
+2026/08/09 12:00:06 netvis starting
+2026/08/09 12:00:06 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:00:06 netvis: DPI scale = 1.25
+2026/08/09 12:00:06 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:00:06 monitor: capture started
+2026/08/09 12:00:06 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/09 12:00:06 blocker: enabled
+2026/08/09 12:00:40 pidblock: network-layer enforcement started
+2026/08/09 12:00:40 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:00:40 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:00:40 alert: trafficgen.exe auto-blocked - Using 6.19 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:00:51 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:00:51 pidblock: Unblock(18716): unblocked
+2026/08/09 12:00:56 pidblock: network-layer enforcement started
+2026/08/09 12:00:56 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:00:56 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:00:56 alert: trafficgen.exe auto-blocked - Using 8.19 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:05:04 netvis starting
+2026/08/09 12:05:04 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:05:04 netvis: DPI scale = 1.25
+2026/08/09 12:05:04 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:05:04 monitor: capture started
+2026/08/09 12:05:04 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/09 12:05:04 blocker: enabled
+2026/08/09 12:05:06 pidblock: network-layer enforcement started
+2026/08/09 12:05:06 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:05:06 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:05:06 alert: trafficgen.exe auto-blocked - Using 4.20 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:05:18 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:05:18 pidblock: Unblock(18716): unblocked
+2026/08/09 12:05:21 pidblock: network-layer enforcement started
+2026/08/09 12:05:21 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:05:21 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:05:21 pidblock: dropping tcp port 63695 (pid 18716)
+2026/08/09 12:05:21 alert: trafficgen.exe auto-blocked - Using 1.16 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:05:25 pidblock: dropping tcp port 63695 (pid 18716)
+2026/08/09 12:05:29 pidblock: dropping tcp port 63695 (pid 18716)
+2026/08/09 12:05:35 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:05:35 pidblock: Unblock(18716): unblocked
+2026/08/09 12:05:43 pidblock: network-layer enforcement started
+2026/08/09 12:05:43 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:05:43 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:05:43 alert: trafficgen.exe auto-blocked - Using 5.98 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:06:43 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:06:43 pidblock: Unblock(18716): unblocked
+2026/08/09 12:06:49 pidblock: network-layer enforcement started
+2026/08/09 12:06:49 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:06:49 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:06:49 alert: trafficgen.exe auto-blocked - Using 2.25 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:07:07 blocker: disabled
+2026/08/09 12:07:08 blocker: enabled
+2026/08/09 12:07:13 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:07:13 pidblock: Unblock(18716): unblocked
+2026/08/09 12:07:53 blocklist_store: saved 99557 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:07:53 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 12:08:17 blocklist_store: saved 99558 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:08:18 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:09:53 netvis starting
+2026/08/09 12:09:53 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:09:53 netvis: DPI scale = 1.25
+2026/08/09 12:09:53 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:09:53 monitor: capture started
+2026/08/09 12:09:53 blocker: started, blocklist=99569 allowlist=0 dohIPs=34
+2026/08/09 12:09:53 blocker: enabled
+2026/08/09 12:09:58 pidblock: network-layer enforcement started
+2026/08/09 12:09:58 pidblock: Block(18716): socket-layer handle opened, now blocked
+2026/08/09 12:09:58 auto-block: trafficgen.exe (pid 18716) exceeded 1.00 MB/s, blocked
+2026/08/09 12:09:58 alert: trafficgen.exe auto-blocked - Using 5.13 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:12:45 netvis starting
+2026/08/09 12:12:45 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:12:45 netvis: DPI scale = 1.25
+2026/08/09 12:12:45 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:12:45 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/09 12:12:45 blocker: Start failed
+2026/08/09 12:13:21 netvis starting
+2026/08/09 12:13:21 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:13:21 netvis: DPI scale = 1.25
+2026/08/09 12:13:21 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:13:22 monitor: capture started
+2026/08/09 12:13:22 blocker: started, blocklist=99569 allowlist=0 dohIPs=34
+2026/08/09 12:13:22 blocker: enabled
+2026/08/09 12:14:22 pidblock: network-layer enforcement started
+2026/08/09 12:14:22 pidblock: Block(10608): socket-layer handle opened, now blocked
+2026/08/09 12:14:22 auto-block: brave.exe (pid 10608) exceeded 1.00 MB/s, blocked
+2026/08/09 12:14:22 alert: brave.exe auto-blocked - Using 3.88 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/09 12:14:22 pidblock: dropping udp port 65448 (pid 10608)
+2026/08/09 12:14:24 pidblock: dropping udp port 60359 (pid 10608)
+2026/08/09 12:14:26 pidblock: dropping udp port 51637 (pid 10608)
+2026/08/09 12:14:28 pidblock: dropping udp port 64714 (pid 10608)
+2026/08/09 12:14:30 pidblock: dropping udp port 60359 (pid 10608)
+2026/08/09 12:14:32 pidblock: dropping tcp port 50996 (pid 10608)
+2026/08/09 12:14:34 pidblock: dropping udp port 56841 (pid 10608)
+2026/08/09 12:14:36 pidblock: dropping tcp port 55914 (pid 10608)
+2026/08/09 12:14:38 pidblock: dropping tcp port 62895 (pid 10608)
+2026/08/09 12:14:40 pidblock: dropping tcp port 55914 (pid 10608)
+2026/08/09 12:14:43 pidblock: dropping tcp port 50996 (pid 10608)
+2026/08/09 12:14:45 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/09 12:14:45 pidblock: Unblock(10608): unblocked
+2026/08/09 12:19:25 netvis starting
+2026/08/09 12:19:25 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:19:25 netvis: DPI scale = 1.25
+2026/08/09 12:19:25 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:19:25 monitor: capture started
+2026/08/09 12:19:25 blocker: started, blocklist=99569 allowlist=0 dohIPs=34
+2026/08/09 12:19:25 blocker: enabled
+2026/08/09 12:19:43 netvis starting
+2026/08/09 12:19:43 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:19:50 netvis starting
+2026/08/09 12:19:50 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:28:54 netvis starting
+2026/08/09 12:28:54 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:28:54 netvis: DPI scale = 1.25
+2026/08/09 12:28:54 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:28:54 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/09 12:28:54 netvis starting
+2026/08/09 12:28:54 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:28:55 blocker: Start failed
+2026/08/09 12:29:02 netvis starting
+2026/08/09 12:29:02 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:29:22 netvis starting
+2026/08/09 12:29:22 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:29:45 netvis starting
+2026/08/09 12:29:45 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:29:45 netvis: DPI scale = 1.25
+2026/08/09 12:29:45 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:29:45 monitor: capture started
+2026/08/09 12:29:45 blocker: started, blocklist=99569 allowlist=0 dohIPs=34
+2026/08/09 12:29:45 blocker: enabled
+2026/08/09 12:52:10 netvis starting
+2026/08/09 12:52:10 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:52:10 netvis: DPI scale = 1.25
+2026/08/09 12:52:10 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:52:10 monitor: capture started
+2026/08/09 12:52:10 blocker: started, blocklist=99569 allowlist=0 dohIPs=34
+2026/08/09 12:52:10 blocker: enabled
+2026/08/09 12:53:14 blocker: disabled
+2026/08/09 12:53:17 blocker: disabled, passing everything through
+2026/08/09 12:53:22 blocker: disabled, passing everything through
+2026/08/09 12:53:30 blocklist_store: saved 99557 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:31 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:31 blocklist_store: saved 99556 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:31 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:31 blocklist_store: saved 99555 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:31 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:31 blocklist_store: saved 99554 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:31 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:35 blocklist_store: saved 99553 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:35 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:36 blocklist_store: saved 99552 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:36 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:36 blocklist_store: saved 99551 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:36 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:37 blocklist_store: saved 99550 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:37 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:37 blocklist_store: saved 99549 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:37 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:37 blocklist_store: saved 99548 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:37 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99547 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:38 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99546 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:38 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99545 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:38 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99544 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:38 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99543 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:38 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:38 blocklist_store: saved 99542 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:39 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:39 blocklist_store: saved 99541 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:39 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:39 blocklist_store: saved 99540 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:39 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:39 blocklist_store: saved 99539 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:39 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:39 blocklist_store: saved 99538 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:39 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:39 blocklist_store: saved 99537 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:40 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:40 blocklist_store: saved 99536 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:40 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:40 blocklist_store: saved 99535 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:40 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:40 blocklist_store: saved 99534 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:40 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:40 blocklist_store: saved 99533 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:40 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:40 blocklist_store: saved 99532 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:41 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:41 blocklist_store: saved 99531 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:41 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:41 blocklist_store: saved 99530 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:41 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:41 blocklist_store: saved 99529 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:41 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:41 blocklist_store: saved 99528 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:53:42 blocker: blocklist reloaded (99569 domains, useDefault=1)
+2026/08/09 12:53:59 blocker: disabled, passing everything through
+2026/08/09 12:54:08 blocker: disabled, passing everything through
+2026/08/09 12:54:15 blocker: disabled, passing everything through
+2026/08/09 12:54:28 blocker: disabled, passing everything through
+2026/08/09 12:54:59 blocker: disabled, passing everything through
+2026/08/09 12:55:05 netvis shutting down
+2026/08/09 12:55:05 settings: saved
+2026/08/09 12:55:53 netvis starting
+2026/08/09 12:55:53 netvis: DnsFlushResolverCache -> ok
+2026/08/09 12:55:53 netvis: DPI scale = 1.25
+2026/08/09 12:55:53 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/09 12:55:53 monitor: capture started
+2026/08/09 12:55:53 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/09 12:55:53 blocker: disabled
+2026/08/09 12:55:58 blocker: enabled
+2026/08/09 12:56:07 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:07 blocker: blocklist reloaded (0 domains, useDefault=0)
+2026/08/09 12:56:09 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:09 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 12:56:10 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:11 blocker: blocklist reloaded (0 domains, useDefault=0)
+2026/08/09 12:56:11 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:11 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 12:56:12 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:12 blocker: blocklist reloaded (0 domains, useDefault=0)
+2026/08/09 12:56:15 blocklist_store: saved 0 domains to C:\Program Files\netvis\blocklist.db
+2026/08/09 12:56:15 blocker: blocklist reloaded (99568 domains, useDefault=1)
+2026/08/09 12:57:56 netvis starting
+2026/08/09 12:57:56 netvis: another instance is already running - signalling it and exiting
+2026/08/09 12:58:27 alert: svchost.exe started listening - Accepting incoming connections on TCP port 7680.
+2026/08/09 13:03:08 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/09 13:03:12 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/09 13:07:12 alert: go.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 13:10:46 alert: taskhostw.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 13:14:44 alert: Codium.exe started listening - Accepting incoming connections on TCP port 50993.
+2026/08/09 13:16:51 alert: winget.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/09 13:17:50 netvis starting
+2026/08/09 13:17:50 netvis: another instance is already running - signalling it and exiting
+2026/08/09 13:17:57 netvis starting
+2026/08/09 13:17:57 netvis: another instance is already running - signalling it and exiting
+2026/08/09 13:18:02 netvis starting
+2026/08/09 13:18:02 netvis: another instance is already running - signalling it and exiting
+2026/08/09 13:28:18 alert: main.exe started listening - Accepting incoming connections on TCP port 8443.
+2026/08/10 22:00:11 netvis starting
+2026/08/10 22:00:11 netvis: DnsFlushResolverCache -> ok
+2026/08/10 22:00:11 netvis: DPI scale = 1.25
+2026/08/10 22:00:11 license: hwid = db154d54d2441c6b28dadb0eae66de80
+2026/08/10 22:00:11 license: server = http://127.0.0.1:8443 (default)
+2026/08/10 22:00:13 license: request failed, GetLastError=12029
+2026/08/10 22:00:13 license: server unreachable at http://127.0.0.1:8443
+2026/08/10 22:00:22 license: request failed, GetLastError=12029
+2026/08/10 22:00:22 license: server unreachable at http://127.0.0.1:8443
+2026/08/10 22:04:50 license: not licensed (http 403)
+2026/08/10 22:06:56 netvis: not licensed, exiting
+2026/08/10 22:07:02 netvis starting
+2026/08/10 22:07:02 netvis: DnsFlushResolverCache -> ok
+2026/08/10 22:07:02 netvis: DPI scale = 1.25
+2026/08/10 22:07:02 license: hwid = db154d54d2441c6b28dadb0eae66de80
+2026/08/10 22:07:02 license: server = http://127.0.0.1:8443 (from license.cfg)
+2026/08/10 22:07:04 license: request failed, GetLastError=12029
+2026/08/10 22:07:04 license: server unreachable at http://127.0.0.1:8443
+2026/08/10 22:07:52 license: not licensed (http 403)
+2026/08/10 22:08:07 license: activation failed (http 403): unknown or already used license key
+2026/08/10 22:08:18 license: activated this machine
+2026/08/10 22:08:18 license: activation succeeded, starting netvis
+2026/08/10 22:08:18 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/10 22:08:18 monitor: Start failed: WinDivertOpen failed - run as Administrator, and make sure WinDivert.dll/WinDivert64.sys are next to the exe.
+2026/08/10 22:08:18 blocker: Start failed
+2026/08/10 22:08:32 netvis starting
+2026/08/10 22:08:32 netvis: another instance is already running - signalling it and exiting
+2026/08/10 22:09:08 netvis starting
+2026/08/10 22:09:08 netvis: DnsFlushResolverCache -> ok
+2026/08/10 22:09:08 netvis: DPI scale = 1.25
+2026/08/10 22:09:08 license: hwid = db154d54d2441c6b28dadb0eae66de80
+2026/08/10 22:09:08 license: server = http://127.0.0.1:8443 (from license.cfg)
+2026/08/10 22:09:08 license: machine is licensed
+2026/08/10 22:09:08 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/10 22:09:08 monitor: capture started
+2026/08/10 22:09:08 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/10 22:09:08 blocker: disabled
+2026/08/10 22:09:22 blocker: disabled, passing everything through
+2026/08/10 22:09:43 blocker: disabled, passing everything through
+2026/08/10 22:10:22 blocker: disabled, passing everything through
+2026/08/10 22:10:28 blocker: disabled, passing everything through
+2026/08/10 22:10:47 netvis starting
+2026/08/10 22:10:47 netvis: another instance is already running - signalling it and exiting
+2026/08/10 22:11:06 blocker: disabled, passing everything through
+2026/08/10 22:11:21 blocker: disabled, passing everything through
+2026/08/10 22:11:33 blocker: disabled, passing everything through
+2026/08/10 22:11:54 blocker: disabled, passing everything through
+2026/08/10 22:12:00 blocker: disabled, passing everything through
+2026/08/10 22:12:25 blocker: disabled, passing everything through
+2026/08/10 22:12:30 blocker: disabled, passing everything through
+2026/08/10 22:12:44 blocker: disabled, passing everything through
+2026/08/10 22:12:52 blocker: disabled, passing everything through
+2026/08/10 22:13:31 blocker: disabled, passing everything through
+2026/08/10 22:13:55 blocker: disabled, passing everything through
+2026/08/10 22:14:08 blocker: disabled, passing everything through
+2026/08/10 22:14:41 netvis starting
+2026/08/10 22:14:41 netvis: DnsFlushResolverCache -> ok
+2026/08/10 22:14:41 netvis: DPI scale = 1.25
+2026/08/10 22:14:41 license: hwid = db154d54d2441c6b28dadb0eae66de80
+2026/08/10 22:14:41 license: server = http://127.0.0.1:8443 (from license.cfg)
+2026/08/10 22:14:43 license: request failed, GetLastError=12029
+2026/08/10 22:14:43 license: server unreachable at http://127.0.0.1:8443
+2026/08/10 22:15:23 license: not licensed (http 403)
+2026/08/10 22:17:34 license: activation failed (http 403): this machine has been revoked
+2026/08/10 22:18:22 license: activated this machine
+2026/08/10 22:18:22 license: activation succeeded, starting netvis
+2026/08/10 22:18:22 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/10 22:18:22 monitor: capture started
+2026/08/10 22:18:22 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/10 22:18:22 blocker: disabled
+2026/08/10 22:18:35 netvis starting
+2026/08/10 22:18:35 netvis: another instance is already running - signalling it and exiting
+2026/08/10 22:18:35 license: machine is licensed
+2026/08/10 22:18:39 blocker: disabled, passing everything through
+2026/08/10 22:18:52 netvis starting
+2026/08/10 22:18:52 netvis: another instance is already running - signalling it and exiting
+2026/08/10 22:18:54 license: request failed, GetLastError=12029
+2026/08/10 22:18:54 license: server unreachable at http://127.0.0.1:8443
+2026/08/10 22:19:03 blocker: disabled, passing everything through
+2026/08/10 22:19:09 blocker: disabled, passing everything through
+2026/08/10 22:19:29 blocker: disabled, passing everything through
+2026/08/10 22:19:36 blocker: disabled, passing everything through
+2026/08/10 22:19:44 blocker: disabled, passing everything through
+2026/08/10 22:20:37 blocker: disabled, passing everything through
+2026/08/10 22:21:12 blocker: disabled, passing everything through
+2026/08/10 22:21:19 blocker: disabled, passing everything through
+2026/08/10 22:21:26 blocker: disabled, passing everything through
+2026/08/10 22:21:47 blocker: disabled, passing everything through
+2026/08/10 22:21:53 blocker: disabled, passing everything through
+2026/08/10 22:22:03 blocker: disabled, passing everything through
+2026/08/10 22:22:23 blocker: disabled, passing everything through

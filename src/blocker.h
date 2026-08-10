@@ -32,11 +32,16 @@ class Blocker {
 public:
     ~Blocker();
 
-    // Loads blocklist.txt/allowlist.txt (if present next to the exe,
-    // merged with built-in defaults for the blocklist), opens an
-    // intercepting WinDivert handle, and starts the worker thread.
-    bool Start(std::string* error);
+    // Builds the initial blocklist from the user domains + (if useDefault)
+    // the built-in malicious-domain database, opens an intercepting
+    // WinDivert handle, and starts the worker thread.
+    bool Start(std::string* error, std::vector<std::string> userDomains, bool useDefault);
     void Close();
+
+    // Live-swaps the blocklist (e.g. after the user edits it) without
+    // reopening the WinDivert handle. Thread-safe with the packet worker.
+    // Also flushes the OS DNS cache so edits take effect right away.
+    void Reload(std::vector<std::string> userDomains, bool useDefault);
 
     int64_t BlockedCount() const { return blockedCount_.load(); }
 
@@ -58,17 +63,27 @@ private:
     void HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address& addr);
     void Reinject(const std::vector<uint8_t>& raw, uint32_t len, const wd::Address& addr);
     void RecordBlock(const std::string& label);
-    void LoadLists();
-    std::string BuildFilter() const;
+    void LoadStaticLists();          // allowlist + DoH IPs (never change at runtime)
+    void RebuildBlocklistLocked();   // caller holds listsMu_
+    void FlushDnsCache();
+    bool IsBlockedDomain(const std::string& domain); // locks listsMu_; true if blocked and not allowlisted
 
     wd::Api api_;
     HANDLE handle_ = nullptr;
     std::atomic<bool> running_{false};
     std::thread thread_;
 
+    // blocklist_/allowlist_ are read by the packet worker and rewritten by
+    // Reload() from the UI thread, so they're guarded by listsMu_. dohIPs_
+    // is fixed after Start (used to build the filter) and needs no lock.
+    std::mutex listsMu_;
     std::unordered_set<std::string> blocklist_;
     std::unordered_set<std::string> allowlist_;
     std::unordered_set<std::string> dohIPs_;
+    std::vector<std::string> userDomains_;
+    bool useDefault_ = true;
+
+    std::string BuildFilter() const;
 
     std::atomic<int64_t> blockedCount_{0};
     std::mutex recentMu_;

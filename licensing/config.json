@@ -1,0 +1,9 @@
+{
+  "listen": "127.0.0.1:8443",
+  "db": "licenses.db",
+  "tls": false,
+  "cert_file": "cert.pem",
+  "key_file": "key.pem",
+  "rate_limit_per_minute": 30,
+  "trust_proxy": false
+}

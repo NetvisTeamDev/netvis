@@ -1,0 +1,9 @@
+# Caddy handles HTTPS: it gets a Let's Encrypt certificate for netvis.cc
+# on first start and renews it forever, with no cron job to forget about.
+# The licensing server itself stays on plain HTTP bound to localhost, so
+# nothing can reach it except through here.
+
+netvis.cc, www.netvis.cc {
+	encode gzip
+	reverse_proxy 127.0.0.1:8443
+}

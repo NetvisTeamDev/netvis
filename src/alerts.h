@@ -14,6 +14,7 @@
 #pragma once
 #include <atomic>
 #include <deque>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -26,6 +27,7 @@ enum class AlertKind : uint8_t {
     FirstConnection,
     NewListener,
     DnsChanged,
+    AutoBlocked,
 };
 
 struct Alert {
@@ -54,6 +56,18 @@ public:
     // Every exe name that has been seen connecting, for persisting.
     std::vector<std::string> KnownExes();
 
+    // Called (on the alerts thread) whenever a new alert is raised, so the
+    // app can show a system notification even while the UI loop is parked
+    // in the background. Set it before Start().
+    void SetOnAlert(std::function<void(const Alert&)> cb) { onAlert_ = std::move(cb); }
+
+    // Raises an alert from outside (e.g. the UI thread when auto-block
+    // fires). Goes through the same path as internal alerts, so it shows in
+    // the feed and triggers the notification callback.
+    void Raise(AlertKind kind, std::string title, std::string detail, uint32_t pid) {
+        Push(kind, std::move(title), std::move(detail), pid);
+    }
+
 private:
     void Run();
     void CheckConnections();
@@ -71,6 +85,7 @@ private:
     bool dnsInitialised_ = false;
     bool firstScanDone_ = false; // first poll seeds current state instead of alerting on all of it
     ProcNames names_;
+    std::function<void(const Alert&)> onAlert_;
 
     std::atomic<size_t> unread_{0};
 };

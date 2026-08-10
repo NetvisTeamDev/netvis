@@ -130,6 +130,11 @@ bool PidBlockManager::ShouldDrop(const uint8_t* raw, uint32_t len, const wd::Add
 }
 
 std::string PidBlockManager::Block(uint32_t pid) {
+    // Refuse to firewall ourselves. netvis shouldn't appear in the table at
+    // all (the monitor filters its own PID out), but this is the one action
+    // that would be self-defeating if it ever got through.
+    if (pid == ::GetCurrentProcessId()) return "netvis can't block itself";
+
     std::lock_guard<std::mutex> lock(mu_);
     if (blocks_.count(pid)) return "";
 

@@ -68,6 +68,9 @@ public:
     }
     size_t Capacity() const { return capacity_; }
 
+    double CurrentDown() const { return samples_.empty() ? 0.0 : samples_.back().down; }
+    double CurrentUp() const { return samples_.empty() ? 0.0 : samples_.back().up; }
+
     // `size` is the total footprint (including the Y-axis label gutter on
     // the left) - matches what the caller reserves via ImGui layout.
     void Draw(ImVec2 size) const {
@@ -167,14 +170,8 @@ public:
             }
         }
 
-        // Live current-value readout, top-left inside the chart.
-        {
-            float tx = p0.x + 10, ty = p0.y + 8;
-            std::string d = "Down  " + FormatRateShort(samples_.empty() ? 0.0 : samples_.back().down);
-            std::string u = "Up  " + FormatRateShort(samples_.empty() ? 0.0 : samples_.back().up);
-            dl->AddText(ImVec2(tx, ty), IM_COL32(0x62, 0xe6, 0x8f, 0xFF), d.c_str());
-            dl->AddText(ImVec2(tx, ty + ImGui::GetTextLineHeight() + 2), IM_COL32(0x8f, 0xb4, 0xff, 0xFF), u.c_str());
-        }
+        // (The current Down/Up values are rendered by the caller above the
+        // chart now, so they don't overlap the plotted area.)
 
         dl->AddRect(p0, p1, IM_COL32(55, 60, 70, 255), rounding);
 

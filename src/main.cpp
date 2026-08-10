@@ -4,14 +4,18 @@
 #include <d3d11.h>
 #include <tchar.h>
 #include <shellapi.h>
+#include <commdlg.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <unordered_set>
 #include <vector>
 
@@ -28,6 +32,9 @@
 #include "hostcache.h"
 #include "alerts.h"
 #include "settings.h"
+#include "blocklist_store.h"
+#include "startup.h"
+#include "license.h"
 #include "log.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -61,6 +68,13 @@ static UINT g_showMsg = 0; // registered message a second instance broadcasts to
 static HICON g_appIcon = nullptr; // the embedded app icon, reused for the tray
 static NOTIFYICONDATAW g_trayIcon = {};
 static bool g_trayAdded = false;
+static std::atomic<bool> g_notifyEnabled{false}; // read from the alerts thread
+
+// Set whenever the app is "opened" again without the process restarting -
+// a tray click, the tray menu, or a second launch handing off to us. The
+// main loop sees this and re-runs the licensing gate, so opening netvis
+// always costs a license check, not just the very first launch of the day.
+static std::atomic<bool> g_licenseRecheck{false};
 
 static void AddTrayIcon(HWND hwnd) {
     if (g_trayAdded) return;
@@ -71,7 +85,7 @@ static void AddTrayIcon(HWND hwnd) {
     g_trayIcon.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_trayIcon.uCallbackMessage = WM_NETVIS_TRAY;
     g_trayIcon.hIcon = g_appIcon ? g_appIcon : ::LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(g_trayIcon.szTip, L"netvis - running in background");
+    wcscpy_s(g_trayIcon.szTip, L"netvis");
     ::Shell_NotifyIconW(NIM_ADD, &g_trayIcon);
     g_trayAdded = true;
 }
@@ -82,13 +96,42 @@ static void RemoveTrayIcon() {
     g_trayAdded = false;
 }
 
+// Shows a Windows balloon/toast on the tray icon. Safe to call from any
+// thread (the alerts thread uses it), and works whether the window is
+// visible or hidden, as long as the tray icon exists.
+static void ShowTrayNotification(const std::string& title, const std::string& body) {
+    if (!g_trayAdded) return;
+    NOTIFYICONDATAW nid = g_trayIcon;
+    nid.uFlags = NIF_INFO;
+    // NIIF_USER + hBalloonIcon shows netvis's own icon on the toast instead
+    // of the generic system info glyph.
+    if (g_appIcon) {
+        nid.dwInfoFlags = NIIF_USER;
+        nid.hBalloonIcon = g_appIcon;
+    } else {
+        nid.dwInfoFlags = NIIF_INFO;
+    }
+    auto widen = [](const std::string& s, wchar_t* out, int cap) {
+        int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, out, cap);
+        if (n <= 0) out[0] = 0;
+    };
+    widen(title, nid.szInfoTitle, (int)(sizeof(nid.szInfoTitle) / sizeof(wchar_t)));
+    widen(body, nid.szInfo, (int)(sizeof(nid.szInfo) / sizeof(wchar_t)));
+    ::Shell_NotifyIconW(NIM_MODIFY, &nid);
+}
+
 static void RestoreWindow(HWND hwnd) {
     g_windowHidden = false;
     ::ShowWindow(hwnd, SW_SHOW);
     ::ShowWindow(hwnd, SW_RESTORE);
     ::SetForegroundWindow(hwnd);
-    RemoveTrayIcon();
+    // Un-hiding from the tray *is* opening the app as far as the user is
+    // concerned, so it has to be licensed the same as a cold start.
+    g_licenseRecheck.store(true);
+    // Tray icon stays put (it's persistent now, so notifications keep
+    // working while the window is open).
 }
+
 
 namespace {
 
@@ -142,31 +185,6 @@ const char* kUnitLabels[3] = {"KB/s", "MB/s", "GB/s"};
 // Duration unit picker for timed limits.
 const char* kDurationLabels[3] = {"minutes", "hours", "days"};
 constexpr int kDurationSeconds[3] = {60, 3600, 86400};
-
-// Compact one-line summary of an active limit for the process table, e.g.
-// "limited dn 512 KB/s" or "limited dn 1 MB/s, up 256 KB/s, 12m left".
-std::string FormatLimitShort(const PidBlockManager::LimitSpec& s) {
-    std::string out = "limited ";
-    bool any = false;
-    auto rate = [](uint64_t bps) {
-        double v = (double)bps;
-        const char* u = "KB/s";
-        v /= 1024.0;
-        if (v >= 1024) { v /= 1024.0; u = "MB/s"; }
-        if (v >= 1024) { v /= 1024.0; u = "GB/s"; }
-        char b[32];
-        snprintf(b, sizeof(b), "%.4g %s", v, u);
-        return std::string(b);
-    };
-    if (s.limitDown) { out += "dn " + rate(s.downBps); any = true; }
-    if (s.limitUp) { out += (any ? ", up " : "up ") + rate(s.upBps); any = true; }
-    if (s.hasDuration) {
-        char b[32];
-        snprintf(b, sizeof(b), ", %dm left", (s.remainingSecs + 59) / 60);
-        out += b;
-    }
-    return out;
-}
 
 // Picks whichever of KB/MB/GB keeps the displayed value in a sane range,
 // for pre-filling an input with an existing bytes/sec value.
@@ -232,29 +250,25 @@ void DrawProcessIcon(ID3D11ShaderResourceView* tex, const std::string& name, flo
 }
 
 // Sorts by whichever table column the user clicked, matching the column
-// order in the "apps" table (App=0, PID=1, Down/s=2, Up/s=3, Total=4).
-// Pinned processes are held at the top regardless of the active sort.
+// order in the "apps" table (App=0, PID=1, Downloaded=2, Uploaded=3).
+// Pinned processes (by PID) are held at the top regardless of the sort.
 void SortRows(std::vector<AppStats>& rows, int column, bool ascending,
-              const std::unordered_set<std::string>& pinned) {
+              const std::unordered_set<uint32_t>& pinned) {
     auto compare = [column](const AppStats& a, const AppStats& b) -> int {
         switch (column) {
             case 0:
                 return _stricmp(a.name.c_str(), b.name.c_str());
             case 1:
                 return (a.pid < b.pid) ? -1 : (a.pid > b.pid ? 1 : 0);
-            case 2:
-                return (a.rateDown < b.rateDown) ? -1 : (a.rateDown > b.rateDown ? 1 : 0);
             case 3:
-                return (a.rateUp < b.rateUp) ? -1 : (a.rateUp > b.rateUp ? 1 : 0);
-            default: {
-                uint64_t ta = a.totalDown + a.totalUp, tb = b.totalDown + b.totalUp;
-                return (ta < tb) ? -1 : (ta > tb ? 1 : 0);
-            }
+                return (a.totalUp < b.totalUp) ? -1 : (a.totalUp > b.totalUp ? 1 : 0);
+            default: // 2 = downloaded (also the fallback/default sort)
+                return (a.totalDown < b.totalDown) ? -1 : (a.totalDown > b.totalDown ? 1 : 0);
         }
     };
     std::sort(rows.begin(), rows.end(), [&](const AppStats& a, const AppStats& b) {
-        bool pa = pinned.count(ToLowerAscii(a.name)) != 0;
-        bool pb = pinned.count(ToLowerAscii(b.name)) != 0;
+        bool pa = pinned.count(a.pid) != 0;
+        bool pb = pinned.count(b.pid) != 0;
         if (pa != pb) return pa; // pinned rows first, then normal sorting within each group
         return ascending ? compare(a, b) < 0 : compare(a, b) > 0;
     });
@@ -402,6 +416,225 @@ void ApplyModernStyle() {
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.65f);
 }
 
+// Startup licensing gate. Runs its own little render loop before any of
+// the real app starts, so nothing captures traffic until the machine is
+// licensed. Returns false if the user gave up (closed the window / Quit),
+// in which case wWinMain exits.
+//
+// The network calls happen on a worker thread: WinHTTP blocks, and a
+// server that's down would otherwise freeze the window for seconds with
+// nothing on screen.
+bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
+    enum class Phase { Checking, NeedKey, Activating, Offline };
+
+    struct Shared {
+        std::atomic<bool> busy{true};
+        std::atomic<int> authResult{-1}; // license::Status, -1 = not finished
+        std::atomic<bool> activated{false};
+        std::mutex mu;
+        std::string error;
+    };
+    auto shared = std::make_shared<Shared>();
+
+    auto startAuth = [shared]() {
+        shared->busy.store(true);
+        shared->authResult.store(-1);
+        std::thread([shared] {
+            license::Status s = license::Authenticate();
+            shared->authResult.store((int)s);
+            shared->busy.store(false);
+        }).detach();
+    };
+
+    auto startActivate = [shared](std::string key) {
+        shared->busy.store(true);
+        std::thread([shared, key] {
+            std::string err;
+            bool ok = license::Activate(key, &err);
+            {
+                std::lock_guard<std::mutex> lock(shared->mu);
+                shared->error = ok ? "" : err;
+            }
+            shared->activated.store(ok);
+            shared->busy.store(false);
+        }).detach();
+    };
+
+    Phase phase = Phase::Checking;
+    static char keyBuf[512] = {};
+    bool quit = false;
+
+    startAuth();
+
+    while (true) {
+        MSG msg;
+        while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            if (msg.message == WM_QUIT) quit = true;
+        }
+        if (quit) return false;
+
+        // Phase transitions, driven by whatever the worker finished.
+        if (!shared->busy.load()) {
+            if (phase == Phase::Checking) {
+                int r = shared->authResult.load();
+                if (r == (int)license::Status::Licensed) return true;
+                phase = (r == (int)license::Status::Unreachable) ? Phase::Offline : Phase::NeedKey;
+            } else if (phase == Phase::Activating) {
+                if (shared->activated.load()) {
+                    Log("license: activation succeeded, starting netvis");
+                    return true;
+                }
+                phase = Phase::NeedKey;
+            }
+        }
+
+        if (g_ResizeWidth != 0 && g_ResizeHeight != 0) {
+            CleanupRenderTarget();
+            g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+            g_ResizeWidth = g_ResizeHeight = 0;
+            CreateRenderTarget();
+        }
+
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(40, 34));
+        ImGui::Begin("activate", nullptr,
+                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+        ImGui::PopStyleVar();
+
+        // Everything on this screen is centred as one column. These helpers
+        // place the next item by measuring it first - ImGui lays out
+        // left-to-right, so centring means setting the cursor yourself.
+        float full = ImGui::GetContentRegionAvail().x;
+        auto centerNext = [&](float itemWidth) {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (full - itemWidth) * 0.5f);
+        };
+        auto centeredText = [&](const char* text) {
+            centerNext(ImGui::CalcTextSize(text).x);
+            ImGui::TextUnformatted(text);
+        };
+        auto centeredColored = [&](ImVec4 col, const char* text) {
+            centerNext(ImGui::CalcTextSize(text).x);
+            ImGui::TextColored(col, "%s", text);
+        };
+
+        // Push the block down so it sits nearer the middle of the window
+        // rather than clinging to the top edge.
+        ImGui::Dummy(ImVec2(0, io.DisplaySize.y * 0.14f));
+
+        {
+            const char* title = "netvis";
+            ImGui::PushFont(g_fontBold, 52.0f * dpiScale);
+            centerNext(ImGui::CalcTextSize(title).x);
+            ImGui::TextUnformatted(title);
+            ImGui::PopFont();
+        }
+        centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f), "Firewall & bandwidth manager");
+
+        ImGui::Dummy(ImVec2(0, 26.0f * dpiScale));
+
+        switch (phase) {
+        case Phase::Checking:
+            centeredText("Checking your license...");
+            break;
+
+        case Phase::Offline: {
+            centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Can't reach the licensing server.");
+            ImGui::Spacing();
+            centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f),
+                            "netvis checks your license when it opens.");
+            centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f),
+                            "Check your internet connection and try again.");
+            ImGui::Dummy(ImVec2(0, 20.0f * dpiScale));
+
+            float bw = 140.0f * dpiScale, qw = 100.0f * dpiScale;
+            centerNext(bw + qw + ImGui::GetStyle().ItemSpacing.x);
+            if (ImGui::Button("Try again", ImVec2(bw, 0))) {
+                phase = Phase::Checking;
+                startAuth();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Quit", ImVec2(qw, 0))) return false;
+            break;
+        }
+
+        case Phase::NeedKey:
+        case Phase::Activating: {
+            centeredText("Enter your license key to activate this computer.");
+            ImGui::Spacing();
+            centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
+                            "A key is used on one computer and can't be reused.");
+            ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
+
+            bool busy = (phase == Phase::Activating);
+            float boxW = (std::min)(560.0f * dpiScale, full);
+            centerNext(boxW);
+            ImGui::BeginDisabled(busy);
+            ImGui::InputTextMultiline("##key", keyBuf, sizeof(keyBuf),
+                                       ImVec2(boxW, ImGui::GetTextLineHeight() * 4.5f));
+            ImGui::EndDisabled();
+
+            // Whitespace and line breaks are what you get from copying a key
+            // out of an email, so strip them rather than rejecting the paste.
+            std::string key;
+            for (const char* p = keyBuf; *p; ++p)
+                if (!isspace((unsigned char)*p)) key += (char)toupper((unsigned char)*p);
+
+            ImGui::Spacing();
+            char counter[64];
+            snprintf(counter, sizeof(counter), "%d / %d characters", (int)key.size(), license::kKeyLength);
+            centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f), counter);
+
+            {
+                std::lock_guard<std::mutex> lock(shared->mu);
+                if (!shared->error.empty()) {
+                    ImGui::Spacing();
+                    centeredColored(ImVec4(0.90f, 0.35f, 0.40f, 1.0f), shared->error.c_str());
+                }
+            }
+
+            ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
+            float aw = 140.0f * dpiScale, qw = 100.0f * dpiScale;
+            centerNext(aw + qw + ImGui::GetStyle().ItemSpacing.x);
+            ImGui::BeginDisabled(busy || (int)key.size() != license::kKeyLength);
+            if (ImGui::Button("Activate", ImVec2(aw, 0))) {
+                phase = Phase::Activating;
+                {
+                    std::lock_guard<std::mutex> lock(shared->mu);
+                    shared->error.clear();
+                }
+                startActivate(key);
+            }
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Quit", ImVec2(qw, 0))) return false;
+
+            if (busy) {
+                ImGui::Spacing();
+                centeredText("Activating...");
+            }
+            break;
+        }
+        }
+
+        ImGui::End();
+
+        ImGui::Render();
+        const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
+        g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
+        g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        g_pSwapChain->Present(1, 0);
+    }
+}
+
 } // namespace
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
@@ -498,6 +731,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     float dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
     Log("netvis: DPI scale = %.2f", dpiScale);
 
+    // Tray icon lives for the whole run (not just background mode), so
+    // alert notifications can appear whether the window is open or hidden.
+    AddTrayIcon(hwnd);
+
+    // 1-second timer so the message loop wakes (and runs the monitoring
+    // tick / auto-block) even while hidden in the tray with no other input.
+    ::SetTimer(hwnd, 2, 1000, nullptr);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -533,14 +774,35 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
+    // Licensing gate: nothing below this line runs - no capture, no
+    // blocking, no tray behaviour - until the server confirms this machine
+    // is activated (or the user redeems a key here and now).
+    if (!RunLicenseGate(io, dpiScale)) {
+        Log("netvis: not licensed, exiting");
+        ImGui_ImplDX11_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        RemoveTrayIcon();
+        CleanupDeviceD3D();
+        ::DestroyWindow(hwnd);
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+        return 0;
+    }
+
     // --- app state ---
+    Settings settings = Settings::Load();
+
     Monitor mon;
     std::string monErr;
     bool monOk = mon.Start(&monErr);
 
+    // User firewall blocklist (persisted in Program Files\netvis\blocklist.db).
+    std::vector<std::string> userBlocklist = blocklist_store::Load();
+    bool useDefaultBlocklist = settings.useDefaultBlocklist;
+
     Blocker blk;
     std::string blkErr;
-    bool blkOk = blk.Start(&blkErr);
+    bool blkOk = blk.Start(&blkErr, userBlocklist, useDefaultBlocklist);
 
     PidBlockManager pidMgr;
     IconCache icons(g_pd3dDevice);
@@ -548,21 +810,41 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
     std::vector<AppStats> rows;
     bool showClosedProcesses = false;
-    double lastTickTime = ImGui::GetTime();
+    uint64_t lastTickMs = 0; // wall-clock of the last monitoring tick (0 = fire on first loop)
     bool autoBlockEnabled = false;
     double autoBlockThresholdValue = 1.0;
     int autoBlockUnitIdx = 1; // MB/s default
-    Settings settings = Settings::Load();
-    std::unordered_set<std::string> autoBlockExempt = settings.autoBlockExempt; // lowercased exe names marked immune
-    std::unordered_set<std::string> pinnedProcs = settings.pinned;              // lowercased exe names kept at the top
+    // Keyed by PID, not name: two processes sharing an exe name (e.g.
+    // several chrome.exe) must be pinned/exempted individually. PIDs don't
+    // survive a restart, so these are intentionally not persisted.
+    std::unordered_set<uint32_t> autoBlockExempt;
+    std::unordered_set<uint32_t> pinnedProcs;
     autoBlockEnabled = settings.autoBlockEnabled;
     autoBlockThresholdValue = settings.autoBlockThreshold;
     autoBlockUnitIdx = settings.autoBlockUnitIdx;
     if (blkOk) blk.SetEnabled(settings.adBlockerEnabled);
 
     Alerts alerts;
+    g_notifyEnabled.store(settings.notifyOnAlert);
+    alerts.SetOnAlert([](const Alert& a) {
+        if (g_notifyEnabled.load()) ShowTrayNotification(a.title, a.detail);
+    });
     alerts.Start(std::vector<std::string>(settings.knownExes.begin(), settings.knownExes.end()));
     bool showAlerts = false;
+    bool notifyOnAlert = settings.notifyOnAlert;
+    std::string lastNotifiedAlert; // title+timestamp of the newest alert we've toasted, to avoid repeats
+
+    bool showBlocklist = false;
+    bool focusBlocklist = false;
+    char newDomainBuf[256] = "";
+    std::string blocklistStatus;
+
+    // Applies the current user list + default toggle to the blocker and
+    // saves it to disk. Called whenever the blocklist is edited.
+    auto applyBlocklist = [&]() {
+        blocklist_store::Save(userBlocklist);
+        if (blkOk) blk.Reload(userBlocklist, useDefaultBlocklist);
+    };
 
     int detailPid = -1; // process whose detail panel is open, -1 = none
     std::string detailName;
@@ -614,7 +896,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
         openLimitModal = true;
     };
-    int sortColumn = 4;      // default: Total, descending (busiest first) - matches the old fixed sort
+    int sortColumn = 2;      // default: Downloaded, descending (busiest first)
     bool sortAscending = false;
     int connViewPid = -1;
     std::string connViewName;
@@ -625,6 +907,23 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     HostCache hostCache;
 
     bool runInBackground = settings.runInBackground;
+    bool runOnStartup = startup::IsEnabled(); // source of truth is the scheduled task, not settings
+    // Default ON, but only the first time ever - after that the user's
+    // choice (task present or not) is respected, so turning it off sticks.
+    if (!settings.startupDefaultApplied) {
+        settings.startupDefaultApplied = true;
+        if (!runOnStartup) {
+            startup::SetEnabled(true);
+            runOnStartup = startup::IsEnabled();
+        }
+    }
+
+    // Licensing re-checks while the app is already running. The flag is a
+    // shared_ptr so the detached worker can safely clear it even if it
+    // outlives the loop during shutdown.
+    constexpr uint64_t kLicenseRecheckMs = 6ull * 60 * 60 * 1000; // 6 hours
+    uint64_t lastLicenseCheckMs = ::GetTickCount64(); // the startup gate just checked
+    auto licenseCheckBusy = std::make_shared<std::atomic<bool>>(false);
 
     std::string uiStatus;
     if (!monOk) uiStatus = "Capture failed: " + monErr;
@@ -634,6 +933,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     bool done = false;
     while (!done) {
         g_runInBackground = runInBackground; // let WndProc see the current choice
+        g_notifyEnabled.store(notifyOnAlert); // let the alerts thread see it
 
         // While hidden to the tray there's nothing to draw, so block until a
         // message arrives (tray click, etc.) instead of spinning the render
@@ -649,22 +949,44 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (msg.message == WM_QUIT) done = true;
         }
         if (done) break;
-        if (g_windowHidden) continue; // don't render while in the tray
 
-        if (g_ResizeWidth != 0 && g_ResizeHeight != 0) {
-            CleanupRenderTarget();
-            g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
-            g_ResizeWidth = g_ResizeHeight = 0;
-            CreateRenderTarget();
+        uint64_t nowMs = ::GetTickCount64();
+
+        // Re-opened (tray click, tray menu, or a second launch handing off
+        // to this instance) - or a background re-check found the license
+        // gone. Either way the gate runs again, and if it isn't satisfied
+        // we shut down through the normal path below.
+        if (g_licenseRecheck.exchange(false)) {
+            if (!RunLicenseGate(io, dpiScale)) {
+                Log("netvis: license check failed on re-open, exiting");
+                break;
+            }
         }
 
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
+        // Periodic re-check so an instance that lives in the tray for days
+        // still notices a revoked license. Only an explicit "no" from the
+        // server counts - if it's merely unreachable we leave the running
+        // session alone rather than kicking someone off over a network
+        // blip. (Reaching the server is required to *open* netvis; losing
+        // it mid-session is not the user's fault.)
+        if (nowMs - lastLicenseCheckMs >= kLicenseRecheckMs) {
+            lastLicenseCheckMs = nowMs;
+            if (!licenseCheckBusy->exchange(true)) {
+                auto busy = licenseCheckBusy;
+                std::thread([busy] {
+                    if (license::Authenticate() == license::Status::NotLicensed)
+                        g_licenseRecheck.store(true);
+                    busy->store(false);
+                }).detach();
+            }
+        }
 
-        double now = ImGui::GetTime();
-        if (monOk && now - lastTickTime >= 1.0) {
-            lastTickTime = now;
+        // Monitoring tick, once a second - driven by wall-clock (not
+        // ImGui::GetTime, which only advances on rendered frames) so it
+        // keeps running while the window is hidden in the tray. A 1s timer
+        // (set below) wakes the message loop when hidden so this fires.
+        if (monOk && nowMs - lastTickMs >= 1000) {
+            lastTickMs = nowMs;
             pidMgr.PurgeExpired(); // drop any timed limits that have elapsed
             rows = mon.Snapshot();
             SortRows(rows, sortColumn, sortAscending, pinnedProcs);
@@ -679,19 +1001,39 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     if (r.pid == kUnknownPID) continue;
                     if (pidMgr.IsBlocked(r.pid)) continue;
                     if (IsAutoBlockProtected(r.name)) continue;
-                    if (autoBlockExempt.count(ToLowerAscii(r.name))) continue;
+                    if (autoBlockExempt.count(r.pid)) continue;
                     if (r.rateDown + r.rateUp <= thresholdBytesPerSec) continue;
                     std::string err = pidMgr.Block(r.pid);
                     if (err.empty()) {
+                        double mbps = (r.rateDown + r.rateUp) / (1024.0 * 1024.0);
                         Log("auto-block: %s (pid %u) exceeded %.2f %s, blocked", r.name.c_str(), r.pid,
                             autoBlockThresholdValue, kUnitLabels[autoBlockUnitIdx]);
-                        uiStatus = "Auto-blocked " + r.name + " (high traffic)";
+                        char detail[160];
+                        snprintf(detail, sizeof(detail),
+                                 "Using %.2f MB/s, over the %.2f %s auto-block threshold - cut off.", mbps,
+                                 autoBlockThresholdValue, kUnitLabels[autoBlockUnitIdx]);
+                        // Shows in the Alerts feed and fires a notification
+                        // (if enabled) via the same path as other alerts.
+                        alerts.Raise(AlertKind::AutoBlocked, r.name + " auto-blocked", detail, r.pid);
                     } else {
                         Log("auto-block: %s (pid %u) failed: %s", r.name.c_str(), r.pid, err.c_str());
                     }
                 }
             }
         }
+
+        if (g_windowHidden) continue; // done with background work; skip rendering while in the tray
+
+        if (g_ResizeWidth != 0 && g_ResizeHeight != 0) {
+            CleanupRenderTarget();
+            g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+            g_ResizeWidth = g_ResizeHeight = 0;
+            CreateRenderTarget();
+        }
+
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(io.DisplaySize);
@@ -759,7 +1101,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (blkOk) {
                 centerInRow(ImGui::GetFrameHeight());
                 bool blockerEnabled = blk.Enabled();
-                if (ImGui::Checkbox("Ad blocker enabled", &blockerEnabled)) {
+                if (ImGui::Checkbox("Block trackers & malicious domains", &blockerEnabled)) {
                     blk.SetEnabled(blockerEnabled);
                 }
                 ImGui::SameLine(0, 28);
@@ -773,7 +1115,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
             ImGui::SameLine(0, 8);
             centerInRow(ImGui::GetTextLineHeight());
-            ImGui::TextUnformatted("ads/trackers blocked");
+            ImGui::TextUnformatted("malicious sites blocked");
+
+            if (blkOk) {
+                ImGui::SameLine(0, 28);
+                centerInRow(ImGui::GetFrameHeight());
+                if (ImGui::Button("Edit firewall blocklist...")) {
+                    showBlocklist = true;
+                    focusBlocklist = true;
+                }
+            }
         }
         if (monOk) {
             ImGui::Checkbox("Auto-block high-traffic processes", &autoBlockEnabled);
@@ -788,14 +1139,19 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             }
         }
         ImGui::Checkbox("Run in background when window is closed", &runInBackground);
+        ImGui::SameLine(0, 28);
+        ImGui::Checkbox("System notification on every alert", &notifyOnAlert);
+        ImGui::SameLine(0, 28);
+        if (ImGui::Checkbox("Run when Windows starts", &runOnStartup)) {
+            startup::SetEnabled(runOnStartup);
+            runOnStartup = startup::IsEnabled(); // reflect what actually took effect
+        }
         ImGui::Spacing();
         ImGui::Spacing();
 
-        graph.Draw(ImVec2(ImGui::GetContentRegionAvail().x, 90));
+        // Legend + live values ABOVE the graph (so nothing overlaps the
+        // plotted area): Download on the left, Upload to its right.
         {
-            // Swatches drawn directly (not ColorButton) and centered on the
-            // text line so they sit level with the labels.
-            const ImVec4 legendText(0.557f, 0.584f, 0.627f, 1.0f);
             auto swatch = [&](ImU32 col) {
                 float sz = 10.0f * dpiScale;
                 float lineH = ImGui::GetTextLineHeight();
@@ -804,15 +1160,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(p.x, y), ImVec2(p.x + sz, y + sz), col, 2.0f);
                 ImGui::Dummy(ImVec2(sz, lineH));
             };
-
             swatch(IM_COL32(0x35, 0xc7, 0x5f, 0xFF));
             ImGui::SameLine(0, 6);
-            ImGui::TextColored(legendText, "Download");
-            ImGui::SameLine(0, 18);
+            ImGui::TextColored(ImVec4(0.38f, 0.90f, 0.56f, 1.0f), "Download %s", FormatRate(graph.CurrentDown()).c_str());
+            ImGui::SameLine(0, 28);
             swatch(IM_COL32(0x66, 0x96, 0xfa, 0xFF));
             ImGui::SameLine(0, 6);
-            ImGui::TextColored(legendText, "Upload");
+            ImGui::TextColored(ImVec4(0.56f, 0.70f, 1.00f, 1.0f), "Upload %s", FormatRate(graph.CurrentUp()).c_str());
         }
+        ImGui::Spacing();
+        graph.Draw(ImVec2(ImGui::GetContentRegionAvail().x, 90));
         ImGui::Spacing();
         ImGui::Spacing();
 
@@ -830,22 +1187,20 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         bool needResort = false;
-        if (ImGui::BeginTable("apps", 6,
+        if (ImGui::BeginTable("apps", 5,
                                ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
                                    ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable,
                                ImGui::GetContentRegionAvail())) {
             ImGui::TableSetupColumn("App", ImGuiTableColumnFlags_WidthStretch, 2.2f);
             ImGui::TableSetupColumn("PID", ImGuiTableColumnFlags_WidthFixed, 70);
-            // PreferSortDescending on the rate/total columns: these jump
-            // around a lot second to second, so the useful sort direction
-            // is always "busiest first" - defaulting to ascending (as
-            // ImGui does without this flag) surfaces a wall of idle 0 B/s
-            // rows instead, which looks like the numbers are stuck at 0.
-            ImGui::TableSetupColumn("Down/s", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending, 100);
-            ImGui::TableSetupColumn("Up/s", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending, 100);
-            ImGui::TableSetupColumn("Total", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort |
-                                                 ImGuiTableColumnFlags_PreferSortDescending,
-                                     100);
+            // These columns now show cumulative bytes (total downloaded /
+            // uploaded since netvis started), not instantaneous speed - the
+            // live rate is still on the graph and in the per-app details.
+            // PreferSortDescending so a click surfaces the busiest apps.
+            ImGui::TableSetupColumn("Downloaded", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort |
+                                                      ImGuiTableColumnFlags_PreferSortDescending,
+                                     110);
+            ImGui::TableSetupColumn("Uploaded", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending, 110);
             ImGui::TableSetupColumn("Block", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 90);
             ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::PushFont(g_fontBold, 0.0f);
@@ -937,41 +1292,37 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     }
                     ImGui::Separator();
                     {
-                        std::string lname = ToLowerAscii(r.name);
-                        bool pinned = pinnedProcs.count(lname) != 0;
+                        bool pinned = pinnedProcs.count(r.pid) != 0;
                         if (ImGui::MenuItem("Pin to top", nullptr, pinned)) {
-                            if (pinned) pinnedProcs.erase(lname);
-                            else pinnedProcs.insert(lname);
+                            if (pinned) pinnedProcs.erase(r.pid);
+                            else pinnedProcs.insert(r.pid);
                             // Deferred: we're mid-iteration over `rows`
                             // right now, and re-sorting it here would
                             // invalidate the loop out from under us.
                             needResort = true;
                         }
-                        bool exempt = autoBlockExempt.count(lname) != 0;
+                        bool exempt = autoBlockExempt.count(r.pid) != 0;
                         if (ImGui::MenuItem("Exempt from auto-block", nullptr, exempt)) {
-                            if (exempt) autoBlockExempt.erase(lname);
-                            else autoBlockExempt.insert(lname);
+                            if (exempt) autoBlockExempt.erase(r.pid);
+                            else autoBlockExempt.insert(r.pid);
                         }
                     }
                     ImGui::EndPopup();
                 }
                 ImGui::SameLine(0, 0);
 
-                DrawProcessIcon(icons.Get(r.exePath), r.name, dpiScale);
+                DrawProcessIcon(icons.Get(ToLowerAscii(r.name), r.exePath), r.name, dpiScale);
                 CopyableText("name", r.name);
-                if (pinnedProcs.count(ToLowerAscii(r.name))) {
+                if (pinnedProcs.count(r.pid)) {
                     ImGui::SameLine(0, 6);
                     ImGui::TextColored(ImVec4(0.271f, 0.608f, 1.000f, 1.0f), "*");
                     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pinned to top");
                 }
-                {
-                    PidBlockManager::LimitSpec ls;
-                    if (pidMgr.GetLimit(r.pid, &ls)) {
-                        ImGui::SameLine();
-                        ImGui::TextDisabled("(%s)", FormatLimitShort(ls).c_str());
-                    }
+                if (pidMgr.IsLimited(r.pid)) {
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(limited)");
                 }
-                if (autoBlockExempt.count(ToLowerAscii(r.name))) {
+                if (autoBlockExempt.count(r.pid)) {
                     ImGui::SameLine();
                     ImGui::TextDisabled("(auto-block exempt)");
                 }
@@ -981,15 +1332,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 else CopyableText("pid", std::to_string(r.pid));
 
                 ImGui::TableSetColumnIndex(2);
-                CopyableText("down", FormatRate(r.rateDown));
+                CopyableText("down", FormatBytes(r.totalDown));
 
                 ImGui::TableSetColumnIndex(3);
-                CopyableText("up", FormatRate(r.rateUp));
+                CopyableText("up", FormatBytes(r.totalUp));
 
                 ImGui::TableSetColumnIndex(4);
-                CopyableText("total", FormatBytes(r.totalDown + r.totalUp));
-
-                ImGui::TableSetColumnIndex(5);
                 if (r.pid == kUnknownPID) {
                     ImGui::TextDisabled("-");
                 } else if (!r.alive) {
@@ -1306,6 +1654,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     switch (a.kind) {
                         case AlertKind::NewListener: color = ImVec4(0.95f, 0.55f, 0.30f, 1.0f); break;
                         case AlertKind::DnsChanged: color = ImVec4(0.95f, 0.75f, 0.30f, 1.0f); break;
+                        case AlertKind::AutoBlocked: color = ImVec4(0.90f, 0.35f, 0.40f, 1.0f); break;
                         default: color = ImVec4(0.271f, 0.608f, 1.000f, 1.0f); break;
                     }
                     ImGui::PushID((int)i);
@@ -1324,6 +1673,104 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             ImGui::End();
         }
 
+        // --- firewall blocklist manager ---
+        if (showBlocklist) {
+            ImGui::SetNextWindowSize(ImVec2(560, 520), ImGuiCond_FirstUseEver);
+            if (focusBlocklist) {
+                ImGui::SetNextWindowFocus();
+                focusBlocklist = false;
+            }
+            if (ImGui::Begin("Firewall blocklist", &showBlocklist)) {
+                ImGui::TextWrapped("Domains the firewall blocks system-wide (any app, any browser). "
+                                    "Stored in Program Files\\netvis\\blocklist.db.");
+                ImGui::Spacing();
+
+                if (ImGui::Checkbox("Use built-in malicious-domain database", &useDefaultBlocklist)) {
+                    applyBlocklist();
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Merge netvis's bundled list of ~100k known ad/tracker/malware\n"
+                                       "domains with your own entries below.");
+
+                ImGui::Spacing();
+                if (ImGui::Button("Import from text file...")) {
+                    char path[MAX_PATH] = {};
+                    OPENFILENAMEA ofn = {sizeof(ofn)};
+                    ofn.hwndOwner = hwnd;
+                    ofn.lpstrFilter = "Text files\0*.txt\0All files\0*.*\0";
+                    ofn.lpstrFile = path;
+                    ofn.nMaxFile = sizeof(path);
+                    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+                    if (GetOpenFileNameA(&ofn)) {
+                        auto imported = blocklist_store::ParseFile(path);
+                        std::unordered_set<std::string> have(userBlocklist.begin(), userBlocklist.end());
+                        int added = 0;
+                        for (auto& d : imported)
+                            if (have.insert(d).second) { userBlocklist.push_back(d); added++; }
+                        applyBlocklist();
+                        blocklistStatus = "Imported " + std::to_string(added) + " new domain(s).";
+                    }
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("One domain per line; lines starting with # are ignored.\n"
+                                       "hosts-file lines like \"0.0.0.0 ads.example.com\" also work.");
+
+                ImGui::Spacing();
+                ImGui::SetNextItemWidth(-140);
+                bool addNow = ImGui::InputTextWithHint("##newdomain", "add a domain, e.g. ads.example.com",
+                                                        newDomainBuf, sizeof(newDomainBuf),
+                                                        ImGuiInputTextFlags_EnterReturnsTrue);
+                ImGui::SameLine();
+                if (ImGui::Button("Add domain") || addNow) {
+                    std::string d = ToLowerAscii(newDomainBuf);
+                    // trim spaces
+                    while (!d.empty() && (d.front() == ' ' || d.front() == '\t')) d.erase(d.begin());
+                    while (!d.empty() && (d.back() == ' ' || d.back() == '\t' || d.back() == '\r')) d.pop_back();
+                    if (!d.empty() &&
+                        std::find(userBlocklist.begin(), userBlocklist.end(), d) == userBlocklist.end()) {
+                        userBlocklist.push_back(d);
+                        applyBlocklist();
+                    }
+                    newDomainBuf[0] = '\0';
+                }
+
+                if (!blocklistStatus.empty()) {
+                    ImGui::TextColored(ImVec4(0.35f, 0.78f, 0.45f, 1.0f), "%s", blocklistStatus.c_str());
+                }
+
+                ImGui::Spacing();
+                ImGui::Text("Your domains (%zu):", userBlocklist.size());
+                if (ImGui::BeginTable("userblock", 2,
+                                       ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY,
+                                       ImVec2(0, ImGui::GetContentRegionAvail().y - 6))) {
+                    ImGui::TableSetupColumn("Domain", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80);
+                    int removeIdx = -1;
+                    for (int i = 0; i < (int)userBlocklist.size(); i++) {
+                        ImGui::TableNextRow();
+                        ImGui::PushID(i);
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted(userBlocklist[i].c_str());
+                        ImGui::TableSetColumnIndex(1);
+                        if (ImGui::SmallButton("Remove")) removeIdx = i;
+                        ImGui::PopID();
+                    }
+                    if (userBlocklist.empty()) {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextDisabled("(none yet - add or import domains above)");
+                    }
+                    ImGui::EndTable();
+                    if (removeIdx >= 0) {
+                        userBlocklist.erase(userBlocklist.begin() + removeIdx);
+                        applyBlocklist();
+                    }
+                }
+            }
+            ImGui::End();
+        }
+
         ImGui::Render();
         const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
@@ -1337,13 +1784,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     Log("netvis shutting down");
 
     // Persist before tearing anything down, while the state is still valid.
-    settings.pinned = pinnedProcs;
-    settings.autoBlockExempt = autoBlockExempt;
+    // (Pins and auto-block exemptions are PID-based and intentionally not
+    // persisted - PIDs are meaningless after a restart.)
     settings.adBlockerEnabled = blkOk ? blk.Enabled() : settings.adBlockerEnabled;
     settings.autoBlockEnabled = autoBlockEnabled;
     settings.autoBlockThreshold = autoBlockThresholdValue;
     settings.autoBlockUnitIdx = autoBlockUnitIdx;
     settings.runInBackground = runInBackground;
+    settings.notifyOnAlert = notifyOnAlert;
+    settings.useDefaultBlocklist = useDefaultBlocklist;
     for (const auto& e : alerts.KnownExes()) settings.knownExes.insert(e);
     for (const auto& r : rows) {
         if (r.pid == kUnknownPID || r.name.empty()) continue;

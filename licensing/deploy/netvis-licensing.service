@@ -1,0 +1,22 @@
+[Unit]
+Description=netvis licensing server
+After=network.target
+
+[Service]
+Type=simple
+User=netvis
+WorkingDirectory=/opt/netvis
+ExecStart=/opt/netvis/licensing serve
+Restart=always
+RestartSec=3
+
+# The service only ever needs its own folder. Everything else on the box
+# is read-only or invisible to it, so a bug here can't become a bad day.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/netvis
+
+[Install]
+WantedBy=multi-user.target

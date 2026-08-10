@@ -30,6 +30,9 @@ struct Settings {
     double autoBlockThreshold = 1.0;
     int autoBlockUnitIdx = 1;
     bool runInBackground = false;
+    bool notifyOnAlert = true;
+    bool useDefaultBlocklist = true; // whether to merge the built-in malicious-domain database
+    bool startupDefaultApplied = false; // have we applied the "run at startup" default-on once?
 
     // Loads from disk; missing file just yields defaults.
     static Settings Load();

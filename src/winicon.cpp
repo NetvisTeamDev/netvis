@@ -24,8 +24,11 @@ IconPixels ExtractIconRGBA(const std::string& exePath) {
     std::wstring wpath = WidenUtf8(exePath);
     if (wpath.empty()) return out;
 
+    // Large (32x32) icon rather than small (16x16): the table draws icons
+    // DPI-scaled (16 * up to 2x), so a 32px source downscales cleanly
+    // instead of a 16px source blurring as it's stretched up.
     SHFILEINFOW sfi = {};
-    if (!SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_SMALLICON))
+    if (!SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON))
         return out;
     HICON hIcon = sfi.hIcon;
     if (!hIcon) return out;

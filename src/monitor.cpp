@@ -29,6 +29,15 @@ TrafficType ClassifyPorts(bool isTcp, uint16_t a, uint16_t b) {
     return TrafficType::Other;
 }
 
+// netvis's own PID. Its traffic (the licence check, hostname lookups) is
+// an artifact of the tool doing its job, not something the user is doing,
+// so it never belongs in the table, the graph, the alerts or the
+// auto-block logic. Cached once - it can't change while we're running.
+uint32_t SelfPid() {
+    static const uint32_t pid = ::GetCurrentProcessId();
+    return pid;
+}
+
 bool IsProcessAlive(uint32_t pid) {
     HANDLE h = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
     if (!h) return false;
@@ -109,6 +118,11 @@ void Monitor::CaptureLoop() {
 
         uint32_t pid;
         if (!netmap_.Lookup(proto, localPort, &pid)) pid = kUnknownPID;
+
+        // Drop our own packets here, at the single point every counter is
+        // fed from - so netvis can't show, graph, alert on or throttle
+        // itself no matter which feature is looking at the data.
+        if (pid == SelfPid()) continue;
 
         TrafficType type = ClassifyPorts(pkt.isTcp, pkt.srcPort, pkt.dstPort);
 
