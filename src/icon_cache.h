@@ -5,6 +5,7 @@
 // make off it.
 #pragma once
 #include <d3d11.h>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -30,9 +31,22 @@ public:
 private:
     void WarmAsync(const std::string& key, const std::string& exePath);
 
+    // A failed extraction used to be remembered forever, to avoid retrying
+    // every frame. That turned any momentary failure into a permanent
+    // letter badge - and the worst moment for extraction is exactly when
+    // netvis starts at logon, with the shell still coming up and processes
+    // still launching. Failures are now retried, backing off so a genuinely
+    // icon-less exe costs a handful of attempts rather than one per frame.
+    struct Failure {
+        int attempts = 0;
+        uint64_t nextTryMs = 0;
+    };
+    static constexpr int kMaxAttempts = 5;
+
     ID3D11Device* device_;
     std::mutex mu_;
     std::unordered_set<std::string> requested_;
+    std::unordered_map<std::string, Failure> failed_;
     std::unordered_map<std::string, IconPixels> pending_; // ready pixel data, not yet uploaded
     std::unordered_map<std::string, ID3D11ShaderResourceView*> textures_; // uploaded, UI-thread only
 };

@@ -30,14 +30,24 @@ enum class Status {
 struct Result {
     Status status = Status::Unreachable;
     int daysLeft = -1; // -1 = unknown or no expiry
+    bool trial = false;
 };
 
 // GET /authentificate/<hwid>
 Status Authenticate();
 Result AuthenticateEx();
 
-// Days remaining on this machine's licence as of the last check, or -1.
+// Days remaining on this machine's license as of the last check, or -1.
 int LastDaysLeft();
+
+// Whether that license is the free trial rather than a paid one.
+bool LastWasTrial();
+
+// POST /trial/<hwid>. Starts the one free trial this machine gets. The
+// server decides and records it, so there is nothing locally to reset -
+// and the trial's expiry arrives through the same signed check as a paid
+// license, so it can't be extended from this side either.
+bool StartTrial(std::string* error);
 
 // POST /validate/<key>. On failure `error` gets a message suitable for
 // showing the user.

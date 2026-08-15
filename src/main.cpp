@@ -27,6 +27,7 @@
 #include "blocker.h"
 #include "pidblock.h"
 #include "icon_cache.h"
+#include "winicon.h"
 #include "traffic_graph.h"
 #include "connlist.h"
 #include "hostcache.h"
@@ -45,8 +46,38 @@ static IDXGISwapChain* g_pSwapChain = nullptr;
 static bool g_SwapChainOccluded = false;
 static UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
+// netvis's own icon as a texture, for the license and startup screens. The
+// window and tray use the HICON directly; ImGui needs a shader resource view.
+static ID3D11ShaderResourceView* g_appIconSRV = nullptr;
 
 static bool CreateDeviceD3D(HWND hWnd);
+
+// Uploads decoded icon pixels as a texture. Small enough not to be worth a
+// cache: this runs once, for one image.
+static ID3D11ShaderResourceView* CreateTextureFromPixels(const IconPixels& px) {
+    if (!px.ok || !g_pd3dDevice) return nullptr;
+
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width = px.width;
+    desc.Height = px.height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA sub = {};
+    sub.pSysMem = px.rgba.data();
+    sub.SysMemPitch = px.width * 4;
+
+    ID3D11Texture2D* tex = nullptr;
+    if (FAILED(g_pd3dDevice->CreateTexture2D(&desc, &sub, &tex))) return nullptr;
+    ID3D11ShaderResourceView* srv = nullptr;
+    HRESULT hr = g_pd3dDevice->CreateShaderResourceView(tex, nullptr, &srv);
+    tex->Release();
+    return SUCCEEDED(hr) ? srv : nullptr;
+}
 static void CleanupDeviceD3D();
 static void CreateRenderTarget();
 static void CleanupRenderTarget();
@@ -118,6 +149,15 @@ static void ShowTrayNotification(const std::string& title, const std::string& bo
     widen(title, nid.szInfoTitle, (int)(sizeof(nid.szInfoTitle) / sizeof(wchar_t)));
     widen(body, nid.szInfo, (int)(sizeof(nid.szInfo) / sizeof(wchar_t)));
     ::Shell_NotifyIconW(NIM_MODIFY, &nid);
+}
+
+// Opens a link in the user's browser. Goes through explorer.exe on purpose:
+// netvis runs elevated, and a browser launched directly from an elevated
+// process inherits that - which modern browsers either refuse outright or
+// run as administrator, neither of which anyone wants. Handing the URL to
+// explorer drops it back to normal integrity.
+static void OpenInBrowser(const char* url) {
+    ::ShellExecuteA(nullptr, "open", "explorer.exe", url, nullptr, SW_SHOWNORMAL);
 }
 
 static void RestoreWindow(HWND hwnd) {
@@ -416,6 +456,62 @@ void ApplyModernStyle() {
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.65f);
 }
 
+// Draws one full frame showing just the netvis wordmark and a status line.
+// Used for "Checking your license..." and, more importantly, for the frame
+// left on screen while the app starts up: opening WinDivert and loading a
+// 99k-entry blocklist takes long enough that whatever was drawn last stays
+// visible, and that shouldn't be the license screen.
+void DrawSplashFrame(ImGuiIO& io, float dpiScale, const char* message) {
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(40, 34));
+    ImGui::Begin("splash", nullptr,
+                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+    ImGui::PopStyleVar();
+
+    float full = ImGui::GetContentRegionAvail().x;
+    auto centered = [&](const char* text) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (full - ImGui::CalcTextSize(text).x) * 0.5f);
+        ImGui::TextUnformatted(text);
+    };
+
+    ImGui::Dummy(ImVec2(0, io.DisplaySize.y * 0.06f));
+    // The app icon, so the first thing a customer sees is branded rather
+    // than a bare word. Falls through harmlessly if the texture is missing.
+    if (g_appIconSRV) {
+        const float iconSize = 96.0f * dpiScale;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (full - iconSize) * 0.5f);
+        ImGui::Image((ImTextureID)g_appIconSRV, ImVec2(iconSize, iconSize));
+        ImGui::Dummy(ImVec2(0, 12.0f * dpiScale));
+    }
+    {
+        const char* title = "netvis";
+        ImGui::PushFont(g_fontBold, 52.0f * dpiScale);
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (full - ImGui::CalcTextSize(title).x) * 0.5f);
+        ImGui::TextUnformatted(title);
+        ImGui::PopFont();
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.557f, 0.584f, 0.627f, 1.0f));
+    centered("Firewall & bandwidth manager");
+    ImGui::PopStyleColor();
+
+    ImGui::Dummy(ImVec2(0, 26.0f * dpiScale));
+    centered(message);
+
+    ImGui::End();
+    ImGui::Render();
+    const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
+    g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
+    g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    g_pSwapChain->Present(1, 0);
+}
+
 // Startup licensing gate. Runs its own little render loop before any of
 // the real app starts, so nothing captures traffic until the machine is
 // licensed. Returns false if the user gave up (closed the window / Quit),
@@ -446,6 +542,20 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
         }).detach();
     };
 
+    auto startTrial = [shared]() {
+        shared->busy.store(true);
+        std::thread([shared] {
+            std::string err;
+            bool ok = license::StartTrial(&err);
+            {
+                std::lock_guard<std::mutex> lock(shared->mu);
+                shared->error = ok ? "" : err;
+            }
+            shared->activated.store(ok);
+            shared->busy.store(false);
+        }).detach();
+    };
+
     auto startActivate = [shared](std::string key) {
         shared->busy.store(true);
         std::thread([shared, key] {
@@ -463,7 +573,12 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
     Phase phase = Phase::Checking;
     static char keyBuf[512] = {};
     bool quit = false;
-    bool expired = false; // came from a licence that ran out, not a fresh install
+    bool expired = false; // came from a license that ran out, not a fresh install
+    // Until the server has actually answered, the only thing that may be on
+    // screen is "checking". Without this, any path that reaches the render
+    // code before the worker finishes flashes the key entry form for a
+    // frame or two, which reads as "your license is gone".
+    bool gotAnswer = false;
 
     startAuth();
 
@@ -480,12 +595,20 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
         if (!shared->busy.load()) {
             if (phase == Phase::Checking) {
                 int r = shared->authResult.load();
-                if (r == (int)license::Status::Licensed) return true;
+                gotAnswer = true;
+                if (r == (int)license::Status::Licensed) {
+                    // Leave a neutral frame up: the app now spends a couple
+                    // of seconds starting capture, and this is what stays on
+                    // screen during it.
+                    DrawSplashFrame(io, dpiScale, "Starting netvis...");
+                    return true;
+                }
                 expired = (r == (int)license::Status::Expired);
                 phase = (r == (int)license::Status::Unreachable) ? Phase::Offline : Phase::NeedKey;
             } else if (phase == Phase::Activating) {
                 if (shared->activated.load()) {
                     Log("license: activation succeeded, starting netvis");
+                    DrawSplashFrame(io, dpiScale, "Starting netvis...");
                     return true;
                 }
                 phase = Phase::NeedKey;
@@ -529,7 +652,14 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 
         // Push the block down so it sits nearer the middle of the window
         // rather than clinging to the top edge.
-        ImGui::Dummy(ImVec2(0, io.DisplaySize.y * 0.14f));
+        ImGui::Dummy(ImVec2(0, io.DisplaySize.y * 0.06f));
+
+        if (g_appIconSRV) {
+            const float iconSize = 96.0f * dpiScale;
+            centerNext(iconSize);
+            ImGui::Image((ImTextureID)g_appIconSRV, ImVec2(iconSize, iconSize));
+            ImGui::Dummy(ImVec2(0, 12.0f * dpiScale));
+        }
 
         {
             const char* title = "netvis";
@@ -542,7 +672,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 
         ImGui::Dummy(ImVec2(0, 26.0f * dpiScale));
 
-        switch (phase) {
+        switch (gotAnswer ? phase : Phase::Checking) {
         case Phase::Checking:
             centeredText("Checking your license...");
             break;
@@ -569,21 +699,44 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 
         case Phase::NeedKey:
         case Phase::Activating: {
-            if (expired) {
-                centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Your licence has run out.");
+            bool busy = (phase == Phase::Activating);
+
+            // The trial comes FIRST for anyone who hasn't had one. Asking a
+            // first-time user for a key before offering the free option
+            // reads as demanding money up front, and buries the thing most
+            // of them actually want below the fold.
+            if (!expired) {
+                centeredText("Try netvis free for 14 days.");
+                ImGui::Spacing();
+                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
+                                "The full version. No card, no account.");
+                ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
+
+                float tw = 260.0f * dpiScale;
+                centerNext(tw);
+                ImGui::BeginDisabled(busy);
+                if (ImGui::Button("Start free trial", ImVec2(tw, 0))) {
+                    phase = Phase::Activating;
+                    {
+                        std::lock_guard<std::mutex> lock(shared->mu);
+                        shared->error.clear();
+                    }
+                    startTrial();
+                }
+                ImGui::EndDisabled();
+
+                ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
+                ImGui::Separator();
+                ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
+                centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f), "Already have a license key?");
+            } else {
+                centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Your license has run out.");
                 ImGui::Spacing();
                 centeredText("Enter a new key to carry on for another 6 months.");
                 ImGui::Spacing();
                 centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f), "Get one at netvis.cc");
-            } else {
-                centeredText("Enter your license key to activate this computer.");
-                ImGui::Spacing();
-                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
-                                "A key activates one computer for 6 months.");
             }
             ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
-
-            bool busy = (phase == Phase::Activating);
             // A 30-character key fits on one line, so it gets a single wide
             // field rather than a paste box - and Enter submits it.
             float boxW = (std::min)(420.0f * dpiScale, full);
@@ -633,7 +786,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 
             if (busy) {
                 ImGui::Spacing();
-                centeredText("Activating...");
+                centeredText("Working...");
             }
             break;
         }
@@ -745,6 +898,19 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     // monitor).
     float dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
     Log("netvis: DPI scale = %.2f", dpiScale);
+
+    // Decode the embedded icon at 256px for the license/startup screens.
+    // Loaded fresh at that size rather than reusing iconLarge, which is
+    // whatever size Windows picked for the title bar and would look soft
+    // blown up to ~96 points.
+    {
+        HICON big = (HICON)::LoadImageW(hInstance, MAKEINTRESOURCEW(1), IMAGE_ICON, 256, 256, 0);
+        if (big) {
+            g_appIconSRV = CreateTextureFromPixels(IconFromHICON(big));
+            ::DestroyIcon(big);
+        }
+        if (!g_appIconSRV) Log("netvis: could not build the app icon texture");
+    }
 
     // Tray icon lives for the whole run (not just background mode), so
     // alert notifications can appear whether the window is open or hidden.
@@ -939,6 +1105,21 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     uint64_t lastLicenseCheckMs = ::GetTickCount64(); // the startup gate just checked
     auto licenseCheckBusy = std::make_shared<std::atomic<bool>>(false);
 
+    // Upgrading from trial to paid without restarting: a Buy button beside
+    // the countdown, and somewhere to paste the key it produces. Buying is
+    // pointless if the key can only be redeemed after the trial has run out.
+    bool showUpgrade = false;
+    char upgradeKeyBuf[512] = {};
+    struct KeyOp {
+        std::atomic<bool> busy{false};
+        std::atomic<bool> ok{false};
+        std::mutex mu;
+        std::string error;
+    };
+    auto keyOp = std::make_shared<KeyOp>();
+    std::string licenseToast;      // brief "thanks" line under the title
+    uint64_t licenseToastUntil = 0;
+
     std::string uiStatus;
     if (!monOk) uiStatus = "Capture failed: " + monErr;
     else if (!blkOk) uiStatus = "Ad blocker failed: " + blkErr;
@@ -1078,9 +1259,48 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (unread > 0) snprintf(label, sizeof(label), "Alerts (%zu)", unread);
             else snprintf(label, sizeof(label), "Alerts");
             float btnW = ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2 + 8;
+
+            // Trial countdown and Buy button live up here in the header, not
+            // down in a corner: the bottom of the window is the process
+            // table, and anything drawn over it competes with the Block
+            // buttons for both attention and clicks.
+            float trialW = 0.0f;
+            char badge[64] = {};
+            const char* buyLabel = "Buy a license";
+            float buyW = 0.0f;
+            bool onTrial = license::LastWasTrial();
+            if (onTrial) {
+                int days = license::LastDaysLeft();
+                if (days <= 0) snprintf(badge, sizeof(badge), "Trial - last day");
+                else snprintf(badge, sizeof(badge), "Trial - %d day%s left", days, days == 1 ? "" : "s");
+                buyW = ImGui::CalcTextSize(buyLabel).x + ImGui::GetStyle().FramePadding.x * 2 + 8;
+                trialW = ImGui::CalcTextSize(badge).x + buyW + ImGui::GetStyle().ItemSpacing.x * 2;
+            }
+
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
-                                  std::max(0.0f, ImGui::GetContentRegionAvail().x - btnW));
+                                  std::max(0.0f, ImGui::GetContentRegionAvail().x - btnW - trialW));
+
+            if (onTrial) {
+                int days = license::LastDaysLeft();
+                ImVec4 col = (days <= 3) ? ImVec4(0.95f, 0.65f, 0.35f, 1.0f)
+                                         : ImVec4(0.557f, 0.584f, 0.627f, 1.0f);
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextColored(col, "%s", badge);
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.55f, 0.30f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.24f, 0.66f, 0.36f, 1.0f));
+                if (ImGui::Button(buyLabel)) {
+                    showUpgrade = true;
+                    {
+                        std::lock_guard<std::mutex> lock(keyOp->mu);
+                        keyOp->error.clear();
+                    }
+                    keyOp->ok.store(false);
+                }
+                ImGui::PopStyleColor(2);
+                ImGui::SameLine();
+            }
             if (unread > 0) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.20f, 1.0f));
             if (ImGui::Button(label)) {
                 showAlerts = true;
@@ -1096,18 +1316,28 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         CopyableText("status", uiStatus);
         ImGui::PopStyleColor();
 
+        if (!licenseToast.empty()) {
+            if (::GetTickCount64() > licenseToastUntil) licenseToast.clear();
+            else ImGui::TextColored(ImVec4(0.38f, 0.85f, 0.52f, 1.0f), "%s", licenseToast.c_str());
+        }
+
         // Renewal warning, only near the end of the term - nobody needs a
         // countdown for five months, and a permanent nag would just get
         // tuned out by the time it mattered.
         {
             int days = license::LastDaysLeft();
-            if (days >= 0 && days <= 14) {
+            // A trial is always inside 14 days, so warning on that basis
+            // would nag from day one - the corner badge already shows the
+            // countdown. Warn late instead.
+            int warnBelow = license::LastWasTrial() ? 3 : 14;
+            if (days >= 0 && days <= warnBelow) {
                 ImVec4 warn = (days <= 3) ? ImVec4(0.90f, 0.35f, 0.40f, 1.0f)
                                           : ImVec4(0.95f, 0.65f, 0.35f, 1.0f);
+                const char* what = license::LastWasTrial() ? "trial" : "license";
                 if (days == 0)
-                    ImGui::TextColored(warn, "Your licence expires today - renew at netvis.cc");
+                    ImGui::TextColored(warn, "Your %s expires today - buy at netvis.cc", what);
                 else
-                    ImGui::TextColored(warn, "Your licence expires in %d day%s - renew at netvis.cc", days,
+                    ImGui::TextColored(warn, "Your %s expires in %d day%s - buy at netvis.cc", what, days,
                                         days == 1 ? "" : "s");
             }
         }
@@ -1562,6 +1792,98 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         ImGui::End();
+
+        // --- buy / redeem a license while the trial is running ---
+        if (showUpgrade) {
+            ImGui::SetNextWindowSize(ImVec2(460 * dpiScale, 0), ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                     ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if (ImGui::Begin("Buy a license", &showUpgrade,
+                              ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
+                bool busy = keyOp->busy.load();
+
+                if (keyOp->ok.load()) {
+                    // Take the confirmation down on its own. Leaving a
+                    // "thanks" dialog for the user to dismiss, next to a
+                    // countdown that should no longer exist, is exactly the
+                    // leftover state this was meant to clear.
+                    keyOp->ok.store(false);
+                    showUpgrade = false;
+                    upgradeKeyBuf[0] = '\0';
+                    licenseToast = "License activated - thanks. netvis is yours for the next 6 months.";
+                    licenseToastUntil = ::GetTickCount64() + 15000;
+                } else {
+                    int days = license::LastDaysLeft();
+                    if (days >= 0)
+                        ImGui::TextWrapped("Your trial has %d day%s left. A license is $25 and covers "
+                                            "this computer for 6 months.", days, days == 1 ? "" : "s");
+                    else
+                        ImGui::TextWrapped("A license is $25 and covers this computer for 6 months.");
+
+                    ImGui::Spacing();
+                    ImGui::BeginDisabled(busy);
+                    if (ImGui::Button("Buy at netvis.cc", ImVec2(180 * dpiScale, 0)))
+                        OpenInBrowser("https://netvis.cc/buy");
+                    ImGui::EndDisabled();
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
+                    ImGui::TextUnformatted("Already have your key? Paste it here:");
+                    ImGui::Spacing();
+
+                    ImGui::SetNextItemWidth(-1);
+                    ImGui::BeginDisabled(busy);
+                    bool entered = ImGui::InputTextWithHint("##upgradekey", "license key", upgradeKeyBuf,
+                                                             sizeof(upgradeKeyBuf),
+                                                             ImGuiInputTextFlags_EnterReturnsTrue |
+                                                                 ImGuiInputTextFlags_CharsUppercase);
+                    ImGui::EndDisabled();
+
+                    std::string key = license::Normalize(upgradeKeyBuf);
+                    bool complete = license::PlausibleKey(key);
+
+                    {
+                        std::lock_guard<std::mutex> lock(keyOp->mu);
+                        if (!keyOp->error.empty()) {
+                            ImGui::Spacing();
+                            ImGui::TextColored(ImVec4(0.90f, 0.35f, 0.40f, 1.0f), "%s",
+                                                keyOp->error.c_str());
+                        }
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::BeginDisabled(busy || !complete);
+                    if (ImGui::Button("Activate", ImVec2(120 * dpiScale, 0)) ||
+                        (entered && complete && !busy)) {
+                        keyOp->busy.store(true);
+                        {
+                            std::lock_guard<std::mutex> lock(keyOp->mu);
+                            keyOp->error.clear();
+                        }
+                        // Off the UI thread: activation is two network round
+                        // trips, and the app is running - freezing the whole
+                        // window for a couple of seconds would look broken.
+                        std::thread([keyOp, key] {
+                            std::string err;
+                            bool ok = license::Activate(key, &err);
+                            {
+                                std::lock_guard<std::mutex> lock(keyOp->mu);
+                                keyOp->error = ok ? "" : err;
+                            }
+                            keyOp->ok.store(ok);
+                            keyOp->busy.store(false);
+                        }).detach();
+                    }
+                    ImGui::EndDisabled();
+                    if (busy) {
+                        ImGui::SameLine();
+                        ImGui::TextUnformatted("Activating...");
+                    }
+                }
+            }
+            ImGui::End();
+        }
 
         // --- per-app detail panel ---
         if (detailPid >= 0) {

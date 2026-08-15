@@ -2,7 +2,7 @@ package main
 
 // Polar as the shop and the key issuer.
 //
-// Polar sells the licence, collects VAT as merchant of record, generates
+// Polar sells the license, collects VAT as merchant of record, generates
 // the key, emails it to the customer, and enforces both the 6-month term
 // and the one-machine limit. This file is the part that checks a Polar key
 // when netvis tries to activate with it.
@@ -158,7 +158,7 @@ func (s *server) activatePolarKey(key, hwid string) (*polarActivation, error) {
 // the benefit has no activation limit - the key is real and unexpired, and
 // one-machine-per-key is enforced here instead (see handleValidate).
 //
-// The reply is the licence key object itself rather than an activation, so
+// The reply is the license key object itself rather than an activation, so
 // it's reshaped to look like one, with no activation id: there is no slot,
 // so there's nothing to give back later.
 func (s *server) validatePolarKey(key string) (*polarActivation, error) {
@@ -218,16 +218,16 @@ func (s *server) deactivatePolarKey(key, activationID string) error {
 }
 
 // polarExpiry converts Polar's expiry into ours. Polar is the authority on
-// how long the licence runs, but if the benefit has no expiry configured we
+// how long the license runs, but if the benefit has no expiry configured we
 // fall back to our own 6-month term rather than handing out a permanent
-// licence by accident.
+// license by accident.
 func polarExpiry(act *polarActivation) string {
 	if act.LicenseKey.ExpiresAt != "" {
 		if t, err := time.Parse(time.RFC3339, act.LicenseKey.ExpiresAt); err == nil {
 			return t.UTC().Format(time.RFC3339)
 		}
 	}
-	return time.Now().UTC().AddDate(0, licenceMonths, 0).Format(time.RFC3339)
+	return time.Now().UTC().AddDate(0, licenseMonths, 0).Format(time.RFC3339)
 }
 
 // cmdPolarCheck asks Polar about a key and prints the raw answer. This is

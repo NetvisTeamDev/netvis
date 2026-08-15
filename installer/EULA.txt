@@ -1,0 +1,79 @@
+netvis - End User License Agreement
+
+Last updated: August 2026
+
+Please read this before installing. By installing netvis you accept it.
+
+1. FREE TRIAL
+
+Every computer gets one 14-day free trial of the full version - no card, no
+account. The trial is recorded against that computer and can be used once,
+including after it has expired. Please use it: it is there so you can find
+out whether netvis works alongside your other software before paying.
+
+2. WHAT YOU ARE BUYING
+
+A license key activates netvis on ONE computer for SIX MONTHS from the day
+it is redeemed. When it expires, netvis stops running until a new key is
+redeemed. You are buying the right to use the software for that period; you
+are not buying the software itself.
+
+3. WHAT YOU MAY DO
+
+Install and use netvis on the one computer the key was activated on, for
+personal or business use. You may move the license to a different computer
+by contacting us to release the old one.
+
+4. WHAT YOU MAY NOT DO
+
+Share, resell or publish your license key. Modify, decompile or reverse
+engineer the software. Work around the licensing, or use netvis without a
+valid key.
+
+5. HOW LICENSING WORKS
+
+netvis contacts our server when it starts to check that this computer's
+license is valid. It sends an anonymous identifier derived from your
+hardware, and nothing else. If you block that check, netvis will not run.
+
+6. YOUR DATA
+
+netvis analyses your network traffic entirely on your own computer. Traffic
+data, the programs you run and the sites you visit are never transmitted to
+us or to anyone else. There is no account, no telemetry and no analytics.
+
+7. ADMINISTRATOR ACCESS AND DRIVERS
+
+netvis requires Administrator rights and installs a network filtering
+driver (WinDivert) in order to see and control traffic. This is inherent to
+what the software does.
+
+8. REFUNDS
+
+Because a free trial is available before purchase, refunds are not offered
+as a matter of course. If netvis stops working on the computer you licensed
+it for, and we cannot fix it, contact us and we will refund the current
+period. Payments are processed by Polar, which acts as merchant of record,
+issues your receipt, and applies its own buyer terms.
+
+9. NO WARRANTY
+
+netvis is provided "as is", without warranty of any kind. It is a network
+monitoring and filtering tool, not antivirus software and not a VPN, and it
+is not represented as protecting you from malware or surveillance.
+
+10. LIMITATION OF LIABILITY
+
+To the extent permitted by law, our total liability is limited to the
+amount you paid for your current license period. We are not liable for
+indirect or consequential loss, including lost data, lost profits or
+interrupted connectivity.
+
+11. TERMINATION
+
+We may revoke a license that is shared, resold, or used to work around
+these terms. Otherwise your license runs for the period you paid for.
+
+12. CONTACT
+
+https://netvis.cc

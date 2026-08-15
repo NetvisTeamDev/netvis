@@ -39,11 +39,13 @@ REM Icon resource (embeds netvis.ico into the exe).
 rc.exe /nologo /fo obj\netvis.res netvis.rc
 
 REM --- Link everything. Fast, since there's no whole-program optimization.
-link.exe /nologo /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup /OUT:netvis.exe ^
+REM /MANIFEST:NO - the manifest comes from netvis.rc. Without this the
+REM linker generates its own as well and the two collide.
+link.exe /nologo /MANIFEST:NO /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup /OUT:netvis.exe ^
   obj\main.obj obj\monitor.obj obj\netmap.obj obj\procname.obj obj\windivert_shim.obj ^
   obj\blocker.obj obj\pidblock.obj obj\winicon.obj obj\icon_cache.obj obj\log.obj obj\connlist.obj obj\hostcache.obj ^
   obj\alerts.obj obj\settings.obj obj\blocklist_store.obj obj\startup.obj obj\license.obj ^
   obj\imgui.obj obj\imgui_draw.obj obj\imgui_tables.obj obj\imgui_widgets.obj ^
   obj\imgui_impl_win32.obj obj\imgui_impl_dx11.obj ^
   obj\netvis.res ^
-  user32.lib gdi32.lib d3d11.lib dxgi.lib d3dcompiler.lib dwmapi.lib iphlpapi.lib psapi.lib shell32.lib ws2_32.lib comdlg32.lib ole32.lib oleaut32.lib taskschd.lib winhttp.lib advapi32.lib crypt32.lib
+  user32.lib gdi32.lib d3d11.lib dxgi.lib d3dcompiler.lib dwmapi.lib iphlpapi.lib psapi.lib shell32.lib ws2_32.lib comdlg32.lib ole32.lib oleaut32.lib taskschd.lib winhttp.lib advapi32.lib crypt32.lib bcrypt.lib

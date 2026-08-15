@@ -28,11 +28,6 @@ $SUDO systemctl stop netvis-licensing || true
 $SUDO mv /tmp/licensing.new /opt/netvis/licensing
 $SUDO chmod +x /opt/netvis/licensing
 
-# Only present when deploy.ps1 was given -Exe.
-if [ -f /tmp/netvis.exe ]; then
-  $SUDO mv /tmp/netvis.exe /opt/netvis/downloads/netvis.exe
-fi
-
 $SUDO chown -R netvis:netvis /opt/netvis
 
 echo "-- starting service"

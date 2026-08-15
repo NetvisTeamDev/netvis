@@ -25,6 +25,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"crypto/rand"
 	"database/sql"
 	"embed"
@@ -101,6 +102,12 @@ type Config struct {
 	// "https://buy.polar.sh/polar_cl_xxxxx". Kept in config rather than the
 	// page so it can change without rebuilding.
 	CheckoutURL string `json:"checkout_url"`
+
+	// Private half of the key that signs answers to /authentificate, as 64
+	// hex characters from `licensing genkeys`. Secret: anyone holding it can
+	// mint licenses. Empty means answers go out unsigned, which any client
+	// built with a public key will refuse.
+	ResponsePrivateKey string `json:"response_private_key"`
 }
 
 func loadConfig() Config {
@@ -238,6 +245,7 @@ func openDB(path string) *sql.DB {
 			activated_at TEXT NOT NULL,
 			expires_at   TEXT NOT NULL DEFAULT '',
 			polar_activation_id TEXT NOT NULL DEFAULT '',
+			is_trial     INTEGER NOT NULL DEFAULT 0,
 			revoked      INTEGER NOT NULL DEFAULT 0
 		);
 	`); err != nil {
@@ -249,6 +257,7 @@ func openDB(path string) *sql.DB {
 	for _, stmt := range []string{
 		`ALTER TABLE activations ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE activations ADD COLUMN polar_activation_id TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE activations ADD COLUMN is_trial INTEGER NOT NULL DEFAULT 0`,
 	} {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			log.Fatalf("migrate activations: %v", err)
@@ -307,9 +316,12 @@ func onlyKeyAlphabet(s string) bool {
 func now() string { return time.Now().UTC().Format(time.RFC3339) }
 
 // How long one key buys. Sold as "6 months".
-const licenceMonths = 6
+const licenseMonths = 6
 
-// parseExpiry reads a stored expires_at. An empty string means the licence
+// Free trial, once per machine.
+const trialDays = 14
+
+// parseExpiry reads a stored expires_at. An empty string means the license
 // never expires - that's how activations sold before expiry existed were
 // treated, and those customers keep what they paid for.
 func parseExpiry(s string) (time.Time, bool) {
@@ -330,7 +342,7 @@ func renewedExpiry(current string) time.Time {
 	if t, ok := parseExpiry(current); ok && t.After(from) {
 		from = t
 	}
-	return from.AddDate(0, licenceMonths, 0)
+	return from.AddDate(0, licenseMonths, 0)
 }
 
 func daysLeft(expires time.Time) int {
@@ -359,8 +371,9 @@ func normOS(s string) string {
 // --------------------------------------------------------------- server
 
 type server struct {
-	db  *sql.DB
-	cfg Config
+	db      *sql.DB
+	cfg     Config
+	signKey *ecdsa.PrivateKey // nil when no key is configured
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -410,12 +423,12 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// What does this machine already have? Three cases: nothing (a fresh
-	// activation), a licence with time left (don't burn the key - tell them
+	// activation), a license with time left (don't burn the key - tell them
 	// to keep it), or an expired/expiring one (this key renews it).
-	var revoked int
+	var revoked, currentIsTrial int
 	var currentExpiry string
-	err := s.db.QueryRow(`SELECT revoked, expires_at FROM activations WHERE hwid = ?`, req.HWID).
-		Scan(&revoked, &currentExpiry)
+	err := s.db.QueryRow(`SELECT revoked, expires_at, is_trial FROM activations WHERE hwid = ?`, req.HWID).
+		Scan(&revoked, &currentExpiry, &currentIsTrial)
 	existing := err == nil
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		deny(w, http.StatusInternalServerError, "server error")
@@ -425,9 +438,12 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		deny(w, http.StatusForbidden, "this machine has been revoked")
 		return
 	}
-	if existing {
+	// A machine on trial can always redeem a key - that's the whole point of
+	// letting people buy from inside the app on day two rather than making
+	// them wait for the trial to run out.
+	if existing && currentIsTrial == 0 {
 		if exp, ok := parseExpiry(currentExpiry); !ok {
-			// A pre-expiry, never-expires licence. Nothing to renew.
+			// A pre-expiry, never-expires license. Nothing to renew.
 			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "status": "already_activated"})
 			return
 		} else if daysLeft(exp) > 7 {
@@ -443,10 +459,16 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extends from the current expiry when renewing early, so no paid days
-	// are thrown away.
-	expiry := renewedExpiry(currentExpiry).Format(time.RFC3339)
+	// are thrown away. Upgrading from a trial starts the six months fresh
+	// instead: trial days weren't paid for, and starting now is what the
+	// customer expects when they hand over money.
+	from := currentExpiry
+	if currentIsTrial != 0 {
+		from = ""
+	}
+	expiry := renewedExpiry(from).Format(time.RFC3339)
 	status := "activated"
-	if existing {
+	if existing && currentIsTrial == 0 {
 		status = "renewed"
 	}
 
@@ -491,7 +513,7 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 
 		// A key the customer bought. Polar owns it: it checks the key is
 		// real and unspent, burns one of its activation slots if it has
-		// them, and tells us when the licence runs out.
+		// them, and tells us when the license runs out.
 		act, err := s.activatePolarKey(key, req.HWID)
 		if err != nil {
 			switch {
@@ -504,7 +526,7 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 				// blaming the customer's key, and don't record anything.
 				log.Printf("polar: activation failed for hwid=%s: %v", req.HWID, err)
 				deny(w, http.StatusBadGateway,
-					"couldn't reach the licence service just now - please try again in a minute")
+					"couldn't reach the license service just now - please try again in a minute")
 			}
 			return
 		}
@@ -514,10 +536,13 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := tx.Exec(`
-		INSERT INTO activations (hwid, os, key, activated_at, expires_at, polar_activation_id)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO activations (hwid, os, key, activated_at, expires_at, polar_activation_id, is_trial)
+		VALUES (?, ?, ?, ?, ?, ?, 0)
 		ON CONFLICT(hwid) DO UPDATE SET key = excluded.key, expires_at = excluded.expires_at,
-			os = excluded.os, polar_activation_id = excluded.polar_activation_id`,
+			os = excluded.os, polar_activation_id = excluded.polar_activation_id,
+			-- paying clears the trial flag, otherwise the customer keeps
+			-- seeing the trial countdown after they've bought
+			is_trial = 0`,
 		req.HWID, normOS(req.OS), key, now(), expiry, polarActivationID); err != nil {
 		deny(w, http.StatusInternalServerError, "server error")
 		return
@@ -537,6 +562,65 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /trial/<hwid>   body: {"os":"windows"}
+//
+// Starts the one free trial this machine is allowed. There is nothing on
+// the customer's disk to tamper with: the trial is a row here, and the
+// expiry it produces is delivered through the same signed /authentificate
+// answer as a paid license. Reinstalling, clearing settings or moving the
+// clock changes nothing.
+//
+// One trial per machine FOREVER - including after it has expired. That's
+// the whole point: an expired trial must not be restartable.
+func (s *server) handleTrial(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		deny(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	hwid := strings.TrimPrefix(r.URL.Path, "/trial/")
+	if hwid == "" || len(hwid) > 128 {
+		deny(w, http.StatusBadRequest, "missing hwid")
+		return
+	}
+
+	var req struct {
+		OS string `json:"os"`
+	}
+	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
+
+	var existingTrial int
+	err := s.db.QueryRow(`SELECT is_trial FROM activations WHERE hwid = ?`, hwid).Scan(&existingTrial)
+	if err == nil {
+		// Already known. Either it's licensed (nothing to do) or its trial
+		// has been used - both mean no new trial.
+		if existingTrial != 0 {
+			deny(w, http.StatusForbidden, "the free trial has already been used on this computer")
+		} else {
+			deny(w, http.StatusForbidden, "this computer already has a license")
+		}
+		return
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		deny(w, http.StatusInternalServerError, "server error")
+		return
+	}
+
+	expiry := time.Now().UTC().AddDate(0, 0, trialDays).Format(time.RFC3339)
+	// INSERT without ON CONFLICT: if two requests race, the second fails on
+	// the primary key rather than silently extending the first one's trial.
+	if _, err := s.db.Exec(`
+		INSERT INTO activations (hwid, os, key, activated_at, expires_at, is_trial)
+		VALUES (?, ?, '', ?, ?, 1)`,
+		hwid, normOS(req.OS), now(), expiry); err != nil {
+		deny(w, http.StatusForbidden, "the free trial has already been used on this computer")
+		return
+	}
+
+	log.Printf("trial started hwid=%s os=%s until=%s", hwid, normOS(req.OS), expiry)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok": true, "status": "trial", "expires_at": expiry, "days_left": trialDays,
+	})
+}
+
 // GET /authentificate/<hwid>
 //
 // The everyday call: netvis asks on each launch whether this machine may
@@ -549,10 +633,10 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var osName, at, expiresAt string
-	var revoked int
+	var revoked, isTrial int
 	err := s.db.QueryRow(
-		`SELECT os, activated_at, expires_at, revoked FROM activations WHERE hwid = ?`, hwid).
-		Scan(&osName, &at, &expiresAt, &revoked)
+		`SELECT os, activated_at, expires_at, revoked, is_trial FROM activations WHERE hwid = ?`, hwid).
+		Scan(&osName, &at, &expiresAt, &revoked, &isTrial)
 	if errors.Is(err, sql.ErrNoRows) {
 		deny(w, http.StatusForbidden, "not activated")
 		return
@@ -566,24 +650,56 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]any{"ok": true, "os": osName, "activated_at": at}
+	resp := map[string]any{"ok": true, "os": osName, "activated_at": at, "trial": isTrial != 0}
+
+	// The client sends a fresh nonce per launch and the signature covers
+	// it, so yesterday's captured "yes" is worthless today.
+	nonce := r.URL.Query().Get("n")
+	if len(nonce) > 128 {
+		deny(w, http.StatusBadRequest, "bad nonce")
+		return
+	}
 	if exp, ok := parseExpiry(expiresAt); ok {
 		if time.Now().After(exp) {
-			// The distinct error matters: the client can tell "your licence
-			// ran out, here's how to renew" apart from "never activated".
+			// The distinct error matters: the client can tell "your license
+			// ran out, here's how to renew" apart from "never activated",
+			// and an expired trial gets its own wording again.
 			writeJSON(w, http.StatusForbidden, map[string]any{
 				"ok": false, "error": "expired", "expires_at": expiresAt,
+				"trial": isTrial != 0,
 			})
 			return
 		}
 		resp["expires_at"] = expiresAt
 		resp["days_left"] = daysLeft(exp)
 	}
+
+	if s.signKey != nil {
+		sig, err := signAnswer(s.signKey, hwid, expiresAt, nonce)
+		if err != nil {
+			log.Printf("signing failed: %v", err)
+			deny(w, http.StatusInternalServerError, "server error")
+			return
+		}
+		resp["nonce"] = nonce
+		resp["sig"] = sig
+	}
 	writeJSON(w, http.StatusOK, resp)
 }
 
 func cmdServe(cfg Config, db *sql.DB) {
 	s := &server{db: db, cfg: cfg}
+	if cfg.ResponsePrivateKey != "" {
+		key, err := parseSigningKey(cfg.ResponsePrivateKey)
+		if err != nil {
+			log.Fatalf("response_private_key: %v", err)
+		}
+		s.signKey = key
+		log.Print("answers to /authentificate will be signed")
+	} else {
+		log.Print("WARNING: no response_private_key set - answers are unsigned, and any")
+		log.Print("client built with a public key will refuse them. Run: licensing genkeys")
+	}
 	mux := http.NewServeMux()
 
 	// Licensing API. Strictly limited - a client only ever makes one of
@@ -591,6 +707,7 @@ func cmdServe(cfg Config, db *sql.DB) {
 	api := newLimiter(cfg.RateLimitPerMinute)
 	mux.Handle("/validate/", rateLimited(http.HandlerFunc(s.handleValidate), api, cfg.TrustProxy))
 	mux.Handle("/authentificate/", rateLimited(http.HandlerFunc(s.handleAuthentificate), api, cfg.TrustProxy))
+	mux.Handle("/trial/", rateLimited(http.HandlerFunc(s.handleTrial), api, cfg.TrustProxy))
 
 	// The website, on its own much looser limit: one page view is already
 	// several requests (html, css, screenshot, icon), so the API's budget
@@ -615,9 +732,19 @@ func cmdServe(cfg Config, db *sql.DB) {
 
 
 	// Release downloads come off the disk, from a downloads/ folder beside
-	// the binary, so publishing a new netvis.exe is a file copy.
-	mux.Handle("/downloads/", rateLimited(
-		http.StripPrefix("/downloads/", http.FileServer(http.Dir("downloads"))), pages, cfg.TrustProxy))
+	// the binary, so publishing a new build is a file copy.
+	//
+	// Directory listings are turned off: by default Go's file server renders
+	// an index for /downloads/, which lets anyone browse what's there -
+	// including builds that aren't announced yet.
+	downloads := http.StripPrefix("/downloads/", http.FileServer(http.Dir("downloads")))
+	mux.Handle("/downloads/", rateLimited(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		downloads.ServeHTTP(w, r)
+	}), pages, cfg.TrustProxy))
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
@@ -708,7 +835,7 @@ func cmdKeys(db *sql.DB) {
 
 func cmdUsers(db *sql.DB) {
 	rows, err := db.Query(
-		`SELECT hwid, os, activated_at, expires_at, revoked FROM activations ORDER BY activated_at`)
+		`SELECT hwid, os, activated_at, expires_at, revoked, is_trial FROM activations ORDER BY activated_at`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -718,8 +845,8 @@ func cmdUsers(db *sql.DB) {
 	total, live := 0, 0
 	for rows.Next() {
 		var hwid, osName, at, expiresAt string
-		var revoked int
-		if err := rows.Scan(&hwid, &osName, &at, &expiresAt, &revoked); err != nil {
+		var revoked, isTrial int
+		if err := rows.Scan(&hwid, &osName, &at, &expiresAt, &revoked, &isTrial); err != nil {
 			log.Fatal(err)
 		}
 		total++
@@ -736,6 +863,9 @@ func cmdUsers(db *sql.DB) {
 		default:
 			state = fmt.Sprintf("active, %d days left", daysLeft(exp))
 			live++
+		}
+		if isTrial != 0 {
+			state = "TRIAL - " + state
 		}
 		fmt.Printf("%-24s  %-8s  %-22s  %s\n", hwid, osName, at, state)
 	}
@@ -821,6 +951,7 @@ func usage() {
   forget <hwid>         delete a machine's activation so it can be
                         licensed again from scratch (reinstalls, testing)
   delkey <key>          destroy an unused key
+  genkeys               create the key that signs license answers
   polarcheck <key>      ask Polar about a key and print its raw answer -
                         use this when an activation is refused
 
@@ -860,6 +991,8 @@ func main() {
 		setRevoked(db, need("hwid"), false)
 	case "forget":
 		cmdForget(&server{db: db, cfg: cfg}, need("hwid"))
+	case "genkeys":
+		cmdGenKeys()
 	case "polarcheck":
 		cmdPolarCheck(&server{db: db, cfg: cfg}, need("key"))
 	case "delkey":

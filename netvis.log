@@ -2310,3 +2310,423 @@
 2026/08/15 19:16:29 license: hwid computed
 2026/08/15 19:16:30 license: not licensed (http 403)
 2026/08/15 19:16:32 netvis: not licensed, exiting
+2026/08/15 19:16:36 netvis starting
+2026/08/15 19:16:36 netvis: DnsFlushResolverCache -> ok
+2026/08/15 19:16:36 netvis: DPI scale = 1.25
+2026/08/15 19:16:36 license: hwid computed
+2026/08/15 19:16:36 license: not licensed (http 403)
+2026/08/15 19:16:39 license: activated this machine
+2026/08/15 19:16:39 license: activation succeeded, starting netvis
+2026/08/15 19:16:39 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 19:16:39 monitor: capture started
+2026/08/15 19:16:39 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 19:16:39 blocker: disabled
+2026/08/15 19:16:46 blocker: disabled, passing everything through
+2026/08/15 19:16:53 blocker: disabled, passing everything through
+2026/08/15 19:16:59 blocker: disabled, passing everything through
+2026/08/15 19:17:20 blocker: disabled, passing everything through
+2026/08/15 19:17:27 blocker: disabled, passing everything through
+2026/08/15 19:17:35 blocker: disabled, passing everything through
+2026/08/15 19:17:41 blocker: disabled, passing everything through
+2026/08/15 19:17:49 blocker: disabled, passing everything through
+2026/08/15 19:18:00 blocker: disabled, passing everything through
+2026/08/15 19:18:09 blocker: disabled, passing everything through
+2026/08/15 19:18:20 blocker: disabled, passing everything through
+2026/08/15 19:18:25 blocker: disabled, passing everything through
+2026/08/15 19:18:38 blocker: disabled, passing everything through
+2026/08/15 19:18:46 blocker: disabled, passing everything through
+2026/08/15 19:19:55 blocker: disabled, passing everything through
+2026/08/15 19:20:12 blocker: disabled, passing everything through
+2026/08/15 19:20:20 blocker: disabled, passing everything through
+2026/08/15 19:20:27 blocker: disabled, passing everything through
+2026/08/15 19:20:33 blocker: disabled, passing everything through
+2026/08/15 19:20:47 blocker: disabled, passing everything through
+2026/08/15 19:20:55 blocker: disabled, passing everything through
+2026/08/15 19:21:26 blocker: disabled, passing everything through
+2026/08/15 19:21:33 blocker: disabled, passing everything through
+2026/08/15 19:22:21 blocker: disabled, passing everything through
+2026/08/15 19:22:26 blocker: disabled, passing everything through
+2026/08/15 19:22:54 blocker: disabled, passing everything through
+2026/08/15 19:24:59 blocker: disabled, passing everything through
+2026/08/15 19:26:14 blocker: disabled, passing everything through
+2026/08/15 19:26:24 blocker: disabled, passing everything through
+2026/08/15 19:27:24 blocker: disabled, passing everything through
+2026/08/15 19:27:49 blocker: disabled, passing everything through
+2026/08/15 19:27:54 blocker: disabled, passing everything through
+2026/08/15 19:28:03 blocker: disabled, passing everything through
+2026/08/15 19:28:11 blocker: disabled, passing everything through
+2026/08/15 19:28:18 blocker: disabled, passing everything through
+2026/08/15 19:28:25 blocker: disabled, passing everything through
+2026/08/15 19:28:55 blocker: disabled, passing everything through
+2026/08/15 19:29:12 blocker: disabled, passing everything through
+2026/08/15 19:29:34 blocker: disabled, passing everything through
+2026/08/15 19:29:55 blocker: disabled, passing everything through
+2026/08/15 19:30:56 blocker: disabled, passing everything through
+2026/08/15 19:31:09 blocker: disabled, passing everything through
+2026/08/15 19:31:24 blocker: disabled, passing everything through
+2026/08/15 19:31:47 blocker: disabled, passing everything through
+2026/08/15 19:32:32 blocker: disabled, passing everything through
+2026/08/15 19:32:44 blocker: disabled, passing everything through
+2026/08/15 19:32:50 blocker: disabled, passing everything through
+2026/08/15 19:33:00 blocker: disabled, passing everything through
+2026/08/15 19:33:17 blocker: disabled, passing everything through
+2026/08/15 19:33:29 blocker: disabled, passing everything through
+2026/08/15 19:33:34 blocker: disabled, passing everything through
+2026/08/15 19:33:39 blocker: disabled, passing everything through
+2026/08/15 19:34:18 blocker: disabled, passing everything through
+2026/08/15 19:34:18 alert: AppHostRegistrationVerifier.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/15 19:34:23 blocker: disabled, passing everything through
+2026/08/15 19:34:43 blocker: disabled, passing everything through
+2026/08/15 19:35:32 blocker: disabled, passing everything through
+2026/08/15 19:35:54 blocker: disabled, passing everything through
+2026/08/15 19:36:04 blocker: disabled, passing everything through
+2026/08/15 19:36:25 blocker: disabled, passing everything through
+2026/08/15 19:36:53 blocker: disabled, passing everything through
+2026/08/15 19:37:37 blocker: disabled, passing everything through
+2026/08/15 19:37:55 blocker: disabled, passing everything through
+2026/08/15 19:38:13 blocker: disabled, passing everything through
+2026/08/15 19:38:25 blocker: disabled, passing everything through
+2026/08/15 19:38:36 blocker: disabled, passing everything through
+2026/08/15 19:38:41 blocker: disabled, passing everything through
+2026/08/15 19:38:47 blocker: disabled, passing everything through
+2026/08/15 19:38:55 blocker: disabled, passing everything through
+2026/08/15 19:39:01 blocker: disabled, passing everything through
+2026/08/15 19:39:31 blocker: disabled, passing everything through
+2026/08/15 19:40:17 blocker: disabled, passing everything through
+2026/08/15 19:40:27 blocker: disabled, passing everything through
+2026/08/15 19:41:10 blocker: disabled, passing everything through
+2026/08/15 19:41:33 blocker: disabled, passing everything through
+2026/08/15 19:42:33 blocker: disabled, passing everything through
+2026/08/15 19:42:55 blocker: disabled, passing everything through
+2026/08/15 19:43:41 blocker: disabled, passing everything through
+2026/08/15 19:43:57 blocker: disabled, passing everything through
+2026/08/15 19:44:11 blocker: disabled, passing everything through
+2026/08/15 19:44:29 blocker: disabled, passing everything through
+2026/08/15 19:45:46 netvis starting
+2026/08/15 19:45:46 netvis: DnsFlushResolverCache -> ok
+2026/08/15 19:45:46 netvis: DPI scale = 1.25
+2026/08/15 19:45:46 license: hwid computed
+2026/08/15 19:45:46 license: not licensed (http 502)
+2026/08/15 19:47:15 netvis: not licensed, exiting
+2026/08/15 19:47:29 netvis starting
+2026/08/15 19:47:29 netvis: DnsFlushResolverCache -> ok
+2026/08/15 19:47:29 netvis: DPI scale = 1.25
+2026/08/15 19:47:29 license: hwid computed
+2026/08/15 19:47:30 license: machine is licensed (183 days left)
+2026/08/15 19:47:30 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 19:47:30 monitor: capture started
+2026/08/15 19:47:30 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 19:47:30 blocker: disabled
+2026/08/15 19:47:39 netvis starting
+2026/08/15 19:47:39 netvis: another instance is already running - signalling it and exiting
+2026/08/15 19:47:39 license: machine is licensed (183 days left)
+2026/08/15 19:47:49 blocker: disabled, passing everything through
+2026/08/15 19:47:55 blocker: disabled, passing everything through
+2026/08/15 19:48:18 blocker: disabled, passing everything through
+2026/08/15 19:48:32 blocker: disabled, passing everything through
+2026/08/15 19:48:37 blocker: disabled, passing everything through
+2026/08/15 19:49:05 blocker: disabled, passing everything through
+2026/08/15 19:49:52 blocker: disabled, passing everything through
+2026/08/15 19:50:07 blocker: disabled, passing everything through
+2026/08/15 19:51:15 netvis starting
+2026/08/15 19:51:15 netvis: DnsFlushResolverCache -> ok
+2026/08/15 19:51:15 netvis: DPI scale = 1.25
+2026/08/15 19:51:15 license: hwid computed
+2026/08/15 19:51:15 license: machine is licensed (183 days left)
+2026/08/15 19:51:15 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 19:51:15 monitor: capture started
+2026/08/15 19:51:15 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 19:51:15 blocker: disabled
+2026/08/15 19:51:35 blocker: disabled, passing everything through
+2026/08/15 19:51:47 blocker: disabled, passing everything through
+2026/08/15 19:51:56 blocker: disabled, passing everything through
+2026/08/15 19:52:09 blocker: disabled, passing everything through
+2026/08/15 19:52:15 blocker: disabled, passing everything through
+2026/08/15 19:52:23 blocker: disabled, passing everything through
+2026/08/15 19:52:34 blocker: disabled, passing everything through
+2026/08/15 19:52:56 blocker: disabled, passing everything through
+2026/08/15 19:53:16 blocker: disabled, passing everything through
+2026/08/15 19:53:41 blocker: disabled, passing everything through
+2026/08/15 19:54:07 blocker: disabled, passing everything through
+2026/08/15 19:54:24 blocker: disabled, passing everything through
+2026/08/15 19:54:33 blocker: disabled, passing everything through
+2026/08/15 19:54:55 blocker: disabled, passing everything through
+2026/08/15 19:55:25 blocker: disabled, passing everything through
+2026/08/15 19:55:34 blocker: disabled, passing everything through
+2026/08/15 19:55:43 blocker: disabled, passing everything through
+2026/08/15 19:55:59 blocker: disabled, passing everything through
+2026/08/15 19:56:34 blocker: disabled, passing everything through
+2026/08/15 19:57:14 blocker: disabled, passing everything through
+2026/08/15 19:57:21 blocker: disabled, passing everything through
+2026/08/15 19:57:30 blocker: disabled, passing everything through
+2026/08/15 19:57:50 blocker: disabled, passing everything through
+2026/08/15 19:57:56 blocker: disabled, passing everything through
+2026/08/15 19:58:25 blocker: disabled, passing everything through
+2026/08/15 19:58:49 blocker: disabled, passing everything through
+2026/08/15 19:59:05 blocker: disabled, passing everything through
+2026/08/15 19:59:25 blocker: disabled, passing everything through
+2026/08/15 19:59:35 blocker: disabled, passing everything through
+2026/08/15 19:59:41 blocker: disabled, passing everything through
+2026/08/15 20:00:33 blocker: disabled, passing everything through
+2026/08/15 20:01:19 blocker: disabled, passing everything through
+2026/08/15 20:01:36 blocker: disabled, passing everything through
+2026/08/15 20:01:53 netvis starting
+2026/08/15 20:01:53 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:01:53 netvis: DPI scale = 1.25
+2026/08/15 20:01:53 license: hwid computed
+2026/08/15 20:01:53 license: machine is licensed (183 days left)
+2026/08/15 20:01:53 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:01:53 monitor: capture started
+2026/08/15 20:01:53 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:01:53 blocker: disabled
+2026/08/15 20:01:58 blocker: disabled, passing everything through
+2026/08/15 20:02:06 blocker: disabled, passing everything through
+2026/08/15 20:02:26 blocker: disabled, passing everything through
+2026/08/15 20:02:35 blocker: disabled, passing everything through
+2026/08/15 20:02:49 blocker: disabled, passing everything through
+2026/08/15 20:02:56 blocker: disabled, passing everything through
+2026/08/15 20:03:03 blocker: disabled, passing everything through
+2026/08/15 20:03:16 blocker: disabled, passing everything through
+2026/08/15 20:03:45 blocker: disabled, passing everything through
+2026/08/15 20:03:59 blocker: disabled, passing everything through
+2026/08/15 20:04:43 blocker: disabled, passing everything through
+2026/08/15 20:05:18 netvis starting
+2026/08/15 20:05:18 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:05:18 netvis: DPI scale = 1.25
+2026/08/15 20:05:18 license: hwid computed
+2026/08/15 20:05:18 license: machine is licensed (183 days left)
+2026/08/15 20:05:18 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:05:18 monitor: capture started
+2026/08/15 20:05:18 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:05:18 blocker: disabled
+2026/08/15 20:05:45 netvis starting
+2026/08/15 20:05:45 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:05:45 netvis: DPI scale = 1.25
+2026/08/15 20:05:45 license: hwid computed
+2026/08/15 20:05:45 license: machine is licensed (183 days left)
+2026/08/15 20:05:45 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:05:45 monitor: capture started
+2026/08/15 20:05:45 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:05:45 blocker: disabled
+2026/08/15 20:05:52 netvis starting
+2026/08/15 20:05:52 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:05:52 license: machine is licensed (183 days left)
+2026/08/15 20:06:16 blocker: disabled, passing everything through
+2026/08/15 20:06:40 license: machine is licensed (183 days left)
+2026/08/15 20:06:45 netvis starting
+2026/08/15 20:06:45 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:06:46 license: machine is licensed (183 days left)
+2026/08/15 20:07:01 blocker: disabled, passing everything through
+2026/08/15 20:07:27 blocker: disabled, passing everything through
+2026/08/15 20:07:44 blocker: disabled, passing everything through
+2026/08/15 20:07:49 blocker: disabled, passing everything through
+2026/08/15 20:07:56 blocker: disabled, passing everything through
+2026/08/15 20:08:08 blocker: disabled, passing everything through
+2026/08/15 20:08:14 blocker: disabled, passing everything through
+2026/08/15 20:08:51 blocker: disabled, passing everything through
+2026/08/15 20:09:37 blocker: disabled, passing everything through
+2026/08/15 20:09:58 blocker: disabled, passing everything through
+2026/08/15 20:10:05 blocker: disabled, passing everything through
+2026/08/15 20:10:38 blocker: disabled, passing everything through
+2026/08/15 20:10:55 blocker: disabled, passing everything through
+2026/08/15 20:11:19 blocker: disabled, passing everything through
+2026/08/15 20:11:26 blocker: disabled, passing everything through
+2026/08/15 20:11:34 blocker: disabled, passing everything through
+2026/08/15 20:12:06 blocker: disabled, passing everything through
+2026/08/15 20:12:32 blocker: disabled, passing everything through
+2026/08/15 20:12:38 blocker: disabled, passing everything through
+2026/08/15 20:12:57 blocker: disabled, passing everything through
+2026/08/15 20:13:26 blocker: disabled, passing everything through
+2026/08/15 20:13:31 blocker: disabled, passing everything through
+2026/08/15 20:13:48 blocker: disabled, passing everything through
+2026/08/15 20:13:58 blocker: disabled, passing everything through
+2026/08/15 20:14:08 blocker: disabled, passing everything through
+2026/08/15 20:14:13 blocker: disabled, passing everything through
+2026/08/15 20:15:23 blocker: disabled, passing everything through
+2026/08/15 20:15:39 blocker: disabled, passing everything through
+2026/08/15 20:15:54 blocker: disabled, passing everything through
+2026/08/15 20:16:36 blocker: disabled, passing everything through
+2026/08/15 20:16:50 blocker: disabled, passing everything through
+2026/08/15 20:16:56 blocker: disabled, passing everything through
+2026/08/15 20:17:32 blocker: disabled, passing everything through
+2026/08/15 20:17:44 blocker: disabled, passing everything through
+2026/08/15 20:17:57 blocker: disabled, passing everything through
+2026/08/15 20:18:52 blocker: disabled, passing everything through
+2026/08/15 20:18:58 blocker: disabled, passing everything through
+2026/08/15 20:19:03 blocker: disabled, passing everything through
+2026/08/15 20:19:30 blocker: disabled, passing everything through
+2026/08/15 20:19:36 blocker: disabled, passing everything through
+2026/08/15 20:19:47 blocker: disabled, passing everything through
+2026/08/15 20:20:05 blocker: disabled, passing everything through
+2026/08/15 20:20:45 blocker: disabled, passing everything through
+2026/08/15 20:21:24 blocker: disabled, passing everything through
+2026/08/15 20:21:43 blocker: disabled, passing everything through
+2026/08/15 20:22:17 blocker: disabled, passing everything through
+2026/08/15 20:22:34 blocker: disabled, passing everything through
+2026/08/15 20:22:40 blocker: disabled, passing everything through
+2026/08/15 20:22:57 blocker: disabled, passing everything through
+2026/08/15 20:22:58 alert: GWCtlSrv.exe started listening - Accepting incoming connections on TCP port 60850.
+2026/08/15 20:23:06 blocker: disabled, passing everything through
+2026/08/15 20:23:11 blocker: disabled, passing everything through
+2026/08/15 20:23:18 blocker: disabled, passing everything through
+2026/08/15 20:23:26 blocker: disabled, passing everything through
+2026/08/15 20:23:41 blocker: disabled, passing everything through
+2026/08/15 20:24:08 blocker: disabled, passing everything through
+2026/08/15 20:24:14 blocker: disabled, passing everything through
+2026/08/15 20:24:21 blocker: disabled, passing everything through
+2026/08/15 20:24:42 blocker: disabled, passing everything through
+2026/08/15 20:25:03 netvis starting
+2026/08/15 20:25:03 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:25:03 netvis: DPI scale = 1.25
+2026/08/15 20:25:03 license: hwid computed
+2026/08/15 20:25:03 license: machine is licensed (paid, 183 days left)
+2026/08/15 20:25:03 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:25:03 monitor: capture started
+2026/08/15 20:25:03 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:25:03 blocker: disabled
+2026/08/15 20:25:13 blocker: disabled, passing everything through
+2026/08/15 20:25:17 alert: ssh.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/15 20:25:22 blocker: disabled, passing everything through
+2026/08/15 20:26:06 blocker: disabled, passing everything through
+2026/08/15 20:26:19 netvis starting
+2026/08/15 20:26:19 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:26:19 blocker: disabled, passing everything through
+2026/08/15 20:26:20 license: not licensed (http 403)
+2026/08/15 20:26:25 blocker: disabled, passing everything through
+2026/08/15 20:26:29 license: trial refused (http 404)
+2026/08/15 20:26:47 blocker: disabled, passing everything through
+2026/08/15 20:27:07 blocker: disabled, passing everything through
+2026/08/15 20:27:25 blocker: disabled, passing everything through
+2026/08/15 20:27:32 blocker: disabled, passing everything through
+2026/08/15 20:27:38 blocker: disabled, passing everything through
+2026/08/15 20:27:49 blocker: disabled, passing everything through
+2026/08/15 20:27:58 blocker: disabled, passing everything through
+2026/08/15 20:28:22 blocker: disabled, passing everything through
+2026/08/15 20:28:28 blocker: disabled, passing everything through
+2026/08/15 20:29:15 blocker: disabled, passing everything through
+2026/08/15 20:29:35 blocker: disabled, passing everything through
+2026/08/15 20:29:42 blocker: disabled, passing everything through
+2026/08/15 20:29:49 blocker: disabled, passing everything through
+2026/08/15 20:35:21 netvis starting
+2026/08/15 20:35:21 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:35:21 netvis: DPI scale = 1.25
+2026/08/15 20:35:21 license: hwid computed
+2026/08/15 20:35:21 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:35:21 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:35:21 monitor: capture started
+2026/08/15 20:35:21 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:35:21 blocker: disabled
+2026/08/15 20:35:58 blocker: disabled, passing everything through
+2026/08/15 20:36:11 blocker: disabled, passing everything through
+2026/08/15 20:36:26 blocker: disabled, passing everything through
+2026/08/15 20:36:40 alert: ssh.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/15 20:36:46 blocker: disabled, passing everything through
+2026/08/15 20:36:52 blocker: disabled, passing everything through
+2026/08/15 20:37:04 blocker: disabled, passing everything through
+2026/08/15 20:37:10 blocker: disabled, passing everything through
+2026/08/15 20:37:17 blocker: disabled, passing everything through
+2026/08/15 20:37:37 blocker: disabled, passing everything through
+2026/08/15 20:37:54 blocker: disabled, passing everything through
+2026/08/15 20:38:01 blocker: disabled, passing everything through
+2026/08/15 20:38:20 blocker: disabled, passing everything through
+2026/08/15 20:38:26 blocker: disabled, passing everything through
+2026/08/15 20:38:34 blocker: disabled, passing everything through
+2026/08/15 20:38:59 blocker: disabled, passing everything through
+2026/08/15 20:39:17 netvis starting
+2026/08/15 20:39:17 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:39:17 netvis: DPI scale = 1.25
+2026/08/15 20:39:17 license: hwid computed
+2026/08/15 20:39:18 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:39:18 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:39:18 monitor: capture started
+2026/08/15 20:39:18 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:39:18 blocker: disabled
+2026/08/15 20:39:29 blocker: disabled, passing everything through
+2026/08/15 20:39:41 blocker: disabled, passing everything through
+2026/08/15 20:39:51 blocker: disabled, passing everything through
+2026/08/15 20:39:57 blocker: disabled, passing everything through
+2026/08/15 20:40:17 blocker: disabled, passing everything through
+2026/08/15 20:40:30 blocker: disabled, passing everything through
+2026/08/15 20:40:35 blocker: disabled, passing everything through
+2026/08/15 20:41:41 blocker: disabled, passing everything through
+2026/08/15 20:42:25 netvis starting
+2026/08/15 20:42:25 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:42:25 netvis: DPI scale = 1.25
+2026/08/15 20:42:25 license: hwid computed
+2026/08/15 20:42:25 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:42:25 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:42:25 monitor: capture started
+2026/08/15 20:42:25 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:42:25 blocker: disabled
+2026/08/15 20:42:26 blocker: disabled, passing everything through
+2026/08/15 20:42:35 blocker: disabled, passing everything through
+2026/08/15 20:42:50 blocker: disabled, passing everything through
+2026/08/15 20:42:56 blocker: disabled, passing everything through
+2026/08/15 20:43:14 blocker: disabled, passing everything through
+2026/08/15 20:43:34 blocker: disabled, passing everything through
+2026/08/15 20:43:43 blocker: disabled, passing everything through
+2026/08/15 20:43:56 blocker: disabled, passing everything through
+2026/08/15 20:44:05 blocker: disabled, passing everything through
+2026/08/15 20:44:29 blocker: disabled, passing everything through
+2026/08/15 20:44:50 blocker: disabled, passing everything through
+2026/08/15 20:45:00 blocker: disabled, passing everything through
+2026/08/15 20:45:18 netvis starting
+2026/08/15 20:45:18 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:45:18 netvis: DPI scale = 1.25
+2026/08/15 20:45:18 license: hwid computed
+2026/08/15 20:45:18 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:45:18 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:45:18 monitor: capture started
+2026/08/15 20:45:18 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:45:18 blocker: disabled
+2026/08/15 20:45:18 blocker: disabled, passing everything through
+2026/08/15 20:45:32 blocker: disabled, passing everything through
+2026/08/15 20:45:35 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:45:35 license: activated this machine
+2026/08/15 20:45:47 netvis starting
+2026/08/15 20:45:47 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:45:48 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:46:00 blocker: disabled, passing everything through
+2026/08/15 20:46:13 blocker: disabled, passing everything through
+2026/08/15 20:46:22 blocker: disabled, passing everything through
+2026/08/15 20:46:37 blocker: disabled, passing everything through
+2026/08/15 20:47:04 blocker: disabled, passing everything through
+2026/08/15 20:47:49 blocker: disabled, passing everything through
+2026/08/15 20:47:59 blocker: disabled, passing everything through
+2026/08/15 20:48:05 blocker: disabled, passing everything through
+2026/08/15 20:48:38 netvis starting
+2026/08/15 20:48:38 netvis: DnsFlushResolverCache -> ok
+2026/08/15 20:48:38 netvis: DPI scale = 1.25
+2026/08/15 20:48:38 license: hwid computed
+2026/08/15 20:48:38 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:48:38 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/15 20:48:38 monitor: capture started
+2026/08/15 20:48:38 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/15 20:48:38 blocker: disabled
+2026/08/15 20:48:44 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:48:44 license: activated this machine (trial=1, 13 days)
+2026/08/15 20:48:56 netvis starting
+2026/08/15 20:48:56 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:48:56 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:48:57 blocker: disabled, passing everything through
+2026/08/15 20:49:05 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:49:05 license: activated this machine (trial=1, 13 days)
+2026/08/15 20:49:08 blocker: disabled, passing everything through
+2026/08/15 20:49:23 blocker: disabled, passing everything through
+2026/08/15 20:49:32 blocker: disabled, passing everything through
+2026/08/15 20:49:42 blocker: disabled, passing everything through
+2026/08/15 20:50:00 blocker: disabled, passing everything through
+2026/08/15 20:50:02 alert: ssh.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/15 20:50:10 blocker: disabled, passing everything through
+2026/08/15 20:50:42 blocker: disabled, passing everything through
+2026/08/15 20:50:56 blocker: disabled, passing everything through
+2026/08/15 20:51:12 blocker: disabled, passing everything through
+2026/08/15 20:51:56 blocker: disabled, passing everything through
+2026/08/15 20:52:06 netvis starting
+2026/08/15 20:52:06 netvis: another instance is already running - signalling it and exiting
+2026/08/15 20:52:06 blocker: disabled, passing everything through
+2026/08/15 20:52:06 license: machine is licensed (trial, 13 days left)
+2026/08/15 20:52:13 blocker: disabled, passing everything through
+2026/08/15 20:52:22 blocker: disabled, passing everything through
+2026/08/15 20:52:28 blocker: disabled, passing everything through
+2026/08/15 20:52:35 blocker: disabled, passing everything through

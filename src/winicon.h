@@ -14,3 +14,8 @@ struct IconPixels {
 };
 
 IconPixels ExtractIconRGBA(const std::string& exePath);
+
+// Same conversion, but from an icon handle you already have - used for
+// netvis's own icon, which comes from the exe's resources rather than from
+// a file on disk. Does not take ownership of the handle.
+IconPixels IconFromHICON(void* hIcon);

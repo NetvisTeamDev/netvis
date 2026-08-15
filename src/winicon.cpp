@@ -19,28 +19,22 @@ std::wstring WidenUtf8(const std::string& s) {
 
 } // namespace
 
-IconPixels ExtractIconRGBA(const std::string& exePath) {
-    IconPixels out;
-    std::wstring wpath = WidenUtf8(exePath);
-    if (wpath.empty()) return out;
+namespace {
 
-    // Large (32x32) icon rather than small (16x16): the table draws icons
-    // DPI-scaled (16 * up to 2x), so a 32px source downscales cleanly
-    // instead of a 16px source blurring as it's stretched up.
-    SHFILEINFOW sfi = {};
-    if (!SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON))
-        return out;
-    HICON hIcon = sfi.hIcon;
+// The half that turns an icon handle into pixels. Shared by the two public
+// entry points; `owned` says whether to destroy the handle afterwards.
+IconPixels ConvertIcon(HICON hIcon, bool owned) {
+    IconPixels out;
     if (!hIcon) return out;
 
     ICONINFO info = {};
-    if (!GetIconInfo(hIcon, &info)) { DestroyIcon(hIcon); return out; }
+    if (!GetIconInfo(hIcon, &info)) { if (owned) DestroyIcon(hIcon); return out; }
 
     BITMAP bmp = {};
     if (!GetObjectW(info.hbmColor, sizeof(bmp), &bmp)) {
         if (info.hbmColor) DeleteObject(info.hbmColor);
         if (info.hbmMask) DeleteObject(info.hbmMask);
-        DestroyIcon(hIcon);
+        if (owned) DestroyIcon(hIcon);
         return out;
     }
 
@@ -61,7 +55,7 @@ IconPixels ExtractIconRGBA(const std::string& exePath) {
 
     if (info.hbmColor) DeleteObject(info.hbmColor);
     if (info.hbmMask) DeleteObject(info.hbmMask);
-    DestroyIcon(hIcon);
+    if (owned) DestroyIcon(hIcon);
     if (got == 0) return out;
 
     // Many small icons have no real alpha channel (all zero) - in that
@@ -83,4 +77,37 @@ IconPixels ExtractIconRGBA(const std::string& exePath) {
     out.height = h;
     out.ok = true;
     return out;
+}
+
+} // namespace
+
+IconPixels ExtractIconRGBA(const std::string& exePath) {
+    std::wstring wpath = WidenUtf8(exePath);
+    if (wpath.empty()) return IconPixels();
+
+    // ExtractIconEx first. It reads the icon straight out of the exe's
+    // resources - no shell, no COM, nothing that has to be initialised or
+    // finished booting. SHGetFileInfo goes through the shell's icon
+    // machinery instead, which is exactly the part of Windows that isn't
+    // ready yet when netvis is launched at logon by the startup task. That
+    // timing is why icons came back as letter badges "especially after a
+    // restart".
+    HICON large = nullptr;
+    if (ExtractIconExW(wpath.c_str(), 0, &large, nullptr, 1) != UINT(-1) && large) {
+        IconPixels px = ConvertIcon(large, true);
+        if (px.ok) return px;
+    }
+
+    // Fallback for the cases ExtractIconEx can't serve - an exe with no
+    // icon of its own, where the shell substitutes a document or file-type
+    // icon. Large (32x32) rather than small, so it downscales cleanly at
+    // high DPI instead of being stretched up.
+    SHFILEINFOW sfi = {};
+    if (!SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON))
+        return IconPixels();
+    return ConvertIcon(sfi.hIcon, true); // SHGetFileInfo hands us ownership
+}
+
+IconPixels IconFromHICON(void* hIcon) {
+    return ConvertIcon((HICON)hIcon, false); // caller keeps the handle
 }

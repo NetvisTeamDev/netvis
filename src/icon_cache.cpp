@@ -1,4 +1,5 @@
 #include "icon_cache.h"
+#include <windows.h>
 #include <objbase.h>
 #include <thread>
 
@@ -22,7 +23,7 @@ void IconCache::WarmAsync(const std::string& key, const std::string& exePath) {
         if (SUCCEEDED(hr)) ::CoUninitialize();
 
         std::lock_guard<std::mutex> lock(mu_);
-        pending_[key] = std::move(px); // stored even on failure (ok=false) so we don't retry every frame
+        pending_[key] = std::move(px); // stored either way; Get() decides whether to retry
     }).detach();
 }
 
@@ -43,14 +44,34 @@ ID3D11ShaderResourceView* IconCache::Get(const std::string& key, const std::stri
             if (pend->second.ok) {
                 px = std::move(pend->second);
                 havePixels = true;
+                failed_.erase(key);
+            } else {
+                // Extraction failed. Schedule another go instead of giving
+                // up for the lifetime of the process: 2s, 5s, 15s, 60s,
+                // 300s. Transient causes (the shell still starting after a
+                // reboot, a process not fully up yet) clear within seconds;
+                // an exe that genuinely has no icon settles into the letter
+                // badge after five cheap attempts.
+                static const uint64_t backoffMs[kMaxAttempts] = {2000, 5000, 15000, 60000, 300000};
+                Failure& f = failed_[key];
+                if (f.attempts < kMaxAttempts) {
+                    f.nextTryMs = ::GetTickCount64() + backoffMs[f.attempts];
+                    f.attempts++;
+                    requested_.erase(key); // let it be requested again once the delay is up
+                }
             }
-            pending_.erase(pend); // drop it either way - success handled below, failure means "don't retry"
+            pending_.erase(pend);
         } else if (!requested_.count(key) && !exePath.empty()) {
             // Only start extraction once we actually have a path to read
             // from - a pathless instance of this exe must not lock the name
             // into a permanent "no icon" state.
-            requested_.insert(key);
-            needsWarm = true;
+            auto f = failed_.find(key);
+            bool waiting = f != failed_.end() &&
+                           (f->second.attempts >= kMaxAttempts || ::GetTickCount64() < f->second.nextTryMs);
+            if (!waiting) {
+                requested_.insert(key);
+                needsWarm = true;
+            }
         }
     }
 

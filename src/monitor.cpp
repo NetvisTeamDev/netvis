@@ -29,7 +29,7 @@ TrafficType ClassifyPorts(bool isTcp, uint16_t a, uint16_t b) {
     return TrafficType::Other;
 }
 
-// netvis's own PID. Its traffic (the licence check, hostname lookups) is
+// netvis's own PID. Its traffic (the license check, hostname lookups) is
 // an artifact of the tool doing its job, not something the user is doing,
 // so it never belongs in the table, the graph, the alerts or the
 // auto-block logic. Cached once - it can't change while we're running.

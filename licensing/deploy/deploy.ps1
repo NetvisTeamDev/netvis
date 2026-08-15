@@ -8,10 +8,23 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$Server,
-    [string]$Exe = ""   # optional: path to a netvis.exe to publish as the download
+    [string]$Exe = ""   # optional: installer or exe to publish as the download
 )
 
 $ErrorActionPreference = "Stop"
+
+# Resolve -Exe against the directory you're standing in, BEFORE the
+# Push-Location below moves us into the licensing folder. Without this, a
+# relative path like installer\output\netvis-setup.exe is looked for inside
+# licensing\ - one level away from where it actually is - and scp fails with
+# nothing useful to say.
+if ($Exe -ne "") {
+    if (-not (Test-Path $Exe)) {
+        throw "Can't find $Exe (looked in $(Get-Location)). Build it first with installer\build_installer.bat"
+    }
+    $Exe = (Resolve-Path $Exe).Path
+}
+
 Push-Location (Join-Path $PSScriptRoot "..")
 
 try {
@@ -33,9 +46,14 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "scp failed" }
 
     if ($Exe -ne "") {
-        Write-Host "==> publishing $Exe as the download" -ForegroundColor Cyan
-        scp $Exe "${Server}:/tmp/netvis.exe"
-        if ($LASTEXITCODE -ne 0) { throw "scp of netvis.exe failed" }
+        # Keep the original filename: the download button links to
+        # netvis-setup.exe, so uploading it as netvis.exe would 404.
+        $exeName = Split-Path $Exe -Leaf
+        Write-Host "==> publishing $exeName as the download" -ForegroundColor Cyan
+        scp $Exe "${Server}:/tmp/$exeName"
+        if ($LASTEXITCODE -ne 0) { throw "scp of $exeName failed" }
+        ssh $Server "sudo mv /tmp/$exeName /opt/netvis/downloads/$exeName; sudo chown netvis:netvis /opt/netvis/downloads/$exeName"
+        if ($LASTEXITCODE -ne 0) { throw "publishing $exeName failed" }
     }
 
     Write-Host "==> restarting service" -ForegroundColor Cyan

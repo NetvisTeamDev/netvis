@@ -71,7 +71,7 @@ may run netvis, otherwise `403` with `{"ok":false}`.
 ## Selling (Polar)
 
 Polar is the shop: it takes the payment, handles VAT as merchant of
-record, generates the licence key, emails it to the customer, and enforces
+record, generates the license key, emails it to the customer, and enforces
 both the 6-month term and the one-machine limit. Nothing to pre-generate,
 nothing to upload, and you can't run out of keys.
 
@@ -117,12 +117,12 @@ ever contacted. Use them for giveaways, support cases and testing:
 .\deploy\keys.ps1 -Server ubuntu@YOUR.IP -N 5
 ```
 
-## Licence term
+## License term
 
 A key is worth **6 months** from redemption.
 
 - `/authentificate` returns `days_left`, and `403 {"error":"expired"}` once
-  the term is up — the client shows "your licence ran out, enter a new key"
+  the term is up — the client shows "your license ran out, enter a new key"
   rather than pretending the machine was never activated.
 - Redeeming a key on a machine that's already licensed **renews** it, and
   extends from the current expiry, so renewing early doesn't throw away
@@ -223,7 +223,7 @@ it handles certificate renewal for you.
 
 The server address is **compiled into netvis.exe** (`kServer` in
 `src/license.cpp`) and can't be overridden at runtime — a config file
-holding it would be a one-line licence bypass, since anyone could point the
+holding it would be a one-line license bypass, since anyone could point the
 client at a server of their own that approves everything. Changing the
 address means editing that constant and rebuilding.
 
