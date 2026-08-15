@@ -26,7 +26,10 @@ struct Settings {
     std::unordered_map<std::string, uint64_t> lifetimeBytes;
 
     bool adBlockerEnabled = true;
-    bool autoBlockEnabled = false;
+    // Auto-block is deliberately NOT persisted: it cuts programs off the
+    // internet on its own, so it starts off every launch and has to be
+    // switched on knowingly. The threshold below IS remembered, so turning
+    // it on is one click.
     double autoBlockThreshold = 1.0;
     int autoBlockUnitIdx = 1;
     bool runInBackground = false;

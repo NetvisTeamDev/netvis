@@ -62,7 +62,6 @@ Settings Settings::Load() {
         else if (key == "exempt") s.autoBlockExempt.insert(value);
         else if (key == "known") s.knownExes.insert(value);
         else if (key == "adblock") s.adBlockerEnabled = (value == "1");
-        else if (key == "autoblock") s.autoBlockEnabled = (value == "1");
         else if (key == "autoblock_threshold") s.autoBlockThreshold = atof(value.c_str());
         else if (key == "autoblock_unit") s.autoBlockUnitIdx = atoi(value.c_str());
         else if (key == "run_in_background") s.runInBackground = (value == "1");
@@ -94,7 +93,6 @@ void Settings::Save() const {
 
     f << "# netvis settings - edit while the app is closed, it rewrites this on exit\n";
     f << "adblock=" << (adBlockerEnabled ? 1 : 0) << "\n";
-    f << "autoblock=" << (autoBlockEnabled ? 1 : 0) << "\n";
     f << "autoblock_threshold=" << autoBlockThreshold << "\n";
     f << "autoblock_unit=" << autoBlockUnitIdx << "\n";
     f << "run_in_background=" << (runInBackground ? 1 : 0) << "\n";

@@ -1047,3 +1047,898 @@
 2026/08/10 22:21:53 blocker: disabled, passing everything through
 2026/08/10 22:22:03 blocker: disabled, passing everything through
 2026/08/10 22:22:23 blocker: disabled, passing everything through
+2026/08/10 22:23:38 netvis starting
+2026/08/10 22:23:38 netvis: DnsFlushResolverCache -> ok
+2026/08/10 22:23:39 netvis: DPI scale = 1.25
+2026/08/10 22:23:39 license: hwid computed
+2026/08/10 22:23:39 license: using server from license.cfg
+2026/08/10 22:23:41 license: request failed, GetLastError=12029
+2026/08/10 22:23:41 license: server unreachable
+2026/08/10 22:23:48 license: request failed, GetLastError=12029
+2026/08/10 22:23:48 license: server unreachable
+2026/08/10 22:24:14 license: not licensed (http 403)
+2026/08/10 22:24:44 license: activation failed (http 403): this machine has been revoked
+2026/08/10 22:24:56 license: activated this machine
+2026/08/10 22:24:56 license: activation succeeded, starting netvis
+2026/08/10 22:24:56 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/10 22:24:56 monitor: capture started
+2026/08/10 22:24:56 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/10 22:24:56 blocker: disabled
+2026/08/10 22:24:57 blocker: disabled, passing everything through
+2026/08/10 22:25:15 blocker: disabled, passing everything through
+2026/08/10 22:25:28 blocker: disabled, passing everything through
+2026/08/10 22:26:32 blocker: disabled, passing everything through
+2026/08/10 22:26:39 blocker: disabled, passing everything through
+2026/08/10 22:26:45 blocker: disabled, passing everything through
+2026/08/10 22:26:51 blocker: disabled, passing everything through
+2026/08/10 22:27:07 blocker: disabled, passing everything through
+2026/08/10 22:27:30 blocker: disabled, passing everything through
+2026/08/10 22:27:37 blocker: disabled, passing everything through
+2026/08/10 22:28:44 blocker: disabled, passing everything through
+2026/08/10 22:29:02 blocker: disabled, passing everything through
+2026/08/10 22:29:08 blocker: disabled, passing everything through
+2026/08/10 22:29:22 blocker: disabled, passing everything through
+2026/08/10 22:29:48 blocker: disabled, passing everything through
+2026/08/10 22:30:20 blocker: disabled, passing everything through
+2026/08/10 22:30:49 blocker: disabled, passing everything through
+2026/08/10 22:31:10 blocker: disabled, passing everything through
+2026/08/10 22:31:16 blocker: disabled, passing everything through
+2026/08/10 22:31:33 blocker: disabled, passing everything through
+2026/08/10 22:32:25 blocker: disabled, passing everything through
+2026/08/10 22:33:24 blocker: disabled, passing everything through
+2026/08/10 22:33:32 blocker: disabled, passing everything through
+2026/08/10 22:33:46 blocker: disabled, passing everything through
+2026/08/10 22:33:51 blocker: disabled, passing everything through
+2026/08/10 22:34:19 blocker: disabled, passing everything through
+2026/08/10 22:34:30 blocker: disabled, passing everything through
+2026/08/10 22:34:42 blocker: disabled, passing everything through
+2026/08/10 22:34:49 blocker: disabled, passing everything through
+2026/08/10 22:34:56 blocker: disabled, passing everything through
+2026/08/10 22:34:58 pidblock: network-layer enforcement started
+2026/08/10 22:34:58 pidblock: Block(13452): socket-layer handle opened, now blocked
+2026/08/10 22:34:58 auto-block: brave.exe (pid 13452) exceeded 1.00 MB/s, blocked
+2026/08/10 22:34:58 alert: brave.exe auto-blocked - Using 1.29 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/10 22:34:58 pidblock: dropping udp port 57452 (pid 13452)
+2026/08/10 22:35:00 pidblock: dropping udp port 53127 (pid 13452)
+2026/08/10 22:35:01 blocker: disabled, passing everything through
+2026/08/10 22:35:02 pidblock: dropping udp port 57452 (pid 13452)
+2026/08/10 22:35:04 pidblock: dropping udp port 53127 (pid 13452)
+2026/08/10 22:35:06 pidblock: dropping tcp port 52653 (pid 13452)
+2026/08/10 22:35:07 blocker: disabled, passing everything through
+2026/08/10 22:35:08 pidblock: dropping tcp port 56358 (pid 13452)
+2026/08/10 22:35:11 pidblock: dropping tcp port 49811 (pid 13452)
+2026/08/10 22:35:12 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/10 22:35:12 pidblock: Unblock(13452): unblocked
+2026/08/10 22:35:13 blocker: disabled, passing everything through
+2026/08/10 22:35:21 blocker: disabled, passing everything through
+2026/08/10 22:35:28 blocker: disabled, passing everything through
+2026/08/10 22:35:48 blocker: disabled, passing everything through
+2026/08/10 22:36:08 blocker: disabled, passing everything through
+2026/08/10 22:36:36 blocker: disabled, passing everything through
+2026/08/10 22:36:47 blocker: disabled, passing everything through
+2026/08/10 22:37:35 blocker: disabled, passing everything through
+2026/08/10 22:38:10 blocker: disabled, passing everything through
+2026/08/10 22:38:35 blocker: disabled, passing everything through
+2026/08/10 22:38:50 blocker: disabled, passing everything through
+2026/08/10 22:39:18 blocker: disabled, passing everything through
+2026/08/10 22:39:34 blocker: disabled, passing everything through
+2026/08/10 22:39:39 blocker: disabled, passing everything through
+2026/08/10 22:39:49 blocker: disabled, passing everything through
+2026/08/10 22:39:58 blocker: disabled, passing everything through
+2026/08/10 22:40:21 blocker: disabled, passing everything through
+2026/08/10 22:40:54 blocker: disabled, passing everything through
+2026/08/10 22:41:02 blocker: disabled, passing everything through
+2026/08/10 22:41:16 blocker: disabled, passing everything through
+2026/08/10 22:41:21 blocker: disabled, passing everything through
+2026/08/10 22:41:27 blocker: disabled, passing everything through
+2026/08/10 22:41:41 blocker: disabled, passing everything through
+2026/08/10 22:41:48 blocker: disabled, passing everything through
+2026/08/10 22:41:55 blocker: disabled, passing everything through
+2026/08/10 22:42:03 blocker: disabled, passing everything through
+2026/08/10 22:42:10 blocker: disabled, passing everything through
+2026/08/10 22:42:51 blocker: disabled, passing everything through
+2026/08/10 22:43:32 blocker: disabled, passing everything through
+2026/08/10 22:43:46 blocker: disabled, passing everything through
+2026/08/10 22:43:52 blocker: disabled, passing everything through
+2026/08/10 22:44:19 blocker: disabled, passing everything through
+2026/08/10 22:44:49 blocker: disabled, passing everything through
+2026/08/10 22:44:56 blocker: disabled, passing everything through
+2026/08/10 22:45:12 blocker: disabled, passing everything through
+2026/08/10 22:45:27 blocker: disabled, passing everything through
+2026/08/10 22:45:55 blocker: disabled, passing everything through
+2026/08/10 22:46:00 blocker: disabled, passing everything through
+2026/08/10 22:46:15 blocker: disabled, passing everything through
+2026/08/10 22:47:22 blocker: disabled, passing everything through
+2026/08/10 22:47:32 blocker: disabled, passing everything through
+2026/08/10 22:47:48 blocker: disabled, passing everything through
+2026/08/10 22:47:57 blocker: disabled, passing everything through
+2026/08/10 22:48:51 blocker: disabled, passing everything through
+2026/08/10 22:49:00 blocker: disabled, passing everything through
+2026/08/10 22:49:05 blocker: disabled, passing everything through
+2026/08/10 22:49:19 blocker: disabled, passing everything through
+2026/08/10 22:49:24 blocker: disabled, passing everything through
+2026/08/10 22:49:29 blocker: disabled, passing everything through
+2026/08/10 22:49:40 blocker: disabled, passing everything through
+2026/08/10 22:49:46 blocker: disabled, passing everything through
+2026/08/10 22:50:16 blocker: disabled, passing everything through
+2026/08/10 22:50:48 blocker: disabled, passing everything through
+2026/08/10 22:51:08 blocker: disabled, passing everything through
+2026/08/10 22:51:14 blocker: disabled, passing everything through
+2026/08/10 22:51:47 blocker: disabled, passing everything through
+2026/08/10 22:52:00 blocker: disabled, passing everything through
+2026/08/10 22:52:16 blocker: disabled, passing everything through
+2026/08/10 22:52:49 blocker: disabled, passing everything through
+2026/08/10 22:52:56 blocker: disabled, passing everything through
+2026/08/10 22:53:19 blocker: disabled, passing everything through
+2026/08/10 22:53:24 blocker: disabled, passing everything through
+2026/08/10 22:53:56 blocker: disabled, passing everything through
+2026/08/10 22:54:38 blocker: disabled, passing everything through
+2026/08/10 22:54:44 blocker: disabled, passing everything through
+2026/08/10 22:54:50 blocker: disabled, passing everything through
+2026/08/10 22:55:00 blocker: disabled, passing everything through
+2026/08/10 22:55:06 blocker: disabled, passing everything through
+2026/08/10 22:55:17 blocker: disabled, passing everything through
+2026/08/10 22:55:46 blocker: disabled, passing everything through
+2026/08/10 22:55:55 blocker: disabled, passing everything through
+2026/08/10 22:56:56 blocker: disabled, passing everything through
+2026/08/10 22:57:01 blocker: disabled, passing everything through
+2026/08/10 22:57:50 blocker: disabled, passing everything through
+2026/08/10 22:57:59 blocker: disabled, passing everything through
+2026/08/10 22:58:20 blocker: disabled, passing everything through
+2026/08/10 22:58:35 blocker: disabled, passing everything through
+2026/08/10 22:58:43 blocker: disabled, passing everything through
+2026/08/10 22:58:49 blocker: disabled, passing everything through
+2026/08/10 22:59:01 blocker: disabled, passing everything through
+2026/08/10 22:59:37 blocker: disabled, passing everything through
+2026/08/10 22:59:50 blocker: disabled, passing everything through
+2026/08/10 23:00:01 blocker: disabled, passing everything through
+2026/08/10 23:00:08 blocker: disabled, passing everything through
+2026/08/10 23:00:13 blocker: disabled, passing everything through
+2026/08/10 23:00:45 blocker: disabled, passing everything through
+2026/08/10 23:01:12 blocker: disabled, passing everything through
+2026/08/10 23:01:31 netvis starting
+2026/08/10 23:01:31 netvis: another instance is already running - signalling it and exiting
+2026/08/10 23:01:31 blocker: disabled, passing everything through
+2026/08/10 23:01:33 license: request failed, GetLastError=12029
+2026/08/10 23:01:33 license: server unreachable
+2026/08/10 23:01:38 blocker: disabled, passing everything through
+2026/08/10 23:01:45 blocker: disabled, passing everything through
+2026/08/10 23:01:57 blocker: disabled, passing everything through
+2026/08/10 23:02:02 blocker: disabled, passing everything through
+2026/08/10 23:02:02 alert: svchost.exe started listening - Accepting incoming connections on TCP port 7680.
+2026/08/10 23:02:13 blocker: disabled, passing everything through
+2026/08/10 23:02:23 netvis starting
+2026/08/10 23:02:23 netvis: another instance is already running - signalling it and exiting
+2026/08/10 23:02:32 blocker: disabled, passing everything through
+2026/08/10 23:02:52 blocker: disabled, passing everything through
+2026/08/10 23:03:23 blocker: disabled, passing everything through
+2026/08/10 23:03:53 blocker: disabled, passing everything through
+2026/08/10 23:04:26 blocker: disabled, passing everything through
+2026/08/10 23:04:37 blocker: disabled, passing everything through
+2026/08/10 23:04:43 blocker: disabled, passing everything through
+2026/08/10 23:04:50 blocker: disabled, passing everything through
+2026/08/10 23:04:57 blocker: disabled, passing everything through
+2026/08/10 23:05:14 blocker: disabled, passing everything through
+2026/08/10 23:05:25 blocker: disabled, passing everything through
+2026/08/10 23:05:47 blocker: disabled, passing everything through
+2026/08/10 23:05:55 blocker: disabled, passing everything through
+2026/08/10 23:06:18 blocker: disabled, passing everything through
+2026/08/10 23:06:32 blocker: disabled, passing everything through
+2026/08/10 23:06:54 blocker: disabled, passing everything through
+2026/08/10 23:07:25 blocker: disabled, passing everything through
+2026/08/10 23:07:48 blocker: disabled, passing everything through
+2026/08/10 23:07:55 blocker: disabled, passing everything through
+2026/08/10 23:08:03 blocker: disabled, passing everything through
+2026/08/10 23:08:12 blocker: disabled, passing everything through
+2026/08/10 23:08:34 blocker: disabled, passing everything through
+2026/08/10 23:08:57 blocker: disabled, passing everything through
+2026/08/10 23:09:26 blocker: disabled, passing everything through
+2026/08/10 23:09:51 blocker: disabled, passing everything through
+2026/08/10 23:09:57 blocker: disabled, passing everything through
+2026/08/10 23:10:02 blocker: disabled, passing everything through
+2026/08/10 23:10:12 blocker: disabled, passing everything through
+2026/08/10 23:10:20 blocker: disabled, passing everything through
+2026/08/10 23:10:38 blocker: disabled, passing everything through
+2026/08/10 23:10:52 blocker: disabled, passing everything through
+2026/08/10 23:11:07 blocker: disabled, passing everything through
+2026/08/10 23:11:13 blocker: disabled, passing everything through
+2026/08/10 23:11:26 blocker: disabled, passing everything through
+2026/08/10 23:11:32 blocker: disabled, passing everything through
+2026/08/10 23:11:40 blocker: disabled, passing everything through
+2026/08/10 23:12:16 blocker: disabled, passing everything through
+2026/08/10 23:12:22 blocker: disabled, passing everything through
+2026/08/10 23:12:35 blocker: disabled, passing everything through
+2026/08/10 23:12:42 blocker: disabled, passing everything through
+2026/08/10 23:12:48 blocker: disabled, passing everything through
+2026/08/10 23:12:54 blocker: disabled, passing everything through
+2026/08/10 23:13:01 blocker: disabled, passing everything through
+2026/08/10 23:13:23 blocker: disabled, passing everything through
+2026/08/10 23:14:03 blocker: disabled, passing everything through
+2026/08/10 23:14:28 blocker: disabled, passing everything through
+2026/08/10 23:14:34 blocker: disabled, passing everything through
+2026/08/10 23:14:39 blocker: disabled, passing everything through
+2026/08/10 23:14:51 blocker: disabled, passing everything through
+2026/08/10 23:15:10 blocker: disabled, passing everything through
+2026/08/10 23:15:17 blocker: disabled, passing everything through
+2026/08/10 23:15:49 blocker: disabled, passing everything through
+2026/08/10 23:15:54 blocker: disabled, passing everything through
+2026/08/10 23:16:06 blocker: disabled, passing everything through
+2026/08/10 23:16:32 blocker: disabled, passing everything through
+2026/08/10 23:16:40 blocker: disabled, passing everything through
+2026/08/10 23:16:53 blocker: disabled, passing everything through
+2026/08/10 23:17:06 blocker: disabled, passing everything through
+2026/08/10 23:17:39 blocker: disabled, passing everything through
+2026/08/10 23:17:47 blocker: disabled, passing everything through
+2026/08/10 23:17:53 blocker: disabled, passing everything through
+2026/08/10 23:18:54 blocker: disabled, passing everything through
+2026/08/10 23:19:00 blocker: disabled, passing everything through
+2026/08/10 23:19:06 blocker: disabled, passing everything through
+2026/08/10 23:19:13 blocker: disabled, passing everything through
+2026/08/10 23:19:19 blocker: disabled, passing everything through
+2026/08/10 23:19:24 blocker: disabled, passing everything through
+2026/08/10 23:19:30 blocker: disabled, passing everything through
+2026/08/10 23:19:38 blocker: disabled, passing everything through
+2026/08/10 23:19:51 blocker: disabled, passing everything through
+2026/08/10 23:20:15 blocker: disabled, passing everything through
+2026/08/10 23:20:35 blocker: disabled, passing everything through
+2026/08/10 23:20:42 blocker: disabled, passing everything through
+2026/08/10 23:20:48 blocker: disabled, passing everything through
+2026/08/10 23:21:01 blocker: disabled, passing everything through
+2026/08/10 23:21:06 blocker: disabled, passing everything through
+2026/08/10 23:21:13 blocker: disabled, passing everything through
+2026/08/10 23:21:19 blocker: disabled, passing everything through
+2026/08/10 23:21:37 blocker: disabled, passing everything through
+2026/08/10 23:22:34 blocker: disabled, passing everything through
+2026/08/10 23:22:52 blocker: disabled, passing everything through
+2026/08/10 23:22:59 blocker: disabled, passing everything through
+2026/08/10 23:23:07 blocker: disabled, passing everything through
+2026/08/10 23:23:41 blocker: disabled, passing everything through
+2026/08/10 23:24:06 blocker: disabled, passing everything through
+2026/08/10 23:24:33 blocker: disabled, passing everything through
+2026/08/10 23:24:40 blocker: disabled, passing everything through
+2026/08/10 23:24:46 blocker: disabled, passing everything through
+2026/08/10 23:24:52 blocker: disabled, passing everything through
+2026/08/10 23:25:01 blocker: disabled, passing everything through
+2026/08/10 23:25:40 blocker: disabled, passing everything through
+2026/08/10 23:25:51 blocker: disabled, passing everything through
+2026/08/10 23:25:58 blocker: disabled, passing everything through
+2026/08/10 23:26:06 blocker: disabled, passing everything through
+2026/08/10 23:26:23 blocker: disabled, passing everything through
+2026/08/10 23:26:59 blocker: disabled, passing everything through
+2026/08/10 23:27:09 blocker: disabled, passing everything through
+2026/08/10 23:27:21 blocker: disabled, passing everything through
+2026/08/10 23:27:26 blocker: disabled, passing everything through
+2026/08/10 23:28:34 blocker: disabled, passing everything through
+2026/08/10 23:28:40 blocker: disabled, passing everything through
+2026/08/10 23:28:59 blocker: disabled, passing everything through
+2026/08/10 23:29:06 blocker: disabled, passing everything through
+2026/08/10 23:29:11 blocker: disabled, passing everything through
+2026/08/10 23:29:16 blocker: disabled, passing everything through
+2026/08/10 23:29:46 blocker: disabled, passing everything through
+2026/08/10 23:29:52 blocker: disabled, passing everything through
+2026/08/10 23:30:06 blocker: disabled, passing everything through
+2026/08/10 23:30:23 blocker: disabled, passing everything through
+2026/08/10 23:30:52 blocker: disabled, passing everything through
+2026/08/10 23:31:04 blocker: disabled, passing everything through
+2026/08/10 23:31:10 blocker: disabled, passing everything through
+2026/08/10 23:31:17 blocker: disabled, passing everything through
+2026/08/10 23:31:25 blocker: disabled, passing everything through
+2026/08/10 23:31:43 blocker: disabled, passing everything through
+2026/08/10 23:31:54 blocker: disabled, passing everything through
+2026/08/10 23:32:18 blocker: disabled, passing everything through
+2026/08/10 23:32:28 blocker: disabled, passing everything through
+2026/08/10 23:33:08 blocker: disabled, passing everything through
+2026/08/10 23:33:16 blocker: disabled, passing everything through
+2026/08/10 23:33:41 blocker: disabled, passing everything through
+2026/08/10 23:33:55 blocker: disabled, passing everything through
+2026/08/10 23:34:03 blocker: disabled, passing everything through
+2026/08/10 23:34:08 blocker: disabled, passing everything through
+2026/08/10 23:34:13 blocker: disabled, passing everything through
+2026/08/10 23:34:20 blocker: disabled, passing everything through
+2026/08/10 23:34:30 blocker: disabled, passing everything through
+2026/08/10 23:34:39 blocker: disabled, passing everything through
+2026/08/10 23:34:45 blocker: disabled, passing everything through
+2026/08/10 23:34:52 blocker: disabled, passing everything through
+2026/08/10 23:35:20 blocker: disabled, passing everything through
+2026/08/10 23:35:32 blocker: disabled, passing everything through
+2026/08/10 23:36:02 blocker: disabled, passing everything through
+2026/08/10 23:36:15 blocker: disabled, passing everything through
+2026/08/10 23:36:37 blocker: disabled, passing everything through
+2026/08/10 23:36:43 blocker: disabled, passing everything through
+2026/08/10 23:36:59 blocker: disabled, passing everything through
+2026/08/10 23:37:05 blocker: disabled, passing everything through
+2026/08/10 23:37:23 blocker: disabled, passing everything through
+2026/08/10 23:37:54 blocker: disabled, passing everything through
+2026/08/10 23:38:00 blocker: disabled, passing everything through
+2026/08/10 23:38:06 blocker: disabled, passing everything through
+2026/08/10 23:38:13 blocker: disabled, passing everything through
+2026/08/10 23:38:21 blocker: disabled, passing everything through
+2026/08/10 23:38:36 blocker: disabled, passing everything through
+2026/08/10 23:38:46 blocker: disabled, passing everything through
+2026/08/10 23:38:52 blocker: disabled, passing everything through
+2026/08/10 23:39:02 blocker: disabled, passing everything through
+2026/08/10 23:39:09 blocker: disabled, passing everything through
+2026/08/10 23:39:19 blocker: disabled, passing everything through
+2026/08/10 23:39:32 blocker: disabled, passing everything through
+2026/08/10 23:39:39 blocker: disabled, passing everything through
+2026/08/10 23:39:53 blocker: disabled, passing everything through
+2026/08/10 23:40:06 blocker: disabled, passing everything through
+2026/08/10 23:40:35 blocker: disabled, passing everything through
+2026/08/10 23:41:11 blocker: disabled, passing everything through
+2026/08/10 23:41:22 blocker: disabled, passing everything through
+2026/08/10 23:41:30 blocker: disabled, passing everything through
+2026/08/10 23:42:06 blocker: disabled, passing everything through
+2026/08/10 23:42:48 blocker: disabled, passing everything through
+2026/08/10 23:43:00 blocker: disabled, passing everything through
+2026/08/10 23:43:30 blocker: disabled, passing everything through
+2026/08/10 23:43:41 blocker: disabled, passing everything through
+2026/08/10 23:43:48 blocker: disabled, passing everything through
+2026/08/10 23:44:06 blocker: disabled, passing everything through
+2026/08/10 23:44:19 blocker: disabled, passing everything through
+2026/08/10 23:44:33 blocker: disabled, passing everything through
+2026/08/10 23:44:53 blocker: disabled, passing everything through
+2026/08/10 23:44:59 blocker: disabled, passing everything through
+2026/08/10 23:45:16 blocker: disabled, passing everything through
+2026/08/10 23:45:48 blocker: disabled, passing everything through
+2026/08/10 23:46:07 blocker: disabled, passing everything through
+2026/08/10 23:46:15 blocker: disabled, passing everything through
+2026/08/10 23:46:23 blocker: disabled, passing everything through
+2026/08/10 23:46:29 blocker: disabled, passing everything through
+2026/08/10 23:46:34 blocker: disabled, passing everything through
+2026/08/10 23:46:39 blocker: disabled, passing everything through
+2026/08/10 23:46:47 blocker: disabled, passing everything through
+2026/08/10 23:46:55 blocker: disabled, passing everything through
+2026/08/10 23:47:17 blocker: disabled, passing everything through
+2026/08/10 23:47:27 blocker: disabled, passing everything through
+2026/08/10 23:47:37 blocker: disabled, passing everything through
+2026/08/10 23:47:50 blocker: disabled, passing everything through
+2026/08/10 23:48:11 blocker: disabled, passing everything through
+2026/08/10 23:48:18 blocker: disabled, passing everything through
+2026/08/10 23:48:24 blocker: disabled, passing everything through
+2026/08/10 23:48:30 blocker: disabled, passing everything through
+2026/08/10 23:49:05 blocker: disabled, passing everything through
+2026/08/10 23:49:18 blocker: disabled, passing everything through
+2026/08/10 23:49:23 blocker: disabled, passing everything through
+2026/08/10 23:49:30 blocker: disabled, passing everything through
+2026/08/10 23:49:39 blocker: disabled, passing everything through
+2026/08/10 23:49:53 blocker: disabled, passing everything through
+2026/08/10 23:50:12 blocker: disabled, passing everything through
+2026/08/10 23:50:36 blocker: disabled, passing everything through
+2026/08/10 23:50:41 blocker: disabled, passing everything through
+2026/08/10 23:51:33 blocker: disabled, passing everything through
+2026/08/10 23:51:41 blocker: disabled, passing everything through
+2026/08/10 23:51:55 blocker: disabled, passing everything through
+2026/08/10 23:52:29 blocker: disabled, passing everything through
+2026/08/10 23:52:37 blocker: disabled, passing everything through
+2026/08/10 23:53:13 blocker: disabled, passing everything through
+2026/08/10 23:53:31 blocker: disabled, passing everything through
+2026/08/10 23:54:00 blocker: disabled, passing everything through
+2026/08/10 23:54:11 blocker: disabled, passing everything through
+2026/08/10 23:54:20 blocker: disabled, passing everything through
+2026/08/10 23:54:27 blocker: disabled, passing everything through
+2026/08/10 23:54:34 blocker: disabled, passing everything through
+2026/08/10 23:54:53 blocker: disabled, passing everything through
+2026/08/10 23:55:02 blocker: disabled, passing everything through
+2026/08/10 23:55:09 blocker: disabled, passing everything through
+2026/08/10 23:55:22 blocker: disabled, passing everything through
+2026/08/10 23:55:33 blocker: disabled, passing everything through
+2026/08/10 23:56:11 blocker: disabled, passing everything through
+2026/08/10 23:56:55 blocker: disabled, passing everything through
+2026/08/10 23:57:09 blocker: disabled, passing everything through
+2026/08/10 23:57:15 blocker: disabled, passing everything through
+2026/08/10 23:57:29 blocker: disabled, passing everything through
+2026/08/10 23:57:35 blocker: disabled, passing everything through
+2026/08/10 23:57:42 blocker: disabled, passing everything through
+2026/08/10 23:57:48 blocker: disabled, passing everything through
+2026/08/10 23:58:31 blocker: disabled, passing everything through
+2026/08/10 23:58:40 blocker: disabled, passing everything through
+2026/08/10 23:58:46 blocker: disabled, passing everything through
+2026/08/10 23:58:53 blocker: disabled, passing everything through
+2026/08/10 23:59:02 blocker: disabled, passing everything through
+2026/08/10 23:59:12 blocker: disabled, passing everything through
+2026/08/10 23:59:33 blocker: disabled, passing everything through
+2026/08/10 23:59:40 blocker: disabled, passing everything through
+2026/08/10 23:59:46 blocker: disabled, passing everything through
+2026/08/10 23:59:54 blocker: disabled, passing everything through
+2026/08/11 00:00:01 blocker: disabled, passing everything through
+2026/08/11 00:00:48 blocker: disabled, passing everything through
+2026/08/11 00:01:32 blocker: disabled, passing everything through
+2026/08/11 00:01:53 blocker: disabled, passing everything through
+2026/08/11 00:02:05 blocker: disabled, passing everything through
+2026/08/11 00:02:27 blocker: disabled, passing everything through
+2026/08/11 00:02:33 blocker: disabled, passing everything through
+2026/08/11 00:02:41 blocker: disabled, passing everything through
+2026/08/11 00:03:19 blocker: disabled, passing everything through
+2026/08/11 00:03:38 blocker: disabled, passing everything through
+2026/08/11 00:03:46 blocker: disabled, passing everything through
+2026/08/11 00:03:55 blocker: disabled, passing everything through
+2026/08/11 00:04:09 blocker: disabled, passing everything through
+2026/08/11 00:04:20 blocker: disabled, passing everything through
+2026/08/11 00:04:29 blocker: disabled, passing everything through
+2026/08/11 00:04:40 blocker: disabled, passing everything through
+2026/08/11 00:04:52 blocker: disabled, passing everything through
+2026/08/11 00:05:18 blocker: disabled, passing everything through
+2026/08/11 00:05:24 blocker: disabled, passing everything through
+2026/08/11 00:05:29 blocker: disabled, passing everything through
+2026/08/11 00:05:35 blocker: disabled, passing everything through
+2026/08/11 00:05:45 blocker: disabled, passing everything through
+2026/08/11 00:05:54 blocker: disabled, passing everything through
+2026/08/11 00:06:13 blocker: disabled, passing everything through
+2026/08/11 00:06:36 blocker: disabled, passing everything through
+2026/08/11 00:06:51 blocker: disabled, passing everything through
+2026/08/11 00:06:57 blocker: disabled, passing everything through
+2026/08/11 00:07:39 blocker: disabled, passing everything through
+2026/08/11 00:07:48 blocker: disabled, passing everything through
+2026/08/11 00:08:06 blocker: disabled, passing everything through
+2026/08/11 00:08:11 blocker: disabled, passing everything through
+2026/08/11 00:08:29 blocker: disabled, passing everything through
+2026/08/11 00:08:52 blocker: disabled, passing everything through
+2026/08/11 00:09:06 blocker: disabled, passing everything through
+2026/08/11 00:09:27 blocker: disabled, passing everything through
+2026/08/11 00:09:45 blocker: disabled, passing everything through
+2026/08/11 00:09:52 blocker: disabled, passing everything through
+2026/08/11 00:09:57 blocker: disabled, passing everything through
+2026/08/11 00:10:26 blocker: disabled, passing everything through
+2026/08/11 00:10:32 blocker: disabled, passing everything through
+2026/08/11 00:10:53 blocker: disabled, passing everything through
+2026/08/11 00:10:58 blocker: disabled, passing everything through
+2026/08/11 00:11:09 blocker: disabled, passing everything through
+2026/08/11 00:11:34 blocker: disabled, passing everything through
+2026/08/11 00:12:16 blocker: disabled, passing everything through
+2026/08/11 00:12:39 blocker: disabled, passing everything through
+2026/08/11 00:12:51 blocker: disabled, passing everything through
+2026/08/11 00:12:59 blocker: disabled, passing everything through
+2026/08/11 00:13:09 blocker: disabled, passing everything through
+2026/08/11 00:13:18 blocker: disabled, passing everything through
+2026/08/11 00:13:29 blocker: disabled, passing everything through
+2026/08/11 00:14:09 blocker: disabled, passing everything through
+2026/08/11 00:14:27 blocker: disabled, passing everything through
+2026/08/11 00:14:54 blocker: disabled, passing everything through
+2026/08/11 00:15:09 blocker: disabled, passing everything through
+2026/08/11 00:15:32 blocker: disabled, passing everything through
+2026/08/11 00:15:41 blocker: disabled, passing everything through
+2026/08/11 00:15:49 blocker: disabled, passing everything through
+2026/08/11 00:16:03 blocker: disabled, passing everything through
+2026/08/11 00:16:18 blocker: disabled, passing everything through
+2026/08/11 00:16:23 blocker: disabled, passing everything through
+2026/08/11 00:16:34 blocker: disabled, passing everything through
+2026/08/11 00:16:56 blocker: disabled, passing everything through
+2026/08/11 00:17:14 blocker: disabled, passing everything through
+2026/08/11 00:17:26 blocker: disabled, passing everything through
+2026/08/11 00:17:32 blocker: disabled, passing everything through
+2026/08/11 00:17:50 blocker: disabled, passing everything through
+2026/08/11 00:18:11 blocker: disabled, passing everything through
+2026/08/11 00:18:30 blocker: disabled, passing everything through
+2026/08/11 00:18:50 netvis starting
+2026/08/11 00:18:50 netvis: DnsFlushResolverCache -> ok
+2026/08/11 00:18:50 netvis: DPI scale = 1.25
+2026/08/11 00:18:50 license: hwid computed
+2026/08/11 00:18:50 license: using server from license.cfg
+2026/08/11 00:18:50 license: machine is licensed
+2026/08/11 00:18:51 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/11 00:18:51 monitor: capture started
+2026/08/11 00:18:51 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/11 00:18:51 blocker: disabled
+2026/08/11 00:18:53 blocker: disabled, passing everything through
+2026/08/11 00:19:10 netvis starting
+2026/08/11 00:19:10 netvis: another instance is already running - signalling it and exiting
+2026/08/11 00:19:15 netvis starting
+2026/08/11 00:19:15 netvis: another instance is already running - signalling it and exiting
+2026/08/11 00:19:17 license: request failed, GetLastError=12029
+2026/08/11 00:19:17 license: server unreachable
+2026/08/11 00:19:22 license: request failed, GetLastError=12029
+2026/08/11 00:19:22 license: server unreachable
+2026/08/11 00:19:27 blocker: disabled, passing everything through
+2026/08/11 00:19:55 blocker: disabled, passing everything through
+2026/08/11 00:20:10 blocker: disabled, passing everything through
+2026/08/11 00:20:17 blocker: disabled, passing everything through
+2026/08/11 00:20:31 license: not licensed (http 403)
+2026/08/11 00:20:41 license: activated this machine
+2026/08/11 00:20:41 license: activation succeeded, starting netvis
+2026/08/11 00:21:11 blocker: disabled, passing everything through
+2026/08/11 00:21:12 alert: Photos.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/11 00:21:13 netvis starting
+2026/08/11 00:21:13 netvis: another instance is already running - signalling it and exiting
+2026/08/11 00:21:22 netvis starting
+2026/08/11 00:21:22 netvis: another instance is already running - signalling it and exiting
+2026/08/11 00:21:27 netvis starting
+2026/08/11 00:21:27 netvis: another instance is already running - signalling it and exiting
+2026/08/11 00:21:27 license: machine is licensed
+2026/08/11 00:22:05 blocker: disabled, passing everything through
+2026/08/11 00:22:11 blocker: disabled, passing everything through
+2026/08/11 00:22:24 pidblock: network-layer enforcement started
+2026/08/11 00:22:24 pidblock: Block(13452): socket-layer handle opened, now blocked
+2026/08/11 00:22:24 auto-block: brave.exe (pid 13452) exceeded 1.00 MB/s, blocked
+2026/08/11 00:22:24 alert: brave.exe auto-blocked - Using 1.17 MB/s, over the 1.00 MB/s auto-block threshold - cut off.
+2026/08/11 00:22:24 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:26 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:28 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:30 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:31 blocker: disabled, passing everything through
+2026/08/11 00:22:32 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:34 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:36 pidblock: dropping udp port 64631 (pid 13452)
+2026/08/11 00:22:37 pidblock: network-layer enforcement stopped (no more blocked/limited PIDs)
+2026/08/11 00:22:37 pidblock: Unblock(13452): unblocked
+2026/08/11 00:24:06 blocker: disabled, passing everything through
+2026/08/11 00:24:11 blocker: disabled, passing everything through
+2026/08/11 00:24:38 blocker: disabled, passing everything through
+2026/08/11 00:24:45 blocker: disabled, passing everything through
+2026/08/11 00:24:55 blocker: disabled, passing everything through
+2026/08/11 00:25:05 blocker: disabled, passing everything through
+2026/08/11 00:25:21 blocker: disabled, passing everything through
+2026/08/11 00:25:33 blocker: disabled, passing everything through
+2026/08/11 00:25:38 blocker: disabled, passing everything through
+2026/08/11 00:25:45 blocker: disabled, passing everything through
+2026/08/11 00:25:54 blocker: disabled, passing everything through
+2026/08/11 00:26:12 blocker: disabled, passing everything through
+2026/08/11 00:26:29 blocker: disabled, passing everything through
+2026/08/11 00:26:36 blocker: disabled, passing everything through
+2026/08/11 00:26:45 blocker: disabled, passing everything through
+2026/08/11 00:27:02 blocker: disabled, passing everything through
+2026/08/11 00:27:21 blocker: disabled, passing everything through
+2026/08/11 00:27:46 blocker: disabled, passing everything through
+2026/08/11 00:28:10 blocker: disabled, passing everything through
+2026/08/11 00:28:30 blocker: disabled, passing everything through
+2026/08/11 00:28:47 blocker: disabled, passing everything through
+2026/08/11 00:29:03 blocker: disabled, passing everything through
+2026/08/11 00:29:15 blocker: disabled, passing everything through
+2026/08/11 00:29:40 blocker: disabled, passing everything through
+2026/08/11 00:29:48 blocker: disabled, passing everything through
+2026/08/11 00:29:55 blocker: disabled, passing everything through
+2026/08/11 00:30:07 blocker: disabled, passing everything through
+2026/08/11 00:31:06 blocker: disabled, passing everything through
+2026/08/11 00:31:45 blocker: disabled, passing everything through
+2026/08/11 00:31:53 blocker: disabled, passing everything through
+2026/08/11 00:32:02 blocker: disabled, passing everything through
+2026/08/11 00:32:25 blocker: disabled, passing everything through
+2026/08/11 00:32:45 blocker: disabled, passing everything through
+2026/08/11 00:33:06 blocker: disabled, passing everything through
+2026/08/11 00:33:14 blocker: disabled, passing everything through
+2026/08/11 00:33:50 blocker: disabled, passing everything through
+2026/08/11 00:33:55 blocker: disabled, passing everything through
+2026/08/11 00:34:06 blocker: disabled, passing everything through
+2026/08/11 00:34:20 blocker: disabled, passing everything through
+2026/08/11 00:34:30 blocker: disabled, passing everything through
+2026/08/11 00:34:44 blocker: disabled, passing everything through
+2026/08/11 00:34:49 blocker: disabled, passing everything through
+2026/08/11 00:34:55 blocker: disabled, passing everything through
+2026/08/11 00:35:06 blocker: disabled, passing everything through
+2026/08/11 00:35:11 blocker: disabled, passing everything through
+2026/08/11 00:35:17 blocker: disabled, passing everything through
+2026/08/11 00:36:07 blocker: disabled, passing everything through
+2026/08/11 00:36:22 blocker: disabled, passing everything through
+2026/08/11 00:36:28 blocker: disabled, passing everything through
+2026/08/11 00:36:55 blocker: disabled, passing everything through
+2026/08/11 00:37:08 blocker: disabled, passing everything through
+2026/08/11 00:37:34 blocker: disabled, passing everything through
+2026/08/11 00:37:45 blocker: disabled, passing everything through
+2026/08/11 00:38:01 blocker: disabled, passing everything through
+2026/08/11 00:38:09 blocker: disabled, passing everything through
+2026/08/11 00:38:46 blocker: disabled, passing everything through
+2026/08/11 00:39:10 blocker: disabled, passing everything through
+2026/08/11 00:39:27 blocker: disabled, passing everything through
+2026/08/11 00:39:42 blocker: disabled, passing everything through
+2026/08/11 00:39:56 blocker: disabled, passing everything through
+2026/08/11 00:40:28 blocker: disabled, passing everything through
+2026/08/11 00:40:44 blocker: disabled, passing everything through
+2026/08/11 00:40:49 blocker: disabled, passing everything through
+2026/08/11 00:41:00 blocker: disabled, passing everything through
+2026/08/11 00:41:06 blocker: disabled, passing everything through
+2026/08/11 09:33:13 license: machine is licensed
+2026/08/11 09:33:13 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 09:33:14 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 12:00:41 blocker: disabled, passing everything through
+2026/08/11 12:00:41 alert: cowork-svc.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/11 14:41:25 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 14:41:28 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 14:41:28 blocker: disabled, passing everything through
+2026/08/11 14:41:33 blocker: disabled, passing everything through
+2026/08/11 14:41:39 blocker: disabled, passing everything through
+2026/08/11 14:41:45 blocker: disabled, passing everything through
+2026/08/11 14:41:51 blocker: disabled, passing everything through
+2026/08/11 14:41:56 blocker: disabled, passing everything through
+2026/08/11 14:42:01 blocker: disabled, passing everything through
+2026/08/11 14:42:07 blocker: disabled, passing everything through
+2026/08/11 14:42:14 blocker: disabled, passing everything through
+2026/08/11 14:42:29 blocker: disabled, passing everything through
+2026/08/11 14:42:35 blocker: disabled, passing everything through
+2026/08/11 14:42:44 blocker: disabled, passing everything through
+2026/08/11 14:42:50 blocker: disabled, passing everything through
+2026/08/11 14:42:55 blocker: disabled, passing everything through
+2026/08/11 14:43:02 blocker: disabled, passing everything through
+2026/08/11 14:43:12 blocker: disabled, passing everything through
+2026/08/11 14:43:20 blocker: disabled, passing everything through
+2026/08/11 14:43:45 blocker: disabled, passing everything through
+2026/08/11 14:44:05 blocker: disabled, passing everything through
+2026/08/11 15:46:17 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 15:46:17 blocker: disabled, passing everything through
+2026/08/11 15:46:19 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 15:46:52 blocker: disabled, passing everything through
+2026/08/11 15:46:52 license: request failed, GetLastError=12029
+2026/08/11 15:46:52 license: server unreachable
+2026/08/11 20:55:48 blocker: disabled, passing everything through
+2026/08/11 20:55:49 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 20:55:50 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 21:14:15 alert: DNS servers changed - 192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 21:14:17 alert: DNS servers changed - fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1  ->  192.168.0.1, fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1
+2026/08/11 21:14:17 blocker: disabled, passing everything through
+2026/08/11 21:14:22 blocker: disabled, passing everything through
+2026/08/11 21:14:27 blocker: disabled, passing everything through
+2026/08/11 21:14:35 blocker: disabled, passing everything through
+2026/08/11 21:14:40 blocker: disabled, passing everything through
+2026/08/11 21:14:46 blocker: disabled, passing everything through
+2026/08/11 21:14:46 alert: SIHClient.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/11 21:14:57 blocker: disabled, passing everything through
+2026/08/11 21:15:11 blocker: disabled, passing everything through
+2026/08/11 21:15:18 blocker: disabled, passing everything through
+2026/08/11 21:15:58 blocker: disabled, passing everything through
+2026/08/11 21:16:05 blocker: disabled, passing everything through
+2026/08/11 21:16:10 blocker: disabled, passing everything through
+2026/08/11 21:16:16 blocker: disabled, passing everything through
+2026/08/11 21:16:21 blocker: disabled, passing everything through
+2026/08/11 21:16:34 blocker: disabled, passing everything through
+2026/08/11 21:17:04 blocker: disabled, passing everything through
+2026/08/11 21:17:10 blocker: disabled, passing everything through
+2026/08/11 21:17:19 blocker: disabled, passing everything through
+2026/08/11 21:17:26 blocker: disabled, passing everything through
+2026/08/11 21:17:32 blocker: disabled, passing everything through
+2026/08/11 21:17:39 blocker: disabled, passing everything through
+2026/08/11 21:17:49 blocker: disabled, passing everything through
+2026/08/11 21:18:01 blocker: disabled, passing everything through
+2026/08/11 21:18:22 blocker: disabled, passing everything through
+2026/08/11 21:18:27 blocker: disabled, passing everything through
+2026/08/11 21:18:33 blocker: disabled, passing everything through
+2026/08/11 21:18:47 blocker: disabled, passing everything through
+2026/08/11 21:19:14 blocker: disabled, passing everything through
+2026/08/11 21:19:23 blocker: disabled, passing everything through
+2026/08/11 21:19:35 blocker: disabled, passing everything through
+2026/08/11 21:19:49 blocker: disabled, passing everything through
+2026/08/11 21:20:15 blocker: disabled, passing everything through
+2026/08/11 21:20:20 blocker: disabled, passing everything through
+2026/08/11 21:20:28 blocker: disabled, passing everything through
+2026/08/11 21:20:36 blocker: disabled, passing everything through
+2026/08/11 21:20:44 blocker: disabled, passing everything through
+2026/08/11 21:20:49 blocker: disabled, passing everything through
+2026/08/11 21:21:01 blocker: disabled, passing everything through
+2026/08/11 21:21:35 blocker: disabled, passing everything through
+2026/08/11 21:21:41 blocker: disabled, passing everything through
+2026/08/11 21:21:46 blocker: disabled, passing everything through
+2026/08/11 21:22:35 blocker: disabled, passing everything through
+2026/08/11 21:23:03 alert: ssh.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/11 21:23:38 blocker: disabled, passing everything through
+2026/08/11 21:23:51 blocker: disabled, passing everything through
+2026/08/11 21:23:57 blocker: disabled, passing everything through
+2026/08/11 21:24:12 blocker: disabled, passing everything through
+2026/08/11 21:24:18 blocker: disabled, passing everything through
+2026/08/11 21:24:28 blocker: disabled, passing everything through
+2026/08/11 21:25:17 blocker: disabled, passing everything through
+2026/08/11 21:25:54 blocker: disabled, passing everything through
+2026/08/11 21:26:05 blocker: disabled, passing everything through
+2026/08/11 21:26:13 blocker: disabled, passing everything through
+2026/08/11 21:27:04 blocker: disabled, passing everything through
+2026/08/11 21:27:14 blocker: disabled, passing everything through
+2026/08/11 21:27:29 blocker: disabled, passing everything through
+2026/08/11 21:27:36 blocker: disabled, passing everything through
+2026/08/11 21:27:53 blocker: disabled, passing everything through
+2026/08/11 21:27:59 blocker: disabled, passing everything through
+2026/08/11 21:28:31 blocker: disabled, passing everything through
+2026/08/11 21:28:50 blocker: disabled, passing everything through
+2026/08/11 21:28:59 blocker: disabled, passing everything through
+2026/08/11 21:29:15 blocker: disabled, passing everything through
+2026/08/11 21:29:41 blocker: disabled, passing everything through
+2026/08/11 21:30:01 blocker: disabled, passing everything through
+2026/08/11 21:30:25 blocker: disabled, passing everything through
+2026/08/11 21:31:01 blocker: disabled, passing everything through
+2026/08/11 21:31:29 blocker: disabled, passing everything through
+2026/08/11 21:31:36 blocker: disabled, passing everything through
+2026/08/11 21:32:08 blocker: disabled, passing everything through
+2026/08/11 21:32:26 blocker: disabled, passing everything through
+2026/08/11 21:32:45 blocker: disabled, passing everything through
+2026/08/11 21:32:57 blocker: disabled, passing everything through
+2026/08/11 21:33:09 blocker: disabled, passing everything through
+2026/08/11 21:33:17 blocker: disabled, passing everything through
+2026/08/11 21:33:24 blocker: disabled, passing everything through
+2026/08/11 21:34:10 blocker: disabled, passing everything through
+2026/08/11 21:34:15 blocker: disabled, passing everything through
+2026/08/11 21:34:25 blocker: disabled, passing everything through
+2026/08/11 21:35:11 blocker: disabled, passing everything through
+2026/08/11 21:35:37 blocker: disabled, passing everything through
+2026/08/11 21:36:00 blocker: disabled, passing everything through
+2026/08/11 21:36:12 blocker: disabled, passing everything through
+2026/08/11 21:36:19 blocker: disabled, passing everything through
+2026/08/11 21:36:24 blocker: disabled, passing everything through
+2026/08/11 21:36:40 blocker: disabled, passing everything through
+2026/08/11 21:36:46 blocker: disabled, passing everything through
+2026/08/11 21:36:52 blocker: disabled, passing everything through
+2026/08/11 21:36:57 blocker: disabled, passing everything through
+2026/08/11 21:37:10 blocker: disabled, passing everything through
+2026/08/11 21:37:25 blocker: disabled, passing everything through
+2026/08/11 21:37:31 blocker: disabled, passing everything through
+2026/08/11 21:37:43 blocker: disabled, passing everything through
+2026/08/11 21:38:02 blocker: disabled, passing everything through
+2026/08/11 21:38:11 blocker: disabled, passing everything through
+2026/08/11 21:38:18 blocker: disabled, passing everything through
+2026/08/11 21:38:31 blocker: disabled, passing everything through
+2026/08/11 21:38:41 blocker: disabled, passing everything through
+2026/08/11 21:39:02 blocker: disabled, passing everything through
+2026/08/11 21:39:15 blocker: disabled, passing everything through
+2026/08/11 21:39:21 blocker: disabled, passing everything through
+2026/08/11 21:39:33 blocker: disabled, passing everything through
+2026/08/11 21:39:57 blocker: disabled, passing everything through
+2026/08/11 21:40:03 blocker: disabled, passing everything through
+2026/08/11 21:40:22 blocker: disabled, passing everything through
+2026/08/11 21:40:46 blocker: disabled, passing everything through
+2026/08/11 21:40:59 blocker: disabled, passing everything through
+2026/08/11 21:41:04 blocker: disabled, passing everything through
+2026/08/11 21:41:21 blocker: disabled, passing everything through
+2026/08/11 21:41:34 blocker: disabled, passing everything through
+2026/08/11 21:41:50 blocker: disabled, passing everything through
+2026/08/11 21:42:27 blocker: disabled, passing everything through
+2026/08/11 21:42:57 blocker: disabled, passing everything through
+2026/08/11 21:43:31 blocker: disabled, passing everything through
+2026/08/11 21:43:43 blocker: disabled, passing everything through
+2026/08/11 21:44:16 blocker: disabled, passing everything through
+2026/08/11 21:44:22 blocker: disabled, passing everything through
+2026/08/11 21:44:29 blocker: disabled, passing everything through
+2026/08/11 21:44:35 blocker: disabled, passing everything through
+2026/08/11 21:45:22 blocker: disabled, passing everything through
+2026/08/11 21:45:41 blocker: disabled, passing everything through
+2026/08/11 21:46:05 blocker: disabled, passing everything through
+2026/08/11 21:46:17 blocker: disabled, passing everything through
+2026/08/11 21:46:20 license: request failed, GetLastError=12029
+2026/08/11 21:46:20 license: server unreachable
+2026/08/11 21:46:39 blocker: disabled, passing everything through
+2026/08/11 21:46:54 blocker: disabled, passing everything through
+2026/08/11 21:47:06 blocker: disabled, passing everything through
+2026/08/11 21:47:20 blocker: disabled, passing everything through
+2026/08/11 21:47:57 blocker: disabled, passing everything through
+2026/08/11 21:48:05 blocker: disabled, passing everything through
+2026/08/11 21:48:33 blocker: disabled, passing everything through
+2026/08/11 21:48:58 blocker: disabled, passing everything through
+2026/08/11 21:49:15 blocker: disabled, passing everything through
+2026/08/11 21:49:27 blocker: disabled, passing everything through
+2026/08/11 21:50:17 blocker: disabled, passing everything through
+2026/08/11 21:50:23 blocker: disabled, passing everything through
+2026/08/11 21:51:01 blocker: disabled, passing everything through
+2026/08/11 21:51:08 blocker: disabled, passing everything through
+2026/08/11 21:51:16 blocker: disabled, passing everything through
+2026/08/11 21:52:00 blocker: disabled, passing everything through
+2026/08/11 21:52:19 blocker: disabled, passing everything through
+2026/08/11 21:52:41 blocker: disabled, passing everything through
+2026/08/11 21:53:08 blocker: disabled, passing everything through
+2026/08/11 21:53:27 blocker: disabled, passing everything through
+2026/08/11 21:53:34 blocker: disabled, passing everything through
+2026/08/11 21:53:42 blocker: disabled, passing everything through
+2026/08/11 21:53:48 blocker: disabled, passing everything through
+2026/08/11 21:54:16 blocker: disabled, passing everything through
+2026/08/11 21:54:52 blocker: disabled, passing everything through
+2026/08/11 21:55:22 blocker: disabled, passing everything through
+2026/08/11 21:55:29 blocker: disabled, passing everything through
+2026/08/11 21:55:34 blocker: disabled, passing everything through
+2026/08/11 21:55:39 blocker: disabled, passing everything through
+2026/08/11 21:55:46 blocker: disabled, passing everything through
+2026/08/11 21:56:09 blocker: disabled, passing everything through
+2026/08/11 21:56:16 blocker: disabled, passing everything through
+2026/08/11 21:56:22 blocker: disabled, passing everything through
+2026/08/11 21:56:47 blocker: disabled, passing everything through
+2026/08/11 21:57:06 blocker: disabled, passing everything through
+2026/08/11 21:57:16 blocker: disabled, passing everything through
+2026/08/11 21:57:25 blocker: disabled, passing everything through
+2026/08/11 21:57:44 blocker: disabled, passing everything through
+2026/08/11 21:57:50 blocker: disabled, passing everything through
+2026/08/11 21:57:57 blocker: disabled, passing everything through
+2026/08/11 21:58:20 blocker: disabled, passing everything through
+2026/08/11 21:58:55 blocker: disabled, passing everything through
+2026/08/11 21:59:15 blocker: disabled, passing everything through
+2026/08/11 22:00:35 blocker: disabled, passing everything through
+2026/08/11 22:00:35 alert: msedgewebview2.exe connected to the internet - First time this app has been seen making a connection.
+2026/08/11 22:00:48 blocker: disabled, passing everything through
+2026/08/11 22:00:55 blocker: disabled, passing everything through
+2026/08/11 22:01:01 blocker: disabled, passing everything through
+2026/08/11 22:01:33 blocker: disabled, passing everything through
+2026/08/11 22:01:42 blocker: disabled, passing everything through
+2026/08/11 22:01:48 blocker: disabled, passing everything through
+2026/08/11 22:01:57 blocker: disabled, passing everything through
+2026/08/11 22:02:04 blocker: disabled, passing everything through
+2026/08/11 22:02:26 blocker: disabled, passing everything through
+2026/08/11 22:02:37 blocker: disabled, passing everything through
+2026/08/11 22:02:50 blocker: disabled, passing everything through
+2026/08/11 22:03:02 blocker: disabled, passing everything through
+2026/08/11 22:03:09 blocker: disabled, passing everything through
+2026/08/11 22:03:25 blocker: disabled, passing everything through
+2026/08/11 22:03:51 blocker: disabled, passing everything through
+2026/08/11 22:04:17 blocker: disabled, passing everything through
+2026/08/11 22:04:38 blocker: disabled, passing everything through
+2026/08/11 22:04:44 blocker: disabled, passing everything through
+2026/08/11 22:04:55 blocker: disabled, passing everything through
+2026/08/11 22:05:21 blocker: disabled, passing everything through
+2026/08/11 22:05:28 blocker: disabled, passing everything through
+2026/08/11 22:06:21 blocker: disabled, passing everything through
+2026/08/11 22:06:38 blocker: disabled, passing everything through
+2026/08/11 22:06:43 blocker: disabled, passing everything through
+2026/08/11 22:07:10 blocker: disabled, passing everything through
+2026/08/11 22:07:28 blocker: disabled, passing everything through
+2026/08/11 22:07:35 blocker: disabled, passing everything through
+2026/08/11 22:08:51 blocker: disabled, passing everything through
+2026/08/11 22:09:14 blocker: disabled, passing everything through
+2026/08/11 22:09:37 blocker: disabled, passing everything through
+2026/08/11 22:10:23 blocker: disabled, passing everything through
+2026/08/11 22:10:56 blocker: disabled, passing everything through
+2026/08/11 22:11:45 blocker: disabled, passing everything through
+2026/08/11 22:11:54 blocker: disabled, passing everything through
+2026/08/11 22:12:41 blocker: disabled, passing everything through
+2026/08/11 22:12:52 blocker: disabled, passing everything through
+2026/08/11 22:13:12 blocker: disabled, passing everything through
+2026/08/11 22:13:19 blocker: disabled, passing everything through
+2026/08/11 22:13:47 blocker: disabled, passing everything through
+2026/08/11 22:14:18 blocker: disabled, passing everything through
+2026/08/11 22:15:10 blocker: disabled, passing everything through
+2026/08/11 22:16:01 blocker: disabled, passing everything through
+2026/08/11 22:16:23 blocker: disabled, passing everything through
+2026/08/11 22:16:31 blocker: disabled, passing everything through
+2026/08/11 22:16:41 blocker: disabled, passing everything through
+2026/08/11 22:17:01 blocker: disabled, passing everything through
+2026/08/11 22:17:16 blocker: disabled, passing everything through
+2026/08/11 22:17:23 blocker: disabled, passing everything through
+2026/08/11 22:17:58 blocker: disabled, passing everything through
+2026/08/11 22:18:03 blocker: disabled, passing everything through
+2026/08/11 22:18:28 blocker: disabled, passing everything through
+2026/08/11 22:19:01 blocker: disabled, passing everything through
+2026/08/11 22:19:18 blocker: disabled, passing everything through
+2026/08/11 22:19:23 blocker: disabled, passing everything through
+2026/08/11 22:20:07 blocker: disabled, passing everything through
+2026/08/11 22:20:39 blocker: disabled, passing everything through
+2026/08/11 22:20:46 blocker: disabled, passing everything through
+2026/08/11 22:20:54 blocker: disabled, passing everything through
+2026/08/11 22:21:35 blocker: disabled, passing everything through
+2026/08/11 22:21:42 blocker: disabled, passing everything through
+2026/08/11 22:21:56 blocker: disabled, passing everything through
+2026/08/11 22:22:09 blocker: disabled, passing everything through
+2026/08/11 22:22:43 blocker: disabled, passing everything through
+2026/08/11 22:23:36 blocker: disabled, passing everything through
+2026/08/11 22:24:18 blocker: disabled, passing everything through
+2026/08/11 22:25:09 blocker: disabled, passing everything through
+2026/08/11 22:25:30 netvis starting
+2026/08/11 22:25:30 netvis: DnsFlushResolverCache -> ok
+2026/08/11 22:25:31 netvis: DPI scale = 1.25
+2026/08/11 22:25:31 license: hwid computed
+2026/08/11 22:25:31 license: using server from license.cfg
+2026/08/11 22:25:33 license: request failed, GetLastError=12029
+2026/08/11 22:25:33 license: server unreachable
+2026/08/11 22:25:38 netvis: not licensed, exiting
+2026/08/11 22:50:29 netvis starting
+2026/08/11 22:50:29 netvis: DnsFlushResolverCache -> ok
+2026/08/11 22:50:29 netvis: DPI scale = 1.25
+2026/08/11 22:50:29 license: hwid computed
+2026/08/11 22:50:29 license: using server from license.cfg
+2026/08/11 22:50:31 license: request failed, GetLastError=12029
+2026/08/11 22:50:31 license: server unreachable
+2026/08/11 22:50:35 license: request failed, GetLastError=12029
+2026/08/11 22:50:35 license: server unreachable
+2026/08/11 22:55:56 netvis starting
+2026/08/11 22:55:56 netvis: DnsFlushResolverCache -> ok
+2026/08/11 22:55:56 netvis: DPI scale = 1.25
+2026/08/11 22:55:56 license: hwid computed
+2026/08/11 22:55:56 license: not licensed (http 403)
+2026/08/11 22:56:16 license: activated this machine
+2026/08/11 22:56:16 license: activation succeeded, starting netvis
+2026/08/11 22:56:16 settings: loaded 0 pins, 1 exempt, 0 limits, 22 known exes
+2026/08/11 22:56:16 monitor: capture started
+2026/08/11 22:56:16 blocker: started, blocklist=99568 allowlist=0 dohIPs=34
+2026/08/11 22:56:16 blocker: disabled
+2026/08/11 22:56:20 blocker: disabled, passing everything through
+2026/08/11 22:56:28 netvis starting
+2026/08/11 22:56:28 netvis: another instance is already running - signalling it and exiting
+2026/08/11 22:56:31 blocker: disabled, passing everything through
+2026/08/11 22:56:33 netvis starting
+2026/08/11 22:56:33 netvis: another instance is already running - signalling it and exiting
+2026/08/11 22:56:33 license: machine is licensed (183 days left)
+2026/08/11 22:56:41 netvis starting
+2026/08/11 22:56:41 netvis: another instance is already running - signalling it and exiting
+2026/08/11 22:56:41 license: machine is licensed (183 days left)
+2026/08/11 22:56:57 blocker: disabled, passing everything through
+2026/08/11 22:57:06 blocker: disabled, passing everything through
+2026/08/11 22:57:19 blocker: disabled, passing everything through
+2026/08/11 22:57:25 blocker: disabled, passing everything through
+2026/08/11 22:57:59 blocker: disabled, passing everything through

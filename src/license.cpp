@@ -5,7 +5,9 @@
 #include <winhttp.h>
 #include <wincrypt.h>
 
-#include <fstream>
+#include <atomic>
+#include <cctype>
+#include <cstdlib>
 #include <string>
 
 #pragma comment(lib, "winhttp.lib")
@@ -14,9 +16,15 @@
 
 namespace license {
 
-// Where the client points when there's no license.cfg. Localhost while
-// you're developing; put the real domain in license.cfg to move it.
-const char* const kDefaultServer = "http://127.0.0.1:8443";
+// The licensing server, compiled in. Deliberately not configurable at
+// runtime: a settings file holding this address is a one-line licence
+// bypass, since anyone could point netvis at a server of their own that
+// answers "licensed" to everything. Changing it means a rebuild.
+//
+// It is https for the same reason - redirecting the name with a hosts file
+// gets you a certificate error rather than a working fake server, because
+// WinHTTP validates against the Windows certificate store.
+const char* const kServer = "https://netvis.cc";
 
 namespace {
 
@@ -26,21 +34,6 @@ std::wstring Widen(const std::string& s) {
     std::wstring w(n, L'\0');
     MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), n);
     return w;
-}
-
-std::string Trim(const std::string& s) {
-    size_t a = s.find_first_not_of(" \t\r\n");
-    if (a == std::string::npos) return "";
-    size_t b = s.find_last_not_of(" \t\r\n");
-    return s.substr(a, b - a + 1);
-}
-
-std::string NetvisDir() {
-    char base[MAX_PATH];
-    DWORD n = GetEnvironmentVariableA("ProgramFiles", base, sizeof(base));
-    std::string dir = (n > 0 && n < sizeof(base)) ? std::string(base) + "\\netvis" : "C:\\Program Files\\netvis";
-    CreateDirectoryA(dir.c_str(), nullptr);
-    return dir;
 }
 
 // ---- HWID ---------------------------------------------------------------
@@ -219,65 +212,83 @@ const std::string& HWID() {
 }
 
 const std::string& ServerURL() {
-    static const std::string url = [] {
-        std::string path = NetvisDir() + "\\license.cfg";
-        std::ifstream f(path);
-        if (f) {
-            std::string line;
-            while (std::getline(f, line)) {
-                line = Trim(line);
-                if (line.empty() || line[0] == '#') continue;
-                if (line.rfind("server=", 0) == 0) {
-                    std::string v = Trim(line.substr(7));
-                    while (!v.empty() && v.back() == '/') v.pop_back();
-                    if (!v.empty()) {
-                        Log("license: using server from license.cfg");
-                        return v;
-                    }
-                }
-            }
-        }
-        // Write the default out once so there's an obvious file to edit
-        // when the server moves to a real domain.
-        std::ofstream o(path, std::ios::app);
-        if (o.tellp() == std::streampos(0)) {
-            o << "# netvis licensing server. Change this when you move off localhost,\n"
-                 "# e.g. server=https://licensing.yourdomain.com\n"
-              << "server=" << kDefaultServer << "\n";
-        }
-        Log("license: using default server");
-        return std::string(kDefaultServer);
-    }();
+    static const std::string url = kServer;
     return url;
 }
 
-Status Authenticate() {
+namespace {
+std::atomic<int> g_lastDaysLeft{-1};
+
+// Pulls an integer field out of a flat JSON object, or -1 if absent.
+int JsonInt(const std::string& body, const char* field) {
+    std::string needle = std::string("\"") + field + "\"";
+    size_t p = body.find(needle);
+    if (p == std::string::npos) return -1;
+    p = body.find(':', p + needle.size());
+    if (p == std::string::npos) return -1;
+    p = body.find_first_not_of(" \t", p + 1);
+    if (p == std::string::npos || !isdigit((unsigned char)body[p])) return -1;
+    return atoi(body.c_str() + p);
+}
+} // namespace
+
+int LastDaysLeft() { return g_lastDaysLeft.load(); }
+
+Result AuthenticateEx() {
+    Result out;
     Response r = Request(L"GET", "/authentificate/" + HWID(), "");
     if (!r.sent) {
         Log("license: server unreachable");
-        return Status::Unreachable;
+        out.status = Status::Unreachable;
+        return out;
     }
     if (r.status == 200 && JsonBoolTrue(r.body, "ok")) {
-        Log("license: machine is licensed");
-        return Status::Licensed;
+        out.status = Status::Licensed;
+        out.daysLeft = JsonInt(r.body, "days_left");
+        g_lastDaysLeft.store(out.daysLeft);
+        Log("license: machine is licensed (%d days left)", out.daysLeft);
+        return out;
+    }
+    // The server distinguishes "ran out" from "never activated" so the user
+    // gets told to renew rather than being asked for a key they already own.
+    if (JsonString(r.body, "error") == "expired") {
+        Log("license: licence expired");
+        g_lastDaysLeft.store(0);
+        out.status = Status::Expired;
+        return out;
     }
     Log("license: not licensed (http %lu)", (unsigned long)r.status);
-    return Status::NotLicensed;
+    out.status = Status::NotLicensed;
+    return out;
 }
 
-bool Activate(const std::string& key, std::string* error) {
-    if ((int)key.size() != kKeyLength) {
-        if (error) *error = "A license key is " + std::to_string(kKeyLength) + " characters long.";
-        return false;
+Status Authenticate() { return AuthenticateEx().status; }
+
+std::string Normalize(const std::string& raw) {
+    std::string out;
+    out.reserve(raw.size());
+    for (unsigned char c : raw) {
+        char u = (char)toupper(c);
+        // Letters, digits, dash and underscore are key material; spaces and
+        // line breaks from a paste are not. Dashes matter here - Polar's
+        // keys are NETVIS_1C285B2D-6CE6-..., and stripping them would turn
+        // a valid key into a rejected one.
+        if ((u >= 'A' && u <= 'Z') || (u >= '0' && u <= '9') || u == '-' || u == '_') out += u;
     }
-    // Keys are base32 (A-Z, 2-7); reject anything else before we go to the
-    // network, and before it can end up in a URL.
-    for (char c : key) {
-        bool valid = (c >= 'A' && c <= 'Z') || (c >= '2' && c <= '7');
-        if (!valid) {
-            if (error) *error = "That key contains characters a license key can't have.";
-            return false;
-        }
+    return out;
+}
+
+bool PlausibleKey(const std::string& normalized) {
+    return (int)normalized.size() >= kKeyMinLength && (int)normalized.size() <= kKeyMaxLength;
+}
+
+bool Activate(const std::string& rawKey, std::string* error) {
+    // Normalise here too, not just in the UI, so any other caller gets the
+    // same forgiving behaviour.
+    std::string key = Normalize(rawKey);
+    if (!PlausibleKey(key)) {
+        if (error) *error = "That doesn't look like a license key.";
+        return false;
     }
 
     std::string body = "{\"hwid\":\"" + HWID() + "\",\"os\":\"windows\"}";

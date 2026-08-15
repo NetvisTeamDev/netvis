@@ -463,6 +463,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
     Phase phase = Phase::Checking;
     static char keyBuf[512] = {};
     bool quit = false;
+    bool expired = false; // came from a licence that ran out, not a fresh install
 
     startAuth();
 
@@ -480,6 +481,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             if (phase == Phase::Checking) {
                 int r = shared->authResult.load();
                 if (r == (int)license::Status::Licensed) return true;
+                expired = (r == (int)license::Status::Expired);
                 phase = (r == (int)license::Status::Unreachable) ? Phase::Offline : Phase::NeedKey;
             } else if (phase == Phase::Activating) {
                 if (shared->activated.load()) {
@@ -567,30 +569,43 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 
         case Phase::NeedKey:
         case Phase::Activating: {
-            centeredText("Enter your license key to activate this computer.");
-            ImGui::Spacing();
-            centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
-                            "A key is used on one computer and can't be reused.");
+            if (expired) {
+                centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Your licence has run out.");
+                ImGui::Spacing();
+                centeredText("Enter a new key to carry on for another 6 months.");
+                ImGui::Spacing();
+                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f), "Get one at netvis.cc");
+            } else {
+                centeredText("Enter your license key to activate this computer.");
+                ImGui::Spacing();
+                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
+                                "A key activates one computer for 6 months.");
+            }
             ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
 
             bool busy = (phase == Phase::Activating);
-            float boxW = (std::min)(560.0f * dpiScale, full);
+            // A 30-character key fits on one line, so it gets a single wide
+            // field rather than a paste box - and Enter submits it.
+            float boxW = (std::min)(420.0f * dpiScale, full);
             centerNext(boxW);
+            ImGui::SetNextItemWidth(boxW);
             ImGui::BeginDisabled(busy);
-            ImGui::InputTextMultiline("##key", keyBuf, sizeof(keyBuf),
-                                       ImVec2(boxW, ImGui::GetTextLineHeight() * 4.5f));
+            bool submitted = ImGui::InputTextWithHint("##key", "paste your license key", keyBuf,
+                                                       sizeof(keyBuf), ImGuiInputTextFlags_EnterReturnsTrue |
+                                                                            ImGuiInputTextFlags_CharsUppercase |
+                                                                            ImGuiInputTextFlags_AutoSelectAll);
             ImGui::EndDisabled();
 
-            // Whitespace and line breaks are what you get from copying a key
-            // out of an email, so strip them rather than rejecting the paste.
-            std::string key;
-            for (const char* p = keyBuf; *p; ++p)
-                if (!isspace((unsigned char)*p)) key += (char)toupper((unsigned char)*p);
+            // Dashes, spaces and line breaks are what you get from copying a
+            // key out of an email, so strip them rather than rejecting the
+            // paste. Same routine the network call uses.
+            std::string key = license::Normalize(keyBuf);
+            bool complete = license::PlausibleKey(key);
 
+            // No character counter any more: keys are no longer one fixed
+            // length, so counting up to a number would be wrong for half of
+            // them. The Activate button lighting up is the signal instead.
             ImGui::Spacing();
-            char counter[64];
-            snprintf(counter, sizeof(counter), "%d / %d characters", (int)key.size(), license::kKeyLength);
-            centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f), counter);
 
             {
                 std::lock_guard<std::mutex> lock(shared->mu);
@@ -603,8 +618,8 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
             float aw = 140.0f * dpiScale, qw = 100.0f * dpiScale;
             centerNext(aw + qw + ImGui::GetStyle().ItemSpacing.x);
-            ImGui::BeginDisabled(busy || (int)key.size() != license::kKeyLength);
-            if (ImGui::Button("Activate", ImVec2(aw, 0))) {
+            ImGui::BeginDisabled(busy || !complete);
+            if (ImGui::Button("Activate", ImVec2(aw, 0)) || (submitted && complete && !busy)) {
                 phase = Phase::Activating;
                 {
                     std::lock_guard<std::mutex> lock(shared->mu);
@@ -819,7 +834,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     // survive a restart, so these are intentionally not persisted.
     std::unordered_set<uint32_t> autoBlockExempt;
     std::unordered_set<uint32_t> pinnedProcs;
-    autoBlockEnabled = settings.autoBlockEnabled;
     autoBlockThresholdValue = settings.autoBlockThreshold;
     autoBlockUnitIdx = settings.autoBlockUnitIdx;
     if (blkOk) blk.SetEnabled(settings.adBlockerEnabled);
@@ -1081,6 +1095,23 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         ImGui::PushStyleColor(ImGuiCol_Text, statusColor);
         CopyableText("status", uiStatus);
         ImGui::PopStyleColor();
+
+        // Renewal warning, only near the end of the term - nobody needs a
+        // countdown for five months, and a permanent nag would just get
+        // tuned out by the time it mattered.
+        {
+            int days = license::LastDaysLeft();
+            if (days >= 0 && days <= 14) {
+                ImVec4 warn = (days <= 3) ? ImVec4(0.90f, 0.35f, 0.40f, 1.0f)
+                                          : ImVec4(0.95f, 0.65f, 0.35f, 1.0f);
+                if (days == 0)
+                    ImGui::TextColored(warn, "Your licence expires today - renew at netvis.cc");
+                else
+                    ImGui::TextColored(warn, "Your licence expires in %d day%s - renew at netvis.cc", days,
+                                        days == 1 ? "" : "s");
+            }
+        }
+
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
@@ -1128,15 +1159,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
         if (monOk) {
             ImGui::Checkbox("Auto-block high-traffic processes", &autoBlockEnabled);
-            if (autoBlockEnabled) {
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(80);
-                ImGui::InputDouble("##autoBlockThreshold", &autoBlockThresholdValue, 0.0, 0.0, "%.2f");
-                if (autoBlockThresholdValue < 0.01) autoBlockThresholdValue = 0.01;
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(90);
-                ImGui::Combo("threshold##autoBlockUnit", &autoBlockUnitIdx, kUnitLabels, 3);
-            }
+            // Threshold stays visible and editable whether or not the box is
+            // ticked - you need to set the limit *before* arming something
+            // that cuts programs off the internet, not after.
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(80 * dpiScale);
+            ImGui::InputDouble("##autoBlockThreshold", &autoBlockThresholdValue, 0.0, 0.0, "%.2f");
+            if (autoBlockThresholdValue < 0.01) autoBlockThresholdValue = 0.01;
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(90 * dpiScale);
+            ImGui::Combo("threshold##autoBlockUnit", &autoBlockUnitIdx, kUnitLabels, 3);
         }
         ImGui::Checkbox("Run in background when window is closed", &runInBackground);
         ImGui::SameLine(0, 28);
@@ -1787,7 +1819,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     // (Pins and auto-block exemptions are PID-based and intentionally not
     // persisted - PIDs are meaningless after a restart.)
     settings.adBlockerEnabled = blkOk ? blk.Enabled() : settings.adBlockerEnabled;
-    settings.autoBlockEnabled = autoBlockEnabled;
     settings.autoBlockThreshold = autoBlockThresholdValue;
     settings.autoBlockUnitIdx = autoBlockUnitIdx;
     settings.runInBackground = runInBackground;

@@ -22,6 +22,34 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Background art, behind everything. It's a pseudo-element rather than a
+   background on <body> so it can be pinned to the viewport and masked -
+   a plain body background would scroll or stretch with the page. WebP
+   first, JPEG for anything that can't read it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: image-set(url("bg.webp") type("image/webp"), url("bg.jpg") type("image/jpeg"));
+  background-image: -webkit-image-set(url("bg.webp") type("image/webp"), url("bg.jpg") type("image/jpeg"));
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* Only the top of the page is decorated; the feature cards further down
+     sit on flat colour so nothing competes with them for attention. */
+  -webkit-mask-image: linear-gradient(#000 0%, #000 30%, transparent 78%);
+  mask-image: linear-gradient(#000 0%, #000 30%, transparent 78%);
+}
+
+/* Some people set this because motion or busy imagery makes them ill, and
+   a full-bleed background is exactly the kind of thing they're opting out
+   of - so honour it and fall back to flat colour. */
+@media (prefers-reduced-motion: reduce) {
+  body::before { display: none; }
+}
+
 a { color: inherit; text-decoration: none; }
 
 .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
@@ -74,7 +102,16 @@ a { color: inherit; text-decoration: none; }
 .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
 .btn-ghost:hover { border-color: var(--text-dim); }
 
-.dl-note { margin-top: 14px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
+/* Buy is the action that matters - the app needs a key to run at all - so
+   it gets the brand green and stands apart from the blue download. */
+.btn-buy { background: var(--green); color: #06210f; }
+.btn-buy:hover { background: #5cf089; }
+
+.price { margin-top: 22px; font-size: 19px; color: var(--text); }
+.price strong { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.price .per { color: var(--text-dim); font-size: 16px; }
+
+.dl-note { margin-top: 8px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
 
 /* ---- screenshot ---- */
 .shot {

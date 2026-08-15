@@ -28,7 +28,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"embed"
-	"encoding/base32"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -55,13 +54,15 @@ import (
 //go:embed website
 var websiteFS embed.FS
 
-// A license key is 125 random bytes rendered as unpadded base32, which is
-// exactly 200 characters of A-Z/2-7. Uppercase-only and unambiguous, so a
-// customer can retype one if they have to.
-const keyRandomBytes = 125
-const KeyLength = 200
-
-var b32 = base32.StdEncoding.WithPadding(base32.NoPadding)
+// A license key is 30 characters drawn from the base32 alphabet: 150 bits
+// of randomness, which is far past anything guessable, while staying short
+// enough that a customer can read one off a screen and type it.
+//
+// The alphabet has no 0, 1, 8 or 9, so there's no O/0 or I/1 ambiguity to
+// misread. Case and separators are normalised away on the way in, so
+// "abcde-fghij" and "ABCDEFGHIJ" are the same key.
+const KeyLength = 30
+const keyAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 
 // ---------------------------------------------------------------- config
 
@@ -87,6 +88,15 @@ type Config struct {
 	// which is a header anyone can forge, so with no proxy in front it
 	// would let a single machine pretend to be thousands.
 	TrustProxy bool `json:"trust_proxy"`
+
+	// --- Polar (the shop). Both come from the Polar dashboard; neither is
+	// secret - the organization id is public and the checkout link is what
+	// customers click.
+	PolarOrganizationID string `json:"polar_organization_id"`
+	// Where the Buy button sends people, e.g.
+	// "https://buy.polar.sh/polar_cl_xxxxx". Kept in config rather than the
+	// page so it can change without rebuilding.
+	CheckoutURL string `json:"checkout_url"`
 }
 
 func loadConfig() Config {
@@ -102,7 +112,12 @@ func loadConfig() Config {
 		return c // no config file - defaults are fine
 	}
 	if err := json.Unmarshal(data, &c); err != nil {
-		log.Fatalf("config.json is not valid JSON: %v", err)
+		// Hand-edited over ssh, so the usual culprit is a comma left behind
+		// after deleting the last setting. JSON's own message doesn't say
+		// that, and the service just exits.
+		log.Fatalf("config.json is not valid JSON: %v\n"+
+			"(a trailing comma before the closing brace is the usual cause - "+
+			"check it with: python3 -m json.tool %s)", err, "config.json")
 	}
 	if c.RateLimitPerMinute <= 0 {
 		c.RateLimitPerMinute = 30
@@ -217,10 +232,19 @@ func openDB(path string) *sql.DB {
 			os           TEXT NOT NULL,
 			key          TEXT NOT NULL,
 			activated_at TEXT NOT NULL,
+			expires_at   TEXT NOT NULL DEFAULT '',
 			revoked      INTEGER NOT NULL DEFAULT 0
 		);
 	`); err != nil {
 		log.Fatalf("create tables: %v", err)
+	}
+	// Older databases predate expires_at; add it rather than making anyone
+	// start over. An empty value means "never expires", which is exactly
+	// what those early activations were sold as.
+	if _, err := db.Exec(`ALTER TABLE activations ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			log.Fatalf("migrate activations: %v", err)
+		}
 	}
 	// The database is the whole product - don't let it be world-readable.
 	_ = os.Chmod(path, 0o600)
@@ -228,14 +252,86 @@ func openDB(path string) *sql.DB {
 }
 
 func newKey() string {
-	buf := make([]byte, keyRandomBytes)
+	buf := make([]byte, KeyLength)
 	if _, err := rand.Read(buf); err != nil {
 		log.Fatalf("out of randomness: %v", err)
 	}
-	return b32.EncodeToString(buf)
+	out := make([]byte, KeyLength)
+	for i, b := range buf {
+		// len(keyAlphabet) is 32 and 256 is an exact multiple of it, so
+		// this modulo is uniform - no character is more likely than any
+		// other, and there's no bias to reject and retry around.
+		out[i] = keyAlphabet[int(b)%len(keyAlphabet)]
+	}
+	return string(out)
+}
+
+// normalizeKey tidies what the customer sends: upper case, with spaces and
+// line breaks dropped. People paste keys out of emails, and that shouldn't
+// be a failed activation.
+//
+// Dashes and underscores are KEPT, because Polar's keys contain them
+// (NETVIS_1C285B2D-6CE6-...) and stripping them would break the lookup.
+// Our own keys never contain either, so they're unaffected.
+func normalizeKey(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToUpper(s) {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// onlyKeyAlphabet reports whether every character is from our own key
+// alphabet - which is how a locally generated key is told apart from a
+// Polar one without asking either system.
+func onlyKeyAlphabet(s string) bool {
+	for _, r := range s {
+		if !strings.ContainsRune(keyAlphabet, r) {
+			return false
+		}
+	}
+	return true
 }
 
 func now() string { return time.Now().UTC().Format(time.RFC3339) }
+
+// How long one key buys. Sold as "6 months".
+const licenceMonths = 6
+
+// parseExpiry reads a stored expires_at. An empty string means the licence
+// never expires - that's how activations sold before expiry existed were
+// treated, and those customers keep what they paid for.
+func parseExpiry(s string) (time.Time, bool) {
+	if s == "" {
+		return time.Time{}, false
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+// renewedExpiry extends from whatever is left rather than from today, so a
+// customer who renews early doesn't lose the days they already paid for.
+func renewedExpiry(current string) time.Time {
+	from := time.Now().UTC()
+	if t, ok := parseExpiry(current); ok && t.After(from) {
+		from = t
+	}
+	return from.AddDate(0, licenceMonths, 0)
+}
+
+func daysLeft(expires time.Time) int {
+	d := int(time.Until(expires).Hours() / 24)
+	if d < 0 {
+		return 0
+	}
+	return d
+}
 
 // normOS maps whatever the client reported onto the two platforms we
 // support, so the admin listing stays tidy.
@@ -254,7 +350,10 @@ func normOS(s string) string {
 
 // --------------------------------------------------------------- server
 
-type server struct{ db *sql.DB }
+type server struct {
+	db  *sql.DB
+	cfg Config
+}
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -279,11 +378,15 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		deny(w, http.StatusMethodNotAllowed, "use POST")
 		return
 	}
-	key := strings.TrimPrefix(r.URL.Path, "/validate/")
-	if len(key) != KeyLength {
+	// Two shapes of key are accepted: our own 30-character ones from
+	// `licensing gen`, and Polar's PREFIX_<uuid> ones that customers get
+	// when they buy. Which one it is decides where it gets checked.
+	key := normalizeKey(strings.TrimPrefix(r.URL.Path, "/validate/"))
+	if len(key) < 20 || len(key) > 100 {
 		deny(w, http.StatusBadRequest, "malformed license key")
 		return
 	}
+	isLocalKey := len(key) == KeyLength && onlyKeyAlphabet(key)
 
 	var req struct {
 		HWID string `json:"hwid"`
@@ -298,20 +401,45 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Already activated? Say so instead of eating another key - a customer
-	// reinstalling shouldn't have to buy a second license.
+	// What does this machine already have? Three cases: nothing (a fresh
+	// activation), a licence with time left (don't burn the key - tell them
+	// to keep it), or an expired/expiring one (this key renews it).
 	var revoked int
-	err := s.db.QueryRow(`SELECT revoked FROM activations WHERE hwid = ?`, req.HWID).Scan(&revoked)
-	if err == nil {
-		if revoked != 0 {
-			deny(w, http.StatusForbidden, "this machine has been revoked")
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "status": "already_activated"})
-		return
-	} else if !errors.Is(err, sql.ErrNoRows) {
+	var currentExpiry string
+	err := s.db.QueryRow(`SELECT revoked, expires_at FROM activations WHERE hwid = ?`, req.HWID).
+		Scan(&revoked, &currentExpiry)
+	existing := err == nil
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		deny(w, http.StatusInternalServerError, "server error")
 		return
+	}
+	if existing && revoked != 0 {
+		deny(w, http.StatusForbidden, "this machine has been revoked")
+		return
+	}
+	if existing {
+		if exp, ok := parseExpiry(currentExpiry); !ok {
+			// A pre-expiry, never-expires licence. Nothing to renew.
+			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "status": "already_activated"})
+			return
+		} else if daysLeft(exp) > 7 {
+			// Plenty of time left - refuse politely rather than silently
+			// eating a key they just paid for. They can use it when it runs
+			// out, or on another PC.
+			writeJSON(w, http.StatusOK, map[string]any{
+				"ok": true, "status": "already_activated",
+				"expires_at": currentExpiry, "days_left": daysLeft(exp),
+			})
+			return
+		}
+	}
+
+	// Extends from the current expiry when renewing early, so no paid days
+	// are thrown away.
+	expiry := renewedExpiry(currentExpiry).Format(time.RFC3339)
+	status := "activated"
+	if existing {
+		status = "renewed"
 	}
 
 	tx, err := s.db.Begin()
@@ -321,19 +449,47 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(`DELETE FROM keys WHERE key = ?`, key)
-	if err != nil {
-		deny(w, http.StatusInternalServerError, "server error")
-		return
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		deny(w, http.StatusForbidden, "unknown or already used license key")
-		return
+	if isLocalKey {
+		// One of ours: consume it. Deleting inside this transaction is what
+		// makes two machines redeeming the same key at once safe - the
+		// second finds no row to delete and loses.
+		res, err := tx.Exec(`DELETE FROM keys WHERE key = ?`, key)
+		if err != nil {
+			deny(w, http.StatusInternalServerError, "server error")
+			return
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			deny(w, http.StatusForbidden, "unknown or already used license key")
+			return
+		}
+	} else {
+		// A key the customer bought. Polar owns it: it checks the key is
+		// real and unspent, burns one of its activation slots, and tells us
+		// when the licence runs out.
+		act, err := s.activatePolarKey(key, req.HWID)
+		if err != nil {
+			switch {
+			case errors.Is(err, errKeyUnknown):
+				deny(w, http.StatusForbidden, "unknown or already used license key")
+			case errors.Is(err, errKeyInUse):
+				deny(w, http.StatusForbidden, "this key is already in use on another computer")
+			default:
+				// Polar unreachable or misbehaving. Say so plainly instead of
+				// blaming the customer's key, and don't record anything.
+				log.Printf("polar: activation failed for hwid=%s: %v", req.HWID, err)
+				deny(w, http.StatusBadGateway,
+					"couldn't reach the licence service just now - please try again in a minute")
+			}
+			return
+		}
+		// Polar decides the term for keys it issued.
+		expiry = polarExpiry(act)
 	}
 
-	if _, err := tx.Exec(
-		`INSERT INTO activations (hwid, os, key, activated_at) VALUES (?, ?, ?, ?)`,
-		req.HWID, normOS(req.OS), key, now()); err != nil {
+	if _, err := tx.Exec(`
+		INSERT INTO activations (hwid, os, key, activated_at, expires_at) VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(hwid) DO UPDATE SET key = excluded.key, expires_at = excluded.expires_at, os = excluded.os`,
+		req.HWID, normOS(req.OS), key, now(), expiry); err != nil {
 		deny(w, http.StatusInternalServerError, "server error")
 		return
 	}
@@ -342,8 +498,14 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("activated hwid=%s os=%s", req.HWID, normOS(req.OS))
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "status": "activated"})
+	log.Printf("%s hwid=%s os=%s until=%s", status, req.HWID, normOS(req.OS), expiry)
+	days := 0
+	if exp, ok := parseExpiry(expiry); ok {
+		days = daysLeft(exp)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok": true, "status": status, "expires_at": expiry, "days_left": days,
+	})
 }
 
 // GET /authentificate/<hwid>
@@ -357,11 +519,11 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var osName, at string
+	var osName, at, expiresAt string
 	var revoked int
 	err := s.db.QueryRow(
-		`SELECT os, activated_at, revoked FROM activations WHERE hwid = ?`, hwid).
-		Scan(&osName, &at, &revoked)
+		`SELECT os, activated_at, expires_at, revoked FROM activations WHERE hwid = ?`, hwid).
+		Scan(&osName, &at, &expiresAt, &revoked)
 	if errors.Is(err, sql.ErrNoRows) {
 		deny(w, http.StatusForbidden, "not activated")
 		return
@@ -374,13 +536,25 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 		deny(w, http.StatusForbidden, "revoked")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"ok": true, "os": osName, "activated_at": at,
-	})
+
+	resp := map[string]any{"ok": true, "os": osName, "activated_at": at}
+	if exp, ok := parseExpiry(expiresAt); ok {
+		if time.Now().After(exp) {
+			// The distinct error matters: the client can tell "your licence
+			// ran out, here's how to renew" apart from "never activated".
+			writeJSON(w, http.StatusForbidden, map[string]any{
+				"ok": false, "error": "expired", "expires_at": expiresAt,
+			})
+			return
+		}
+		resp["expires_at"] = expiresAt
+		resp["days_left"] = daysLeft(exp)
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func cmdServe(cfg Config, db *sql.DB) {
-	s := &server{db: db}
+	s := &server{db: db, cfg: cfg}
 	mux := http.NewServeMux()
 
 	// Licensing API. Strictly limited - a client only ever makes one of
@@ -398,6 +572,18 @@ func cmdServe(cfg Config, db *sql.DB) {
 	}
 	pages := newLimiter(300)
 	mux.Handle("/", rateLimited(http.FileServer(http.FS(site)), pages, cfg.TrustProxy))
+
+	// The Buy button. Sends people to Polar, which handles payment, VAT,
+	// and emailing them the key.
+	mux.Handle("/buy", rateLimited(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if cfg.CheckoutURL == "" {
+			http.Error(w, "The shop isn't set up yet - please check back shortly.",
+				http.StatusServiceUnavailable)
+			return
+		}
+		http.Redirect(w, r, cfg.CheckoutURL, http.StatusSeeOther)
+	}), pages, cfg.TrustProxy))
+
 
 	// Release downloads come off the disk, from a downloads/ folder beside
 	// the binary, so publishing a new netvis.exe is a file copy.
@@ -469,8 +655,11 @@ func cmdGen(db *sql.DB, args []string) {
 	fmt.Fprintf(os.Stderr, "\n%d key(s) generated.\n", len(keys))
 }
 
+// Prints nothing but the keys, one per line, so the output can be piped
+// straight into a file or pasted into a store without cleaning it up. The
+// count goes to stderr, which keeps it off the pipe.
 func cmdKeys(db *sql.DB) {
-	rows, err := db.Query(`SELECT key, note, created_at FROM keys ORDER BY created_at`)
+	rows, err := db.Query(`SELECT key FROM keys ORDER BY created_at`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -478,43 +667,52 @@ func cmdKeys(db *sql.DB) {
 
 	count := 0
 	for rows.Next() {
-		var key, note, created string
-		if err := rows.Scan(&key, &note, &created); err != nil {
+		var key string
+		if err := rows.Scan(&key); err != nil {
 			log.Fatal(err)
 		}
 		count++
-		fmt.Printf("%s  %s  %s\n", created, key, note)
+		fmt.Println(key)
 	}
 	fmt.Fprintf(os.Stderr, "\n%d unused key(s).\n", count)
 }
 
 func cmdUsers(db *sql.DB) {
 	rows, err := db.Query(
-		`SELECT hwid, os, activated_at, revoked FROM activations ORDER BY activated_at`)
+		`SELECT hwid, os, activated_at, expires_at, revoked FROM activations ORDER BY activated_at`)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 
-	fmt.Printf("%-24s  %-8s  %-22s %s\n", "HWID", "OS", "ACTIVATED", "STATE")
+	fmt.Printf("%-24s  %-8s  %-22s  %s\n", "HWID", "OS", "ACTIVATED", "STATE")
 	total, live := 0, 0
 	for rows.Next() {
-		var hwid, osName, at string
+		var hwid, osName, at, expiresAt string
 		var revoked int
-		if err := rows.Scan(&hwid, &osName, &at, &revoked); err != nil {
+		if err := rows.Scan(&hwid, &osName, &at, &expiresAt, &revoked); err != nil {
 			log.Fatal(err)
 		}
-		state := "active"
-		if revoked != 0 {
+		total++
+
+		state := ""
+		switch exp, ok := parseExpiry(expiresAt); {
+		case revoked != 0:
 			state = "REVOKED"
-		} else {
+		case !ok:
+			state = "active (no expiry)"
+			live++
+		case time.Now().After(exp):
+			state = "EXPIRED " + exp.Format("2006-01-02")
+		default:
+			state = fmt.Sprintf("active, %d days left", daysLeft(exp))
 			live++
 		}
-		total++
-		fmt.Printf("%-24s  %-8s  %-22s %s\n", hwid, osName, at, state)
+		fmt.Printf("%-24s  %-8s  %-22s  %s\n", hwid, osName, at, state)
 	}
 	fmt.Fprintf(os.Stderr, "\n%d machine(s), %d active.\n", total, live)
 }
+
 
 func setRevoked(db *sql.DB, hwid string, revoked bool) {
 	v := 0
@@ -553,7 +751,7 @@ func usage() {
   gen -n 10 [-note ..] [-out keys.txt]
                         generate license keys
   keys                  list unused keys
-  users                 list activated machines
+  users                 list activated machines, with days remaining
   revoke <hwid>         stop a machine from running netvis
   unrevoke <hwid>       allow it again
   delkey <key>          destroy an unused key
