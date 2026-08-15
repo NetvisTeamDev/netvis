@@ -93,6 +93,10 @@ type Config struct {
 	// secret - the organization id is public and the checkout link is what
 	// customers click.
 	PolarOrganizationID string `json:"polar_organization_id"`
+	// Set to "https://sandbox-api.polar.sh" to test against Polar's sandbox,
+	// which is a completely separate server with its own organization, its
+	// own ids and no real money. Empty means production.
+	PolarAPIBase string `json:"polar_api_base"`
 	// Where the Buy button sends people, e.g.
 	// "https://buy.polar.sh/polar_cl_xxxxx". Kept in config rather than the
 	// page so it can change without rebuilding.
@@ -233,6 +237,7 @@ func openDB(path string) *sql.DB {
 			key          TEXT NOT NULL,
 			activated_at TEXT NOT NULL,
 			expires_at   TEXT NOT NULL DEFAULT '',
+			polar_activation_id TEXT NOT NULL DEFAULT '',
 			revoked      INTEGER NOT NULL DEFAULT 0
 		);
 	`); err != nil {
@@ -241,8 +246,11 @@ func openDB(path string) *sql.DB {
 	// Older databases predate expires_at; add it rather than making anyone
 	// start over. An empty value means "never expires", which is exactly
 	// what those early activations were sold as.
-	if _, err := db.Exec(`ALTER TABLE activations ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''`); err != nil {
-		if !strings.Contains(err.Error(), "duplicate column") {
+	for _, stmt := range []string{
+		`ALTER TABLE activations ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE activations ADD COLUMN polar_activation_id TEXT NOT NULL DEFAULT ''`,
+	} {
+		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			log.Fatalf("migrate activations: %v", err)
 		}
 	}
@@ -442,6 +450,8 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		status = "renewed"
 	}
 
+	polarActivationID := ""
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		deny(w, http.StatusInternalServerError, "server error")
@@ -463,9 +473,25 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		// One key, one machine - checked here as well as at Polar. Polar
+		// only enforces this when the benefit has an activation limit set;
+		// if it doesn't, this is the only thing standing between one
+		// purchase and an office full of installs.
+		var otherHWID string
+		err := tx.QueryRow(`SELECT hwid FROM activations WHERE key = ? AND hwid != ?`, key, req.HWID).
+			Scan(&otherHWID)
+		if err == nil {
+			log.Printf("refused: key already used by %s, tried from %s", otherHWID, req.HWID)
+			deny(w, http.StatusForbidden, "this key is already in use on another computer")
+			return
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			deny(w, http.StatusInternalServerError, "server error")
+			return
+		}
+
 		// A key the customer bought. Polar owns it: it checks the key is
-		// real and unspent, burns one of its activation slots, and tells us
-		// when the licence runs out.
+		// real and unspent, burns one of its activation slots if it has
+		// them, and tells us when the licence runs out.
 		act, err := s.activatePolarKey(key, req.HWID)
 		if err != nil {
 			switch {
@@ -484,12 +510,15 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		}
 		// Polar decides the term for keys it issued.
 		expiry = polarExpiry(act)
+		polarActivationID = act.ID
 	}
 
 	if _, err := tx.Exec(`
-		INSERT INTO activations (hwid, os, key, activated_at, expires_at) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(hwid) DO UPDATE SET key = excluded.key, expires_at = excluded.expires_at, os = excluded.os`,
-		req.HWID, normOS(req.OS), key, now(), expiry); err != nil {
+		INSERT INTO activations (hwid, os, key, activated_at, expires_at, polar_activation_id)
+		VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT(hwid) DO UPDATE SET key = excluded.key, expires_at = excluded.expires_at,
+			os = excluded.os, polar_activation_id = excluded.polar_activation_id`,
+		req.HWID, normOS(req.OS), key, now(), expiry, polarActivationID); err != nil {
 		deny(w, http.StatusInternalServerError, "server error")
 		return
 	}
@@ -733,6 +762,41 @@ func setRevoked(db *sql.DB, hwid string, revoked bool) {
 	}
 }
 
+// forget removes a machine's activation entirely, so it counts as never
+// activated and can be licensed again from scratch.
+//
+// Distinct from revoke, which keeps the row and marks it blocked: a revoked
+// machine is refused even with a fresh key, which is what you want for
+// abuse, and exactly what you don't want when someone reinstalls Windows
+// or you're testing.
+func cmdForget(s *server, hwid string) {
+	var key, activationID string
+	err := s.db.QueryRow(`SELECT key, polar_activation_id FROM activations WHERE hwid = ?`, hwid).
+		Scan(&key, &activationID)
+	if errors.Is(err, sql.ErrNoRows) {
+		log.Fatalf("no machine with hwid %s", hwid)
+	} else if err != nil {
+		log.Fatal(err)
+	}
+
+	// Hand the activation slot back to Polar first. Deleting our row alone
+	// would leave the key stuck at Polar's limit, so it could never be used
+	// again - on this machine or any other.
+	if activationID != "" {
+		if err := s.deactivatePolarKey(key, activationID); err != nil {
+			log.Printf("warning: could not free the activation at Polar: %v", err)
+			log.Print("the machine is still forgotten here; free the slot from the Polar dashboard")
+		} else {
+			fmt.Println("activation slot released at Polar - the same key works again")
+		}
+	}
+
+	if _, err := s.db.Exec(`DELETE FROM activations WHERE hwid = ?`, hwid); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s forgotten - it can be activated again.\n", hwid)
+}
+
 func cmdDelKey(db *sql.DB, key string) {
 	res, err := db.Exec(`DELETE FROM keys WHERE key = ?`, key)
 	if err != nil {
@@ -754,7 +818,11 @@ func usage() {
   users                 list activated machines, with days remaining
   revoke <hwid>         stop a machine from running netvis
   unrevoke <hwid>       allow it again
+  forget <hwid>         delete a machine's activation so it can be
+                        licensed again from scratch (reinstalls, testing)
   delkey <key>          destroy an unused key
+  polarcheck <key>      ask Polar about a key and print its raw answer -
+                        use this when an activation is refused
 
 Admin commands run against the local database file only - they are never
 exposed over the network.
@@ -790,6 +858,10 @@ func main() {
 		setRevoked(db, need("hwid"), true)
 	case "unrevoke":
 		setRevoked(db, need("hwid"), false)
+	case "forget":
+		cmdForget(&server{db: db, cfg: cfg}, need("hwid"))
+	case "polarcheck":
+		cmdPolarCheck(&server{db: db, cfg: cfg}, need("key"))
 	case "delkey":
 		cmdDelKey(db, need("key"))
 	default:
