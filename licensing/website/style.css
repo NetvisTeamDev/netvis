@@ -10,226 +10,573 @@
   --accent-hover: #6aa0ff;
   --green: #46e076;
   --blue: #6696fa;
+  --red: #e05b6b;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Background art, behind everything. It's a pseudo-element rather than a
-   background on <body> so it can be pinned to the viewport and masked -
-   a plain body background would scroll or stretch with the page. WebP
-   first, JPEG for anything that can't read it. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: image-set(url("bg.webp") type("image/webp"), url("bg.jpg") type("image/jpeg"));
-  background-image: -webkit-image-set(url("bg.webp") type("image/webp"), url("bg.jpg") type("image/jpeg"));
-  background-position: center top;
-  background-size: cover;
-  background-repeat: no-repeat;
-  /* Only the top of the page is decorated; the feature cards further down
-     sit on flat colour so nothing competes with them for attention. */
-  -webkit-mask-image: linear-gradient(#000 0%, #000 30%, transparent 78%);
-  mask-image: linear-gradient(#000 0%, #000 30%, transparent 78%);
-}
-
-/* Some people set this because motion or busy imagery makes them ill, and
-   a full-bleed background is exactly the kind of thing they're opting out
-   of - so honour it and fall back to flat colour. */
-@media (prefers-reduced-motion: reduce) {
-  body::before { display: none; }
-}
-
 a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.spacer { flex: 1; }
+.muted { color: var(--text-dim); }
+/* The sprite sheet of symbols. Off-layout rather than display:none, which
+   would stop <use> resolving in some engines. */
+.defs { position: absolute; width: 0; height: 0; }
+.ico { width: 17px; height: 17px; flex: none; }
 
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+/* Stagger steps. These live in the stylesheet rather than in a style="" on
+   each element so the page needs no 'unsafe-inline' in its style-src. */
+.d1 { --d: .07s; } .d2 { --d: .14s; } .d3 { --d: .21s; }
+.d4 { --d: .28s; } .d5 { --d: .35s; }
 
-/* ---- top nav ---- */
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--border);
+/* ============ reading progress ============
+   One transform-only element pinned to the top. Scaling a bar costs the
+   compositor nothing, where animating width would relayout every frame. */
+.progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 40; pointer-events: none; }
+.progress i {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  transform: scaleX(0); transform-origin: 0 50%;
 }
-.nav .logo { width: 34px; height: 34px; border-radius: 9px; }
-.nav .brand { font-size: 20px; font-weight: 600; letter-spacing: -0.2px; }
-.nav .brand span { color: var(--text-dim); font-weight: 400; font-size: 15px; margin-left: 8px; }
-.nav .spacer { flex: 1; }
-.nav .links a { color: var(--text-dim); margin-left: 24px; font-size: 15px; transition: color 0.15s; }
-.nav .links a:hover { color: var(--text); }
 
-/* ---- hero ---- */
-.hero { padding: 84px 0 64px; text-align: center; }
-.hero .icon { width: 104px; height: 104px; border-radius: 26px; margin: 0 auto 30px; display: block; }
-.hero h1 { font-size: 52px; font-weight: 700; letter-spacing: -1.2px; line-height: 1.1; }
-.hero .tag { font-size: 21px; color: var(--text-dim); margin: 18px auto 0; max-width: 640px; }
+/* ============ animated backdrop ============
+   Fixed behind everything: a perspective grid, a slow scanning beam, two
+   drifting colour orbs and a faint grain. All transform/opacity so it runs on
+   the compositor and doesn't repaint the page. */
+.backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 
-.cta { margin-top: 40px; display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.grid-plane {
+  position: absolute;
+  left: -50%; right: -50%; top: -10%; height: 90%;
+  background-image:
+    linear-gradient(rgba(70, 224, 118, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 150, 250, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  transform: perspective(420px) rotateX(58deg);
+  transform-origin: 50% 0;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 10%, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 10%, #000 20%, transparent 75%);
+  animation: gridflow 14s linear infinite;
+}
+@keyframes gridflow { to { background-position: 0 56px, 56px 0; } }
 
+/* One sweep every 9 seconds - present enough to notice, rare enough not to
+   pull the eye off the copy. */
+.beam {
+  position: absolute; top: 0; left: 0; width: 100%; height: 60vh;
+  background: linear-gradient(180deg, transparent, rgba(70, 224, 118, 0.055), transparent);
+  animation: sweep 9s ease-in-out infinite;
+}
+@keyframes sweep {
+  0%, 100% { transform: translateY(-60vh); opacity: 0; }
+  40%      { opacity: 1; }
+  70%      { transform: translateY(90vh); opacity: 0; }
+}
+
+.orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; }
+.orb-a { width: 460px; height: 460px; background: rgba(70, 224, 118, 0.18); top: -80px; left: -60px;
+         animation: drift 22s ease-in-out infinite alternate; }
+.orb-b { width: 520px; height: 520px; background: rgba(76, 139, 245, 0.16); top: 120px; right: -120px;
+         animation: drift 26s ease-in-out infinite alternate-reverse; }
+@keyframes drift { to { transform: translate3d(60px, 70px, 0) scale(1.12); } }
+
+/* Grain, so the large flat areas and the blurred orbs don't band on cheap
+   panels. An inline SVG turbulence rather than an image request. */
+.noise {
+  position: absolute; inset: 0; opacity: 0.028; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+
+/* ============ cursor ============
+   Three layers, all positioned by transform from the top-left corner and all
+   zero-sized: the visible circle is a ::before offset by half its own width.
+   That keeps the element script touches to a single transform per frame, and
+   lets the ring change size on hover without the position having to be
+   recalculated to match. */
+.cursorfx { position: fixed; inset: 0; z-index: 60; pointer-events: none;
+            opacity: 0; transition: opacity .35s ease; }
+.cursorfx.vis { opacity: 1; }
+.cursorfx i { position: absolute; top: 0; left: 0; width: 0; height: 0; display: block; }
+.cursorfx i::before { content: ""; position: absolute; display: block; }
+
+/* The aura. Screen blending means it lifts whatever is under it instead of
+   painting a green disc on top of the text. */
+.cur-aura::before {
+  left: -90px; top: -90px; width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(70, 224, 118, 0.16), rgba(76, 139, 245, 0.07) 45%, transparent 70%);
+  mix-blend-mode: screen; filter: blur(6px);
+}
+.cur-ring::before {
+  left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid rgba(70, 224, 118, 0.5);
+  transition: transform .3s cubic-bezier(.2,.7,.3,1), border-color .3s, background .3s;
+}
+.cursorfx.hot .cur-ring::before {
+  transform: scale(1.8); border-color: rgba(102, 150, 250, 0.85);
+  background: rgba(102, 150, 250, 0.07);
+}
+.cursorfx.down .cur-ring::before { transform: scale(0.72); border-color: rgba(70, 224, 118, 0.95); }
+
+/* Packets shedding off the pointer - green for down, blue for up, the same
+   two colours the graph uses. */
+.cur-packet { opacity: 0; }
+.cur-packet::before {
+  left: -2.5px; top: -2.5px; width: 5px; height: 5px; border-radius: 1.5px;
+  background: var(--green); box-shadow: 0 0 8px rgba(70, 224, 118, 0.65);
+}
+.cur-packet.up::before { background: var(--blue); box-shadow: 0 0 8px rgba(102, 150, 250, 0.65); }
+
+/* Motion is decoration here, so anyone who has asked for less of it gets a
+   completely still page rather than a slower one. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .grid-plane, .beam, .orb, .bars i, .shine::after, .plan-featured::after,
+  .pulse, .fill.part { animation: none !important; }
+  .cursorfx { display: none !important; }
+  #dLine, #uLine, #dArea, #uArea { animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* ============ reveal on scroll ============
+   One base class plus two directional variants, and a --d delay each element
+   sets inline. Staggering by hand beats nth-child rules that stop matching the
+   moment a row is reordered. */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity .8s cubic-bezier(.2,.7,.3,1), transform .8s cubic-bezier(.2,.7,.3,1);
+  transition-delay: var(--d, 0s);
+}
+.reveal-l { transform: translateX(-32px); }
+.reveal-r { transform: translateX(32px); }
+.reveal.shown { opacity: 1; transform: none; }
+
+/* ============ nav ============ */
+.nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px);
+       background: rgba(11, 13, 18, 0.55); border-bottom: 1px solid transparent;
+       transition: background .3s ease, border-color .3s ease; }
+.nav.solid { background: rgba(11, 13, 18, 0.82); border-bottom-color: var(--border); }
+.navrow { display: flex; align-items: center; gap: 12px; padding-top: 16px; padding-bottom: 16px;
+          transition: padding .3s ease; }
+.nav.solid .navrow { padding-top: 11px; padding-bottom: 11px; }
+.logo { width: 32px; height: 32px; border-radius: 9px; }
+.logo.small { width: 22px; height: 22px; border-radius: 6px; }
+.brand { font-size: 19px; font-weight: 600; letter-spacing: -0.2px; }
+.brand span { color: var(--text-dim); font-weight: 400; font-size: 14px; margin-left: 6px; }
+.links a {
+  color: var(--text-dim); margin-left: 22px; font-size: 14px;
+  position: relative; transition: color .15s;
+}
+.links a::after {
+  content: ""; position: absolute; left: 0; bottom: -4px; height: 1px; width: 100%;
+  background: var(--green); transform: scaleX(0); transform-origin: 100% 50%;
+  transition: transform .28s cubic-bezier(.2,.7,.3,1);
+}
+.links a:hover { color: var(--text); }
+.links a:hover::after { transform: scaleX(1); transform-origin: 0 50%; }
+
+/* Support sits apart from the nav links, as a button rather than a word:
+   someone who is looking for help is not scanning a list, they are looking
+   for the thing that obviously means help. */
+.nav-support {
+  display: inline-flex; align-items: center; gap: 8px; margin-left: 24px;
+  padding: 8px 15px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  color: #dfe6ff; background: rgba(88, 101, 242, 0.14);
+  border: 1px solid rgba(88, 101, 242, 0.42);
+  transition: background .2s, border-color .2s, transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .25s;
+}
+.nav-support:hover {
+  background: rgba(88, 101, 242, 0.26); border-color: rgba(122, 133, 255, 0.75);
+  transform: translateY(-1px); box-shadow: 0 8px 24px rgba(88, 101, 242, 0.28);
+}
+
+/* ============ hero ============ */
+.hero { padding: 76px 24px 40px; text-align: center; }
+.badge {
+  display: inline-block; margin-bottom: 22px; padding: 7px 16px; border-radius: 999px;
+  background: rgba(70, 224, 118, 0.1); border: 1px solid rgba(70, 224, 118, 0.35);
+  color: var(--green); font-size: 14px; font-weight: 600;
+}
+.hero h1 { font-size: 58px; font-weight: 700; letter-spacing: -1.6px; line-height: 1.08; }
+/* The gradient drifts rather than sitting still - a slow shimmer that reads as
+   "live" without ever asking to be looked at. */
+.grad {
+  background: linear-gradient(100deg, var(--green), var(--blue) 45%, var(--green) 90%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 9s ease-in-out infinite;
+}
+@keyframes shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.hero .tag { font-size: 20px; color: var(--text-dim); margin: 20px auto 0; max-width: 620px; }
+.hero .tag em { color: var(--text); font-style: normal; font-weight: 600; }
+
+.tracewrap { max-width: 720px; margin: 34px auto 0; }
+/* overflow:hidden matters: the group is translated one column left on every
+   tick, and the viewport is what hides the sample sliding off the edge. */
+.trace { width: 100%; height: 96px; display: block; overflow: hidden; }
+/* Draws itself once on load, then the script takes over and keeps it moving.
+   The dash length is comfortably longer than any path the generator produces,
+   so redrawing d later leaves the line fully stroked. */
+#dLine, #uLine { stroke-dasharray: 1600; stroke-dashoffset: 1600; animation: draw 1.8s .25s ease forwards; }
+#uLine { animation-delay: .5s; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+#dArea, #uArea { opacity: 0; animation: fadein 1.3s 1.25s ease forwards; }
+@keyframes fadein { to { opacity: 1; } }
+
+.readout {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 12px; font-size: 14px; color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.readout b { color: var(--text); font-weight: 600; min-width: 76px; text-align: left; }
+.readout .rd-label { margin-right: 2px; }
+.readout b + .dot { margin-left: 14px; }
+.dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.dot-down { background: var(--green); box-shadow: 0 0 10px rgba(70, 224, 118, 0.6); }
+.dot-up { background: var(--blue); box-shadow: 0 0 10px rgba(102, 150, 250, 0.6); }
+
+.cta { margin-top: 30px; display: flex; gap: 13px; justify-content: center; align-items: center; flex-wrap: wrap; }
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 15px 30px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 16px; font-weight: 600; padding: 15px 30px; border-radius: 12px;
+  border: 1px solid transparent; cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .18s cubic-bezier(.2,.7,.3,1), background .15s, border-color .15s, box-shadow .25s;
 }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn-buy { background: var(--green); color: #06210f; box-shadow: 0 8px 30px rgba(70, 224, 118, 0.22); }
+.btn-buy:hover { background: #5cf089; box-shadow: 0 14px 42px rgba(70, 224, 118, 0.34); }
 .btn-primary { background: var(--accent); color: #08101f; }
-.btn-primary:hover { background: var(--accent-hover); }
-/* Applies to any button, not just the blue one - the primary action moved
-   to the green trial button, and the disabled state has to follow it. */
-.btn:disabled,
-.btn.disabled {
-  background: var(--panel-2);
-  color: var(--text-dim);
-  border-color: var(--border);
-  cursor: not-allowed;
-  opacity: 0.85;
-}
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 14px 42px rgba(76, 139, 245, 0.3); }
 .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
 .btn-ghost:hover { border-color: var(--text-dim); }
 
-/* Green is the primary action: starting the trial. Buying is blue and
-   secondary - people who already want it will find it either way. */
-.btn-buy { background: var(--green); color: #06210f; }
-.btn-buy:hover { background: #5cf089; }
-
-.price { margin-top: 22px; font-size: 19px; color: var(--text); }
-.price strong { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.price .per { color: var(--text-dim); font-size: 16px; }
-
-.dl-note { margin-top: 8px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
-
-/* Badge above the headline - the first thing read, so it carries the offer. */
-.badge {
-  display: inline-block;
-  margin-bottom: 20px;
-  padding: 7px 16px;
-  border-radius: 999px;
-  background: rgba(70, 224, 118, 0.12);
-  border: 1px solid rgba(70, 224, 118, 0.35);
-  color: var(--green);
-  font-size: 14px;
-  font-weight: 600;
+/* A light sweep across the primary CTA every few seconds. It draws the eye
+   back to the one button that matters without moving anything on the page. */
+.shine::after {
+  content: ""; position: absolute; top: 0; left: 0; width: 45%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: sheen 4.5s 1.6s ease-in-out infinite;
+}
+@keyframes sheen {
+  0%   { transform: translateX(-160%) skewX(-18deg); }
+  22%  { transform: translateX(320%) skewX(-18deg); }
+  100% { transform: translateX(320%) skewX(-18deg); }
 }
 
-/* Three reassurances under the buttons, where the hesitation actually is. */
+.btn:disabled, .btn.disabled {
+  background: var(--panel-2); color: var(--text-dim); border-color: var(--border);
+  cursor: not-allowed; box-shadow: none; transform: none;
+}
+.btn.disabled::after { display: none; }
+.dl-note { margin-top: 14px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
+
 .trial-strip {
-  margin: 40px auto 0;
-  max-width: 860px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 26px;
-  text-align: left;
+  margin: 44px auto 0; max-width: 840px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: left;
 }
-.trial-strip div { border-top: 2px solid var(--border); padding-top: 14px; }
-.trial-strip strong { display: block; font-size: 15px; margin-bottom: 5px; }
-.trial-strip span { font-size: 14px; color: var(--text-dim); line-height: 1.55; }
+.trial-strip > div { border-top: 2px solid var(--border); padding-top: 14px; position: relative; }
+/* Sits exactly on top of the grey rule and wipes across it on hover, rather
+   than swapping the border colour outright. */
+.trial-strip > div::before {
+  content: ""; position: absolute; left: 0; top: -2px; height: 2px; width: 100%;
+  background: var(--green); transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform .45s cubic-bezier(.2,.7,.3,1);
+}
+.trial-strip > div:hover::before { transform: scaleX(1); }
+.trial-strip strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.trial-strip span { font-size: 14px; color: var(--text-dim); }
 
-/* ---- pricing ---- */
-.pricing { padding: 30px 0 20px; text-align: center; }
-.pricing h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.5px; }
-.plans {
-  margin: 40px auto 0;
-  max-width: 720px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-.plan {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 30px 26px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-}
-.plan-featured { border-color: rgba(76, 139, 245, 0.55); }
-.plan-name { font-size: 15px; color: var(--text-dim); }
-.plan-price { font-size: 40px; font-weight: 700; letter-spacing: -1.5px; margin-top: 6px; }
-.plan-term { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; }
-.plan ul { list-style: none; margin: 0 0 24px; flex: 1; }
-.plan li { font-size: 15px; color: var(--text-dim); padding: 7px 0 7px 22px; position: relative; }
-.plan li::before { content: "✓"; position: absolute; left: 0; color: var(--green); }
-.plan-cta { justify-content: center; width: 100%; }
-.pricing-note { margin-top: 26px; font-size: 14px; color: var(--text-dim); }
-
-/* ---- screenshot ---- */
+/* ============ screenshots ============ */
 .shot {
-  margin: 56px auto 0;
-  max-width: 900px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--bg-2);
-  padding: 10px;
+  margin: 50px auto 0; max-width: 940px;
+  border: 1px solid var(--border); border-radius: 16px;
+  background: var(--bg-2); padding: 10px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
 }
 .shot img { width: 100%; display: block; border-radius: 8px; }
-.shot .placeholder {
-  border-radius: 8px;
-  background: linear-gradient(180deg, #14171e, #0f1218);
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-dim);
-  font-size: 15px;
+/* Tilts toward the pointer, driven from script. The transition is what makes
+   it settle back smoothly when the mouse leaves. */
+.hero-shot {
+  transform-style: preserve-3d; will-change: transform;
+  transition: transform .5s cubic-bezier(.2,.7,.3,1), box-shadow .5s ease;
+}
+.hero-shot:hover { box-shadow: 0 42px 110px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(70, 224, 118, 0.22); }
+.shot-inner { position: relative; border-radius: 8px; overflow: hidden; }
+/* A glare that slides across the screenshot on hover, the way light moves on
+   a real display when you tilt it. */
+.shot-inner::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.07) 48%, transparent 62%);
+  transform: translateX(-40%); opacity: 0;
+  transition: transform .8s ease, opacity .5s ease;
+}
+.hero-shot:hover .shot-inner::after { transform: translateX(40%); opacity: 1; }
+
+/* ============ pain section ============ */
+.pain { padding: 100px 24px 20px; text-align: center; }
+.pain h2, .features h2, .pricing h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.9px; }
+.pain-grid { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+/* Cards in a .spot grid get a highlight that follows the pointer. --mx/--my
+   are written by script; with no pointer they simply never resolve and the
+   card renders flat. */
+.spot > * { position: relative; isolation: isolate; }
+.spot > *::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%),
+              rgba(70, 224, 118, 0.10), transparent 65%);
+  opacity: 0; transition: opacity .35s ease;
+}
+.spot > *:hover::before { opacity: 1; }
+
+/* opacity and transition-delay are repeated on every card that declares its
+   own transition: the shorthand replaces whatever .reveal set, so leaving
+   them out makes the card snap into view instead of fading, and drops its
+   place in the stagger. */
+.pain-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 28px 24px; text-align: left;
+  transition: opacity .8s cubic-bezier(.2,.7,.3,1), transform .35s cubic-bezier(.2,.7,.3,1), border-color .3s;
+  transition-delay: var(--d, 0s);
+}
+.pain-card:hover { transform: translateY(-6px); border-color: rgba(224, 91, 107, 0.5); }
+.pain-icon {
+  width: 34px; height: 34px; border-radius: 9px; margin-bottom: 16px;
+  background: rgba(224, 91, 107, 0.12); color: var(--red);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;
+  transition: transform .35s cubic-bezier(.2,.7,.3,1);
+}
+.pain-card:hover .pain-icon { transform: scale(1.12) rotate(-6deg); }
+.pain-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+.pain-card p { font-size: 15px; color: var(--text-dim); }
+.pain-card em { color: var(--text); font-style: normal; }
+.pain-note { margin-top: 34px; font-size: 19px; color: var(--text-dim); }
+.pain-note strong { color: var(--text); }
+
+/* ============ latency / auto-block ============ */
+.latency { padding: 100px 0 20px; }
+.latency-inner { display: grid; grid-template-columns: 1.05fr 1fr; gap: 54px; align-items: center; }
+.eyebrow {
+  display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--green); margin-bottom: 12px;
+}
+.latency h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.9px; line-height: 1.18; }
+.latency p { margin-top: 16px; font-size: 16px; color: var(--text-dim); }
+.latency p strong { color: var(--text); }
+.ticks { list-style: none; margin-top: 22px; }
+.ticks li { font-size: 15px; color: var(--text-dim); padding: 7px 0 7px 26px; position: relative; }
+.ticks li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+.ping-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px; margin-bottom: 14px; position: relative;
+}
+.ping-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
+.ping-bad { color: var(--red); font-weight: 600; }
+.ping-good { color: var(--green); font-weight: 600; }
+.bars { display: flex; align-items: flex-end; gap: 5px; height: 88px; }
+.bars i { flex: 1; border-radius: 3px 3px 0 0; height: var(--h); transform-origin: bottom; transform: scaleY(0); }
+.h18 { --h: 18%; } .h20 { --h: 20%; } .h21 { --h: 21%; } .h22 { --h: 22%; }
+.h23 { --h: 23%; } .h24 { --h: 24%; } .h26 { --h: 26%; } .h34 { --h: 34%; }
+.h78 { --h: 78%; } .h82 { --h: 82%; } .h88 { --h: 88%; } .h90 { --h: 90%; }
+.h96 { --h: 96%; }
+/* Held at zero until the section is actually on screen, so the comparison
+   plays for someone who is looking at it rather than finishing before they
+   have scrolled down. */
+.bars.play i { animation: rise .85s cubic-bezier(.2,.9,.3,1) both; }
+.bars.play i:nth-child(1) { animation-delay: .02s } .bars.play i:nth-child(2) { animation-delay: .07s }
+.bars.play i:nth-child(3) { animation-delay: .12s } .bars.play i:nth-child(4) { animation-delay: .17s }
+.bars.play i:nth-child(5) { animation-delay: .22s } .bars.play i:nth-child(6) { animation-delay: .27s }
+.bars.play i:nth-child(7) { animation-delay: .32s } .bars.play i:nth-child(8) { animation-delay: .37s }
+.bars.play i:nth-child(9) { animation-delay: .42s } .bars.play i:nth-child(10) { animation-delay: .47s }
+.bars.play i:nth-child(11) { animation-delay: .52s } .bars.play i:nth-child(12) { animation-delay: .57s }
+@keyframes rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bars-bad i { background: #3a4152; }
+.bars-bad i:nth-child(n+5):nth-child(-n+9) { background: var(--red); }
+.bars-good i { background: #3a4152; }
+.bars-good i:nth-child(5) { background: var(--green); }
+.cut-label { margin-top: 10px; font-size: 12px; color: var(--green); text-align: center; }
+
+/* ============ features ============ */
+.features { padding: 110px 24px 20px; }
+.features h2 { text-align: center; }
+.feature-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  margin-top: 64px;
+}
+.feature-row.reverse .feature-copy { order: 2; }
+.feature-copy h3 { font-size: 25px; font-weight: 700; letter-spacing: -0.5px; }
+.feature-copy p { margin-top: 14px; font-size: 16px; color: var(--text-dim); }
+.feature-copy em { color: var(--text); font-style: normal; font-weight: 600; }
+.feature-shot {
+  border: 1px solid var(--border); border-radius: 14px; background: var(--bg-2);
+  padding: 8px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: opacity .8s cubic-bezier(.2,.7,.3,1), transform .45s cubic-bezier(.2,.7,.3,1), border-color .3s, box-shadow .4s;
+  transition-delay: var(--d, 0s);
+}
+.feature-shot img { width: 100%; display: block; border-radius: 8px; }
+/* Stated after .reveal.shown so hover still wins once the row has appeared. */
+.feature-shot.shown:hover {
+  transform: translateY(-6px) scale(1.012);
+  border-color: rgba(70, 224, 118, 0.4);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.58);
 }
 
-/* ---- features ---- */
-.features { padding: 88px 0 40px; }
-.features h2 { font-size: 30px; font-weight: 600; text-align: center; letter-spacing: -0.5px; }
-.grid {
-  margin-top: 44px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+/* ============ privacy ============ */
+.privacy { padding: 110px 24px 0; }
+.privacy-card {
+  background: linear-gradient(180deg, rgba(70, 224, 118, 0.06), transparent 60%), var(--panel);
+  border: 1px solid rgba(70, 224, 118, 0.28); border-radius: 18px;
+  padding: 44px 40px; text-align: center;
 }
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 26px 24px;
-}
-.card .dot { width: 12px; height: 12px; border-radius: 4px; margin-bottom: 16px; }
-.card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-.card p { font-size: 15px; color: var(--text-dim); }
+.privacy-card h2 { font-size: 30px; font-weight: 700; letter-spacing: -0.7px; }
+.privacy-card p { margin-top: 16px; font-size: 16px; color: var(--text-dim); max-width: 660px; margin-left: auto; margin-right: auto; }
 
-/* ---- footer ---- */
-.foot {
-  margin-top: 72px;
-  border-top: 1px solid var(--border);
-  padding: 34px 0 60px;
-  color: var(--text-dim);
-  font-size: 14px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+/* ============ community + macOS ============ */
+.community { padding: 90px 24px 0; }
+.comm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.comm-card {
+  display: block; position: relative; overflow: hidden;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  padding: 30px 28px;
+  transition: transform .35s cubic-bezier(.2,.7,.3,1), border-color .3s, box-shadow .4s,
+              opacity .8s cubic-bezier(.2,.7,.3,1);
+  transition-delay: var(--d, 0s);
 }
-.foot .spacer { flex: 1; }
+.comm-card h3 { font-size: 23px; font-weight: 700; letter-spacing: -0.5px; margin-top: 18px; }
+.comm-card > p { margin-top: 12px; font-size: 15.5px; color: var(--text-dim); }
+.comm-top { display: flex; align-items: center; justify-content: space-between; }
+.comm-ico { width: 30px; height: 30px; }
+.comm-tag {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+  padding: 5px 11px; border-radius: 999px;
+}
+.comm-tag.live { color: var(--green); background: rgba(70, 224, 118, 0.12); border: 1px solid rgba(70, 224, 118, 0.3); }
+.comm-tag.soon { color: var(--text-dim); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); }
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(70, 224, 118, 0.7);
+         animation: pulse 2.2s ease-out infinite; }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(70, 224, 118, 0.55); }
+  70%  { box-shadow: 0 0 0 9px rgba(70, 224, 118, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(70, 224, 118, 0); }
+}
+.comm-list { list-style: none; margin: 18px 0 0; }
+.comm-list li { font-size: 15px; color: var(--text-dim); padding: 6px 0 6px 24px; position: relative; }
+.comm-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+.comm-discord { --brand: #5865f2; }
+.comm-discord .comm-ico { color: #8b95ff; }
+.comm-discord.shown:hover {
+  transform: translateY(-6px); border-color: rgba(88, 101, 242, 0.6);
+  box-shadow: 0 26px 70px rgba(88, 101, 242, 0.18);
+}
+/* A soft brand glow that only wakes on hover, so the card reads as a link. */
+.comm-discord::after {
+  content: ""; position: absolute; inset: -40% -10% auto -10%; height: 70%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(88, 101, 242, 0.30), transparent 70%);
+  opacity: 0; transition: opacity .4s ease; pointer-events: none;
+}
+.comm-discord:hover::after { opacity: 1; }
+.comm-cta {
+  display: inline-flex; align-items: center; gap: 9px; margin-top: 22px;
+  font-size: 15px; font-weight: 700; color: #aeb6ff;
+}
+.arr { font-style: normal; transition: transform .28s cubic-bezier(.2,.7,.3,1); }
+.comm-discord:hover .arr { transform: translateX(6px); }
+
+.comm-mac .comm-ico { color: var(--text-dim); }
+.comm-foot { margin-top: 20px; font-size: 14px; color: var(--text-dim); }
+.os-bars { margin-top: 22px; display: grid; gap: 12px; }
+.os-row { display: grid; grid-template-columns: 118px 1fr 78px; align-items: center; gap: 12px; font-size: 14px; }
+.os-name { color: var(--text); }
+.os-meter { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.os-meter .fill { display: block; height: 100%; border-radius: 999px; transform-origin: 0 50%; }
+.fill.full { width: 100%; background: linear-gradient(90deg, var(--green), #7ff0a4); }
+/* Doesn't sit still, because "in progress" that looks finished is a lie and
+   "in progress" that looks dead is worse. */
+.fill.part { width: 46%; background: linear-gradient(90deg, var(--accent), #8fb6ff);
+             animation: building 3.4s ease-in-out infinite; }
+@keyframes building { 0%, 100% { transform: scaleX(.86); } 50% { transform: scaleX(1); } }
+.os-state { font-size: 13px; color: var(--text-dim); text-align: right; }
+.os-state.ok { color: var(--green); font-weight: 600; }
+
+/* ============ pricing ============ */
+.pricing { padding: 110px 24px 40px; text-align: center; }
+.pricing-lead { margin-top: 14px; font-size: 17px; color: var(--text-dim); max-width: 560px; margin-left: auto; margin-right: auto; }
+.plans { margin: 44px auto 0; max-width: 760px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.plan {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  padding: 32px 28px; text-align: left; display: flex; flex-direction: column;
+  transition: opacity .8s cubic-bezier(.2,.7,.3,1), transform .35s cubic-bezier(.2,.7,.3,1),
+              border-color .3s, box-shadow .4s;
+  transition-delay: var(--d, 0s);
+}
+.plan.shown:hover { transform: translateY(-6px); box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5); }
+.plan-featured { border-color: rgba(76, 139, 245, 0.55); box-shadow: 0 20px 60px rgba(76, 139, 245, 0.1); }
+/* A slow band of light travelling down the featured plan, so the eye lands on
+   the paid option without a flashing border. Animated as a background
+   position rather than a moving box, so nothing has to be clipped - the
+   "Best value" flag hangs outside the card and would be cut off by overflow. */
+.plan-featured::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(76, 139, 245, 0.18), transparent);
+  background-size: 100% 55%; background-repeat: no-repeat; background-position: 0 -60%;
+  animation: plansweep 6.5s ease-in-out infinite;
+}
+@keyframes plansweep {
+  0%, 100% { background-position: 0 -60%; opacity: 0; }
+  30% { opacity: 1; }
+  75% { background-position: 0 160%; opacity: 0; }
+}
+.plan-flag {
+  position: absolute; top: -12px; right: 22px;
+  background: var(--accent); color: #08101f; font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 999px;
+}
+.plan-name { font-size: 15px; color: var(--text-dim); }
+.plan-price { font-size: 44px; font-weight: 700; letter-spacing: -1.8px; margin-top: 4px; }
+.plan-term { font-size: 14px; color: var(--text-dim); margin-bottom: 22px; }
+.plan ul { list-style: none; margin: 0 0 26px; flex: 1; }
+.plan li { font-size: 15px; color: var(--text-dim); padding: 7px 0 7px 24px; position: relative; }
+.plan li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.plan-cta { justify-content: center; width: 100%; }
+.pricing-note { margin-top: 28px; font-size: 14px; color: var(--text-dim); }
+
+/* ============ footer ============ */
+.foot { margin-top: 80px; border-top: 1px solid var(--border); padding: 30px 0 50px; color: var(--text-dim); font-size: 14px; }
+.footrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .req { color: var(--text-dim); font-size: 13px; }
+.foot-link { display: inline-flex; align-items: center; gap: 7px; margin-left: 10px;
+             color: var(--text-dim); transition: color .2s; }
+.foot-link:hover { color: #aeb6ff; }
 
-@media (max-width: 760px) {
-  .hero h1 { font-size: 38px; }
-  .hero .tag { font-size: 18px; }
-  .grid { grid-template-columns: 1fr; }
-  .trial-strip { grid-template-columns: 1fr; gap: 18px; }
-  .plans { grid-template-columns: 1fr; }
-  .nav .links { display: none; }
+@media (max-width: 860px) {
+  .hero h1 { font-size: 38px; letter-spacing: -1px; }
+  .hero .tag { font-size: 17px; }
+  .pain h2, .features h2, .pricing h2, .latency h2 { font-size: 27px; }
+  .pain-grid, .trial-strip, .plans, .comm-grid { grid-template-columns: 1fr; }
+  .nav-support { margin-left: 0; }
+  .comm-card { padding: 26px 22px; }
+  .os-row { grid-template-columns: 100px 1fr 70px; gap: 9px; }
+  .latency-inner, .feature-row { grid-template-columns: 1fr; gap: 30px; }
+  .feature-row.reverse .feature-copy { order: 0; }
+  .links { display: none; }
+  .privacy-card { padding: 30px 22px; }
+  /* Sideways entrances read as broken on a narrow column - everything rises
+     instead. */
+  .reveal-l, .reveal-r { transform: translateY(24px); }
+  .readout { flex-wrap: wrap; row-gap: 4px; }
 }

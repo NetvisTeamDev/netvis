@@ -2,8 +2,7 @@
 // drawn as a gradient-filled area (solid at the line, fading to nothing at
 // the baseline) with a crisp curve on top, over labeled round-number
 // Y-axis gridlines. Hovering shows a crosshair and the exact values at
-// that moment; the current rates and the visible peak are called out on
-// the graph itself. Everything is drawn with ImDrawList rather than
+// that moment. Everything is drawn with ImDrawList rather than
 // ImGui::PlotLines so we control every pixel of it.
 #pragma once
 #include <algorithm>
@@ -12,6 +11,7 @@
 #include <deque>
 #include <string>
 #include "imgui.h"
+#include "theme.h"
 
 struct TrafficSample {
     double down = 0, up = 0; // bytes/sec
@@ -94,12 +94,12 @@ public:
         float baseY = p1.y - pad;
         float plotH = size.y - pad * 2;
 
-        dl->AddRectFilled(p0, p1, IM_COL32(18, 20, 25, 255), rounding);
+        dl->AddRectFilled(p0, p1, theme::GraphBg(), rounding);
 
         // Unlabeled gridlines for reference (25/50/75/100% of the nice max).
         for (int i = 1; i <= 4; i++) {
             float y = baseY - (float)i / 4.0f * plotH;
-            ImU32 lineCol = (i == 4) ? IM_COL32(255, 255, 255, 26) : IM_COL32(255, 255, 255, 12);
+            ImU32 lineCol = theme::GraphGrid(i == 4);
             dl->AddLine(ImVec2(p0.x + 1, y), ImVec2(p1.x - 1, y), lineCol, 1.0f);
         }
 
@@ -139,41 +139,27 @@ public:
 
         if (n >= 2) {
             dl->PushClipRect(p0, p1, true);
-            fillArea(true, IM_COL32(0x35, 0xc7, 0x5f, 0xB0), IM_COL32(0x35, 0xc7, 0x5f, 0x00));
-            fillArea(false, IM_COL32(0x66, 0x96, 0xfa, 0x80), IM_COL32(0x66, 0x96, 0xfa, 0x00));
-            strokeLine(true, IM_COL32(0x46, 0xe0, 0x76, 0xFF));
-            strokeLine(false, IM_COL32(0x7f, 0xa8, 0xff, 0xFF));
+            fillArea(true, theme::GraphDownFill(), theme::GraphDownClear());
+            fillArea(false, theme::GraphUpFill(), theme::GraphUpClear());
+            strokeLine(true, theme::GraphDownLine());
+            strokeLine(false, theme::GraphUpLine());
 
             // Soft glow dot on the newest download point - a small "live"
             // cue at the leading edge of the graph.
             float lx = sampleX(n - 1), ly = downY(n - 1);
-            dl->AddCircleFilled(ImVec2(lx, ly), 5.0f, IM_COL32(0x46, 0xe0, 0x76, 0x50));
-            dl->AddCircleFilled(ImVec2(lx, ly), 2.5f, IM_COL32(0xbe, 0xff, 0xd6, 0xFF));
+            dl->AddCircleFilled(ImVec2(lx, ly), 5.0f, theme::GraphHeadGlow());
+            dl->AddCircleFilled(ImVec2(lx, ly), 2.5f, theme::GraphHeadDot());
             dl->PopClipRect();
         }
 
-        // Peak marker: a hollow ring + label at the highest download sample
-        // in view, so the busiest moment is called out even after it's
-        // scrolled back in time.
-        if (n >= 2) {
-            int peakIdx = 0;
-            for (int i = 1; i < n; i++)
-                if (samples_[i].down > samples_[peakIdx].down) peakIdx = i;
-            if (samples_[peakIdx].down > floorVal) {
-                float px = sampleX(peakIdx), py = downY(peakIdx);
-                dl->AddCircle(ImVec2(px, py), 4.0f, IM_COL32(0xe6, 0xf0, 0xff, 0xCC), 12, 1.5f);
-                std::string plabel = "peak " + FormatRateShort(samples_[peakIdx].down);
-                ImVec2 ts = ImGui::CalcTextSize(plabel.c_str());
-                float tx = std::min(px + 6, p1.x - ts.x - 4);
-                float ty = std::max(py - ts.y - 4, p0.y + 2);
-                dl->AddText(ImVec2(tx, ty), IM_COL32(0xe6, 0xf0, 0xff, 0xDD), plabel.c_str());
-            }
-        }
+        // No peak marker. The Y axis is already labelled with round numbers,
+        // so the highest point can be read off the grid - and a floating
+        // "peak" label just sat on top of the line it was describing.
 
         // (The current Down/Up values are rendered by the caller above the
         // chart now, so they don't overlap the plotted area.)
 
-        dl->AddRect(p0, p1, IM_COL32(55, 60, 70, 255), rounding);
+        dl->AddRect(p0, p1, theme::GraphBorder(), rounding);
 
         // Reserve the space and make the area hoverable for the crosshair.
         ImGui::Dummy(size);
@@ -185,17 +171,17 @@ public:
                 i = std::max(0, std::min(i, n - 1));
                 float sx = sampleX(i);
 
-                dl->AddLine(ImVec2(sx, p0.y + 1), ImVec2(sx, p1.y - 1), IM_COL32(255, 255, 255, 60), 1.0f);
-                dl->AddCircleFilled(ImVec2(sx, downY(i)), 3.5f, IM_COL32(0x46, 0xe0, 0x76, 0xFF));
-                dl->AddCircleFilled(ImVec2(sx, upY(i)), 3.5f, IM_COL32(0x7f, 0xa8, 0xff, 0xFF));
+                dl->AddLine(ImVec2(sx, p0.y + 1), ImVec2(sx, p1.y - 1), theme::GraphCrosshair(), 1.0f);
+                dl->AddCircleFilled(ImVec2(sx, downY(i)), 3.5f, theme::GraphDownLine());
+                dl->AddCircleFilled(ImVec2(sx, upY(i)), 3.5f, theme::GraphUpLine());
 
                 int secondsAgo = (n - 1) - i;
                 ImGui::BeginTooltip();
                 if (secondsAgo == 0) ImGui::TextUnformatted("now");
                 else ImGui::Text("%ds ago", secondsAgo);
-                ImGui::TextColored(ImVec4(0.38f, 0.90f, 0.56f, 1.0f), "Down  %s",
+                ImGui::TextColored(theme::GraphDownText(), "Down  %s",
                                     FormatRateShort(samples_[i].down).c_str());
-                ImGui::TextColored(ImVec4(0.56f, 0.70f, 1.00f, 1.0f), "Up    %s",
+                ImGui::TextColored(theme::GraphUpText(), "Up    %s",
                                     FormatRateShort(samples_[i].up).c_str());
                 ImGui::EndTooltip();
             }

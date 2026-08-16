@@ -13,8 +13,19 @@
 //   - DNS-over-TLS (TCP 853): can't inspect the query (it's encrypted), so
 //     just drops the connection attempt outright. Rare in practice but
 //     some apps use it to bypass DNS-level blocking entirely.
-//   - DNS-over-HTTPS (TCP 443 to a handful of known public resolver IPs):
-//     same idea - can't inspect it, so block by destination IP.
+//   - DNS-over-HTTPS (TCP 443): the real fix for the biggest DNS-blocking
+//     bypass there is. Two layers:
+//       * the TLS ClientHello names its destination host in the clear (SNI),
+//         so a connection to a known DoH resolver hostname is dropped for
+//         ANY IP - see tls_sni.h. This also drops HTTPS to a blocklisted
+//         ad/tracker domain outright, closing the gap where a domain was
+//         resolved out of band (cached, hardcoded IP, a DoH we missed).
+//       * a fixed list of known resolver IPs is kept as a backstop for the
+//         cases where the ClientHello can't be read (session resumption, a
+//         hello split across segments).
+//     Blocking DoH makes browsers fall back to plain DNS, which the cases
+//     above filter fully - so this doesn't lose per-domain precision, it
+//     restores it. Firefox is nudged off DoH entirely via its canary domain.
 // Everything else passes through untouched (fail-open) - a bug in this
 // code should never look like "the internet stopped working".
 #pragma once
@@ -79,9 +90,14 @@ private:
     std::mutex listsMu_;
     std::unordered_set<std::string> blocklist_;
     std::unordered_set<std::string> allowlist_;
-    std::unordered_set<std::string> dohIPs_;
+    std::unordered_set<std::string> dohIPs_;    // backstop: block 443 to these
+    std::unordered_set<std::string> dohHosts_;  // block 443 by ClientHello SNI
     std::vector<std::string> userDomains_;
     bool useDefault_ = true;
+
+    // Returns true (and fills reason) if this ClientHello SNI should be
+    // dropped: a known DoH resolver host, or a blocklisted ad/tracker domain.
+    bool ShouldBlockSNI(const std::string& sni, std::string& reason);
 
     std::string BuildFilter() const;
 

@@ -12,11 +12,16 @@ if not defined VSPATH (
 )
 
 set "VSPATH=%VSPATH%"
-cmd /c compile.bat >> build.log 2>&1
+cmd /c compile.bat > build.log 2>&1
 
 if errorlevel 1 (
-  echo BUILD FAILED - see tools\trafficgen\build.log
+  echo BUILD FAILED - see tools\netvistest\build.log
   exit /b 1
 )
 
-echo Build OK - tools\trafficgen\trafficgen.exe
+echo Build OK - tools\netvistest\netvistest.exe
+echo.
+echo   netvistest              interactive menu
+echo   netvistest demo         idle -^> saturated -^> blocked, with a table
+echo   netvistest dns          probe the ad/tracker blocklist
+echo.

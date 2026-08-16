@@ -35,7 +35,17 @@ struct Settings {
     bool runInBackground = false;
     bool notifyOnAlert = true;
     bool useDefaultBlocklist = true; // whether to merge the built-in malicious-domain database
-    bool startupDefaultApplied = false; // have we applied the "run at startup" default-on once?
+    // Whether the user wants netvis to start with Windows. The scheduled
+    // task used to be the only record of this, which broke in two ways: an
+    // uninstall deletes the task but keeps this file, so a reinstall never
+    // recreated it; and a task made by a build in one folder kept pointing
+    // there after the app moved to Program Files. The intent lives here now,
+    // and the task is re-registered from it on every launch.
+    bool runOnStartup = true;
+
+    // 0 = follow Windows, 1 = light, 2 = dark. Defaults to following the
+    // system, which is what most people expect a modern app to do.
+    int themeMode = 0;
 
     // Loads from disk; missing file just yields defaults.
     static Settings Load();

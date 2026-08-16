@@ -1,0 +1,38 @@
+# Build output ------------------------------------------------------------
+obj/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.res
+!WinDivert.dll
+!WinDivert64.sys
+
+# Logs and scratch ---------------------------------------------------------
+*.log
+imgui.ini
+netvis_settings.txt
+
+# Installer output ---------------------------------------------------------
+installer/output/
+
+# Secrets and customer data ------------------------------------------------
+# config.json holds response_private_key, which signs licence answers -
+# anyone holding it can mint licences for free. licenses.db holds unsold keys
+# and the hardware ids of people who have paid. Neither belongs in a repo,
+# even a private one: repos get cloned, shared and made public by accident,
+# and a leaked key cannot be un-leaked, only rotated.
+#
+# config.example.json is the template that IS committed.
+licensing/config.json
+licensing/*.db
+licensing/*.db-journal
+licensing/*.db-wal
+licensing/*.pem
+licensing/licensing-linux
+licensing/keys*.txt
+
+# Release binaries that are published rather than built ---------------------
+licensing/website/downloads/*.exe

@@ -30,13 +30,26 @@ constexpr uint32_t MTU_MAX = 65535 + 40; // WINDIVERT_MTU_MAX
 constexpr int ADDRESS_SIZE = 80;
 using Address = uint8_t[ADDRESS_SIZE];
 
-// Outbound is bit 9 overall: byte offset 8 holds a little-endian uint32
-// (Layer:8, Event:8, then single-bit flags starting with Sniffed at bit 0,
-// Outbound at bit 1 of that second byte - i.e. bit 9 of the dword).
+// Byte offset 8 holds a little-endian uint32 of bitfields, packed from the
+// least significant bit up:
+//
+//   bits  0-7   Layer
+//   bits  8-15  Event
+//   bit  16     Sniffed
+//   bit  17     Outbound
+//   bit  18     Loopback
+//   bit  19     Impostor
+//   bit  20     IPv6
+//
+// So Outbound is bit 17. This previously read bit 9, which lands inside
+// Event - and Event is 0 for an ordinary captured packet, so the answer was
+// always "inbound". Every byte the machine sent was counted as download,
+// the upload line of the graph never moved, and upload rate limits could
+// never fire because no packet was ever seen as outbound.
 inline bool IsOutbound(const Address& addr) {
     uint32_t flags;
     memcpy(&flags, addr + 8, sizeof(flags));
-    return (flags >> 9) & 1;
+    return (flags >> 17) & 1;
 }
 
 inline void ZeroAddress(Address& addr) { memset(addr, 0, sizeof(addr)); }

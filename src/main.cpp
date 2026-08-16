@@ -36,6 +36,7 @@
 #include "blocklist_store.h"
 #include "startup.h"
 #include "license.h"
+#include "theme.h"
 #include "log.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -199,6 +200,41 @@ std::string FormatRate(double bytesPerSec) {
 // tool gets used for exactly that a lot. This renders `text` as a
 // borderless, read-only InputText instead, which looks like normal text
 // but supports click-drag selection and copy like any real text field.
+// A blue, white-labelled button for actions that change what netvis is
+// doing. Grey buttons with dark labels disappeared into the background in
+// light mode and read as disabled.
+bool ActionButton(const char* label, ImVec2 size = ImVec2(0, 0)) {
+    ImGui::PushStyleColor(ImGuiCol_Button, theme::ActionButton());
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::ActionButtonHover());
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::ActionButtonDown());
+    ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+    bool clicked = ImGui::Button(label, size);
+    ImGui::PopStyleColor(4);
+    return clicked;
+}
+
+// Ordinary button with the theme's colours stated explicitly rather than
+// inherited. Same reason as ActionButton: anything that falls back to the
+// global default is one missed palette entry away from being unreadable.
+bool NeutralButton(const char* label, ImVec2 size = ImVec2(0, 0)) {
+    ImGui::PushStyleColor(ImGuiCol_Button, theme::NeutralButton());
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::NeutralButtonHover());
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::NeutralButtonDown());
+    ImGui::PushStyleColor(ImGuiCol_Text, theme::NeutralText());
+    bool clicked = ImGui::Button(label, size);
+    ImGui::PopStyleColor(4);
+    return clicked;
+}
+
+// A dropdown's arrow is drawn with ImGuiCol_Button, so it needs the same
+// treatment - that arrow was the "black box" next to the threshold units.
+void PushComboColors() {
+    ImGui::PushStyleColor(ImGuiCol_Button, theme::NeutralButton());
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::NeutralButtonHover());
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::NeutralButtonDown());
+}
+inline void PopComboColors() { ImGui::PopStyleColor(3); }
+
 void CopyableText(const char* idSuffix, const std::string& text) {
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(1, 1, 1, 0.06f));
@@ -362,7 +398,7 @@ bool IsAutoBlockProtected(const std::string& name) {
 // real shipped app rather than an ImGui demo. Palette is a dark slate
 // background with a single blue accent used consistently for anything
 // interactive/active (checkmarks, sliders, active tabs, selection).
-void ApplyModernStyle() {
+void ApplyModernStyle(bool light) {
     ImGuiStyle& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
 
@@ -394,44 +430,85 @@ void ApplyModernStyle() {
     // dark palette - flat, closely-spaced grays are what makes a dark UI
     // read as hazy/washed-out instead of crisp. Base is near-black, and
     // each layer up is a clearly distinct step, not a gentle gradient.
-    const ImVec4 bgDark       = ImVec4(0.043f, 0.047f, 0.059f, 1.00f);
-    const ImVec4 bgMed        = ImVec4(0.075f, 0.082f, 0.098f, 1.00f);
-    const ImVec4 bgLight      = ImVec4(0.130f, 0.145f, 0.173f, 1.00f);
-    const ImVec4 bgLighter    = ImVec4(0.184f, 0.204f, 0.243f, 1.00f);
-    const ImVec4 accent       = ImVec4(0.271f, 0.608f, 1.000f, 1.00f);
-    const ImVec4 accentHover  = ImVec4(0.400f, 0.690f, 1.000f, 1.00f);
-    const ImVec4 accentActive = ImVec4(0.196f, 0.502f, 0.878f, 1.00f);
-    const ImVec4 textMain     = ImVec4(0.961f, 0.965f, 0.973f, 1.00f);
-    const ImVec4 textDim      = ImVec4(0.635f, 0.659f, 0.694f, 1.00f);
-    const ImVec4 border       = ImVec4(0.294f, 0.318f, 0.361f, 1.00f);
+    // Light is not the dark palette inverted. On white, text needs more
+    // contrast to read as solid, so textMain is near-black rather than a
+    // mid grey, and textDim stays dark enough to be read rather than
+    // merely sensed. Surfaces step DOWN from white as they go up in the
+    // stack, the mirror of dark stepping up from black.
+    ImVec4 bgDark, bgMed, bgLight, bgLighter, accent, accentHover, accentActive,
+        textMain, textDim, border;
+    if (light) {
+        bgDark       = ImVec4(0.965f, 0.969f, 0.976f, 1.00f);
+        bgMed        = ImVec4(1.000f, 1.000f, 1.000f, 1.00f);
+        bgLight      = ImVec4(0.898f, 0.910f, 0.925f, 1.00f);
+        bgLighter    = ImVec4(0.831f, 0.847f, 0.871f, 1.00f);
+        accent       = ImVec4(0.153f, 0.412f, 0.816f, 1.00f);
+        accentHover  = ImVec4(0.204f, 0.478f, 0.882f, 1.00f);
+        accentActive = ImVec4(0.118f, 0.345f, 0.706f, 1.00f);
+        textMain     = ImVec4(0.043f, 0.051f, 0.071f, 1.00f);
+        // Secondary text sits much closer to black than the dark theme's
+        // grey does to white. On a light background a mid grey reads as
+        // faded rather than quiet, so "dim" here means "not bold", not
+        // "hard to see".
+        textDim      = ImVec4(0.220f, 0.243f, 0.278f, 1.00f);
+        border       = ImVec4(0.706f, 0.733f, 0.776f, 1.00f);
+    } else {
+        bgDark       = ImVec4(0.043f, 0.047f, 0.059f, 1.00f);
+        bgMed        = ImVec4(0.075f, 0.082f, 0.098f, 1.00f);
+        bgLight      = ImVec4(0.130f, 0.145f, 0.173f, 1.00f);
+        bgLighter    = ImVec4(0.184f, 0.204f, 0.243f, 1.00f);
+        accent       = ImVec4(0.271f, 0.608f, 1.000f, 1.00f);
+        accentHover  = ImVec4(0.400f, 0.690f, 1.000f, 1.00f);
+        accentActive = ImVec4(0.196f, 0.502f, 0.878f, 1.00f);
+        textMain     = ImVec4(0.961f, 0.965f, 0.973f, 1.00f);
+        textDim      = ImVec4(0.635f, 0.659f, 0.694f, 1.00f);
+        border       = ImVec4(0.294f, 0.318f, 0.361f, 1.00f);
+    }
 
     colors[ImGuiCol_Text] = textMain;
     colors[ImGuiCol_TextDisabled] = textDim;
     colors[ImGuiCol_WindowBg] = bgDark;
     colors[ImGuiCol_ChildBg] = bgMed;
     colors[ImGuiCol_PopupBg] = ImVec4(bgMed.x, bgMed.y, bgMed.z, 0.98f);
-    colors[ImGuiCol_Border] = border;
+    // A slightly blue border in light mode, so a tinted button has a
+    // defined edge instead of bleeding into the page.
+    colors[ImGuiCol_Border] = light ? ImVec4(0.639f, 0.706f, 0.808f, 1.00f) : border;
     colors[ImGuiCol_BorderShadow] = ImVec4(0, 0, 0, 0);
-    colors[ImGuiCol_FrameBg] = bgLight;
-    colors[ImGuiCol_FrameBgHovered] = bgLighter;
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.220f, 0.243f, 0.290f, 1.00f);
+    colors[ImGuiCol_FrameBg] = light ? ImVec4(1.000f, 1.000f, 1.000f, 1.00f) : bgLight;
+    colors[ImGuiCol_FrameBgHovered] = light ? ImVec4(0.949f, 0.961f, 0.976f, 1.00f) : bgLighter;
+    // Pressed/active input background. The old value was a dark slate in
+    // both themes, so in light mode clicking a field or a stepper arrow
+    // turned it near-black under near-black text - the "grey box with a
+    // black arrow" problem.
+    colors[ImGuiCol_FrameBgActive] =
+        light ? ImVec4(0.898f, 0.933f, 0.980f, 1.00f) : ImVec4(0.220f, 0.243f, 0.290f, 1.00f);
     colors[ImGuiCol_TitleBg] = bgDark;
     colors[ImGuiCol_TitleBgActive] = bgDark;
     colors[ImGuiCol_TitleBgCollapsed] = bgDark;
     colors[ImGuiCol_MenuBarBg] = bgMed;
     colors[ImGuiCol_ScrollbarBg] = bgDark;
-    colors[ImGuiCol_ScrollbarGrab] = bgLight;
-    colors[ImGuiCol_ScrollbarGrabHovered] = bgLighter;
+    colors[ImGuiCol_ScrollbarGrab] = light ? ImVec4(0.784f, 0.804f, 0.835f, 1.00f) : bgLight;
+    colors[ImGuiCol_ScrollbarGrabHovered] = light ? ImVec4(0.706f, 0.729f, 0.769f, 1.00f) : bgLighter;
     colors[ImGuiCol_ScrollbarGrabActive] = accent;
     colors[ImGuiCol_CheckMark] = accent;
     colors[ImGuiCol_SliderGrab] = accent;
     colors[ImGuiCol_SliderGrabActive] = accentActive;
-    colors[ImGuiCol_Button] = bgLight;
-    colors[ImGuiCol_ButtonHovered] = bgLighter;
-    colors[ImGuiCol_ButtonActive] = accentActive;
-    colors[ImGuiCol_Header] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(accent.x, accent.y, accent.z, 0.55f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(accent.x, accent.y, accent.z, 0.75f);
+    // Ordinary buttons in light mode get a blue tint rather than plain
+    // grey. Grey-on-grey reads as disabled chrome next to the white
+    // surfaces around it; a wash of the accent colour says "clickable"
+    // without shouting the way a solid blue would.
+    colors[ImGuiCol_Button] = light ? ImVec4(0.855f, 0.898f, 0.965f, 1.00f) : bgLight;
+    colors[ImGuiCol_ButtonHovered] = light ? ImVec4(0.780f, 0.851f, 0.949f, 1.00f) : bgLighter;
+    // ImGui draws every label with one text colour, so a button that turns
+    // saturated blue while pressed would put near-black text on blue in
+    // light mode. Keep pressed buttons grey there and let the border carry
+    // the state.
+    colors[ImGuiCol_ButtonActive] = light ? ImVec4(0.694f, 0.796f, 0.925f, 1.00f) : accentActive;
+    // Selection tints. Kept weak in light mode so the near-black text on
+    // top stays the thing you read.
+    colors[ImGuiCol_Header] = ImVec4(accent.x, accent.y, accent.z, light ? 0.18f : 0.35f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(accent.x, accent.y, accent.z, light ? 0.26f : 0.55f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(accent.x, accent.y, accent.z, light ? 0.34f : 0.75f);
     colors[ImGuiCol_Separator] = border;
     colors[ImGuiCol_SeparatorHovered] = accent;
     colors[ImGuiCol_SeparatorActive] = accentActive;
@@ -439,21 +516,23 @@ void ApplyModernStyle() {
     colors[ImGuiCol_ResizeGripHovered] = accent;
     colors[ImGuiCol_ResizeGripActive] = accentActive;
     colors[ImGuiCol_Tab] = bgMed;
-    colors[ImGuiCol_TabHovered] = accentHover;
-    colors[ImGuiCol_TabSelected] = accent;
+    colors[ImGuiCol_TabHovered] = light ? ImVec4(0.847f, 0.886f, 0.957f, 1.00f) : accentHover;
+    colors[ImGuiCol_TabSelected] = light ? ImVec4(0.784f, 0.851f, 0.949f, 1.00f) : accent;
     colors[ImGuiCol_TabDimmed] = bgMed;
     colors[ImGuiCol_TabDimmedSelected] = bgLight;
-    colors[ImGuiCol_TableHeaderBg] = bgLight;
+    colors[ImGuiCol_TableHeaderBg] = light ? ImVec4(0.898f, 0.914f, 0.937f, 1.00f) : bgLight;
     colors[ImGuiCol_TableBorderStrong] = border;
     colors[ImGuiCol_TableBorderLight] = ImVec4(border.x, border.y, border.z, 0.55f);
     colors[ImGuiCol_TableRowBg] = ImVec4(1, 1, 1, 0.00f);
-    colors[ImGuiCol_TableRowBgAlt] = ImVec4(1, 1, 1, 0.05f);
-    colors[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
+    // Zebra striping is an overlay, so it has to invert with the theme -
+    // a white wash over a white table is nothing at all.
+    colors[ImGuiCol_TableRowBgAlt] = light ? ImVec4(0, 0, 0, 0.035f) : ImVec4(1, 1, 1, 0.05f);
+    colors[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, light ? 0.25f : 0.35f);
     colors[ImGuiCol_DragDropTarget] = accent;
     colors[ImGuiCol_NavCursor] = accent;
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 1, 1, 0.70f);
+    colors[ImGuiCol_NavWindowingHighlight] = light ? ImVec4(0, 0, 0, 0.55f) : ImVec4(1, 1, 1, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.2f, 0.2f, 0.2f, 0.20f);
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.65f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, light ? 0.35f : 0.65f);
 }
 
 // Draws one full frame showing just the netvis wordmark and a status line.
@@ -496,7 +575,7 @@ void DrawSplashFrame(ImGuiIO& io, float dpiScale, const char* message) {
         ImGui::TextUnformatted(title);
         ImGui::PopFont();
     }
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.557f, 0.584f, 0.627f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, theme::Dim());
     centered("Firewall & bandwidth manager");
     ImGui::PopStyleColor();
 
@@ -505,7 +584,8 @@ void DrawSplashFrame(ImGuiIO& io, float dpiScale, const char* message) {
 
     ImGui::End();
     ImGui::Render();
-    const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
+    float clear_color[4];
+    theme::ClearColor(clear_color);
     g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
     g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -668,7 +748,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             ImGui::TextUnformatted(title);
             ImGui::PopFont();
         }
-        centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f), "Firewall & bandwidth manager");
+        centeredColored(theme::Dim(), "Firewall & bandwidth manager");
 
         ImGui::Dummy(ImVec2(0, 26.0f * dpiScale));
 
@@ -678,22 +758,22 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             break;
 
         case Phase::Offline: {
-            centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Can't reach the licensing server.");
+            centeredColored(theme::Warn(), "Can't reach the licensing server.");
             ImGui::Spacing();
-            centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f),
+            centeredColored(theme::Dim(),
                             "netvis checks your license when it opens.");
-            centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f),
+            centeredColored(theme::Dim(),
                             "Check your internet connection and try again.");
             ImGui::Dummy(ImVec2(0, 20.0f * dpiScale));
 
             float bw = 140.0f * dpiScale, qw = 100.0f * dpiScale;
             centerNext(bw + qw + ImGui::GetStyle().ItemSpacing.x);
-            if (ImGui::Button("Try again", ImVec2(bw, 0))) {
+            if (NeutralButton("Try again", ImVec2(bw, 0))) {
                 phase = Phase::Checking;
                 startAuth();
             }
             ImGui::SameLine();
-            if (ImGui::Button("Quit", ImVec2(qw, 0))) return false;
+            if (NeutralButton("Quit", ImVec2(qw, 0))) return false;
             break;
         }
 
@@ -708,14 +788,14 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             if (!expired) {
                 centeredText("Try netvis free for 14 days.");
                 ImGui::Spacing();
-                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f),
+                centeredColored(theme::Faint(),
                                 "The full version. No card, no account.");
                 ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
 
                 float tw = 260.0f * dpiScale;
                 centerNext(tw);
                 ImGui::BeginDisabled(busy);
-                if (ImGui::Button("Start free trial", ImVec2(tw, 0))) {
+                if (NeutralButton("Start free trial", ImVec2(tw, 0))) {
                     phase = Phase::Activating;
                     {
                         std::lock_guard<std::mutex> lock(shared->mu);
@@ -728,13 +808,13 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
                 ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
                 ImGui::Separator();
                 ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
-                centeredColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f), "Already have a license key?");
+                centeredColored(theme::Dim(), "Already have a license key?");
             } else {
-                centeredColored(ImVec4(0.95f, 0.65f, 0.35f, 1.0f), "Your license has run out.");
+                centeredColored(theme::Warn(), "Your license has run out.");
                 ImGui::Spacing();
                 centeredText("Enter a new key to carry on for another 6 months.");
                 ImGui::Spacing();
-                centeredColored(ImVec4(0.45f, 0.47f, 0.51f, 1.0f), "Get one at netvis.cc");
+                centeredColored(theme::Faint(), "Get one at netvis.cc");
             }
             ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
             // A 30-character key fits on one line, so it gets a single wide
@@ -764,7 +844,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
                 std::lock_guard<std::mutex> lock(shared->mu);
                 if (!shared->error.empty()) {
                     ImGui::Spacing();
-                    centeredColored(ImVec4(0.90f, 0.35f, 0.40f, 1.0f), shared->error.c_str());
+                    centeredColored(theme::Bad(), shared->error.c_str());
                 }
             }
 
@@ -772,7 +852,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             float aw = 140.0f * dpiScale, qw = 100.0f * dpiScale;
             centerNext(aw + qw + ImGui::GetStyle().ItemSpacing.x);
             ImGui::BeginDisabled(busy || !complete);
-            if (ImGui::Button("Activate", ImVec2(aw, 0)) || (submitted && complete && !busy)) {
+            if (NeutralButton("Activate", ImVec2(aw, 0)) || (submitted && complete && !busy)) {
                 phase = Phase::Activating;
                 {
                     std::lock_guard<std::mutex> lock(shared->mu);
@@ -782,7 +862,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
             }
             ImGui::EndDisabled();
             ImGui::SameLine();
-            if (ImGui::Button("Quit", ImVec2(qw, 0))) return false;
+            if (NeutralButton("Quit", ImVec2(qw, 0))) return false;
 
             if (busy) {
                 ImGui::Spacing();
@@ -795,7 +875,8 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
         ImGui::End();
 
         ImGui::Render();
-        const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
+        float clear_color[4];
+    theme::ClearColor(clear_color);
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -804,6 +885,20 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
 }
 
 } // namespace
+
+namespace theme {
+// Resolves Auto against the Windows setting, then restyles everything.
+// Defined here rather than in the header so it can reach ApplyModernStyle,
+// which lives in this file's anonymous namespace with the rest of the
+// styling. Called at startup and whenever the choice changes, so a switch
+// takes effect on the very next frame.
+void Apply(Mode m) {
+    detail::g_mode = m;
+    detail::g_light = (m == Mode::Light) || (m == Mode::Auto && SystemPrefersLight());
+    ApplyModernStyle(detail::g_light);
+}
+} // namespace theme
+
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     LogInit();
@@ -949,7 +1044,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         io.FontDefault = g_fontRegular;
     }
 
-    ApplyModernStyle();
+    theme::Apply(static_cast<theme::Mode>(Settings::Load().themeMode));
     if (dpiScale > 1.01f) ImGui::GetStyle().ScaleAllSizes(dpiScale);
 
     ImGui_ImplWin32_Init(hwnd);
@@ -990,6 +1085,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     TrafficGraph graph(60);
 
     std::vector<AppStats> rows;
+    // 0 = Processes, 1 = Settings. Deliberately not persisted: the app
+    // should open on what it is for, not on wherever you last poked.
+    int activeTab = 0;
     bool showClosedProcesses = false;
     uint64_t lastTickMs = 0; // wall-clock of the last monitoring tick (0 = fire on first loop)
     bool autoBlockEnabled = false;
@@ -1087,16 +1185,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     HostCache hostCache;
 
     bool runInBackground = settings.runInBackground;
-    bool runOnStartup = startup::IsEnabled(); // source of truth is the scheduled task, not settings
-    // Default ON, but only the first time ever - after that the user's
-    // choice (task present or not) is respected, so turning it off sticks.
-    if (!settings.startupDefaultApplied) {
-        settings.startupDefaultApplied = true;
-        if (!runOnStartup) {
-            startup::SetEnabled(true);
-            runOnStartup = startup::IsEnabled();
-        }
-    }
+    // The saved preference decides; the scheduled task is just how it's
+    // carried out. Re-registering it on every launch costs a few
+    // milliseconds and makes the whole thing self-healing: it comes back
+    // after an uninstall removed it, and it always points at the exe that
+    // is actually running rather than wherever the last build lived.
+    bool runOnStartup = settings.runOnStartup;
+    if (runOnStartup) startup::SetEnabled(true);
+    runOnStartup = startup::IsEnabled(); // reflect what actually took effect
+    Log("netvis: run at startup = %d (task %s)", (int)settings.runOnStartup,
+        runOnStartup ? "present" : "missing");
 
     // Licensing re-checks while the app is already running. The flag is a
     // shared_ptr so the detached worker can safely clear it even if it
@@ -1169,7 +1267,13 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (!licenseCheckBusy->exchange(true)) {
                 auto busy = licenseCheckBusy;
                 std::thread([busy] {
-                    if (license::Authenticate() == license::Status::NotLicensed)
+                    // Both answers mean "this machine may no longer run":
+                    // NotLicensed for a revoked or unknown machine, Expired
+                    // when the term simply ran out. Watching only the first
+                    // let a trial expire mid-session and carry on running
+                    // until the next launch.
+                    license::Status s = license::Authenticate();
+                    if (s == license::Status::NotLicensed || s == license::Status::Expired)
                         g_licenseRecheck.store(true);
                     busy->store(false);
                 }).detach();
@@ -1243,30 +1347,46 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                           ImGuiWindowFlags_NoBringToFrontOnFocus);
         ImGui::PopStyleVar();
 
-        // --- header: title + status, with the Alerts button pinned to the
-        // top-right corner so it's clearly its own thing, away from the
-        // ad-blocker/auto-block toggles below. ---
-        ImGui::PushFont(g_fontBold, 0.0f);
-        ImGui::TextUnformatted("netvis");
-        ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextColored(ImVec4(0.557f, 0.584f, 0.627f, 1.0f), "  bandwidth monitor & firewall");
-
+        // --- header: tab strip on the left, license/alerts on the right ---
+        //
+        // No wordmark and no tagline. The window title bar already says
+        // netvis; repeating it inside costs a line of vertical space on
+        // every screen and makes the app look like a widget someone
+        // embedded rather than the thing you opened.
         {
+            auto tab = [&](const char* label, int id) {
+                bool active = (activeTab == id);
+                // The selected tab keeps a saturated blue in both themes, so
+                // its label needs white explicitly - ImGui has one global
+                // text colour, and in light mode that's near-black.
+                if (active) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, theme::TabActive());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::TabActiveHover());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::TabActive());
+                    ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+                } else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, theme::TabIdle());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::TabIdleHover());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::TabIdleHover());
+                }
+                if (ImGui::Button(label, ImVec2(110 * dpiScale, 0))) activeTab = id;
+                ImGui::PopStyleColor(active ? 4 : 3);
+            };
+            tab("Processes", 0);
+            ImGui::SameLine(0, 8);
+            tab("Settings", 1);
+
             size_t unread = alerts.UnreadCount();
             char label[64];
             if (unread > 0) snprintf(label, sizeof(label), "Alerts (%zu)", unread);
             else snprintf(label, sizeof(label), "Alerts");
             float btnW = ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2 + 8;
 
-            // Trial countdown and Buy button live up here in the header, not
-            // down in a corner: the bottom of the window is the process
-            // table, and anything drawn over it competes with the Block
-            // buttons for both attention and clicks.
+            // License state lives up here, right of the tabs: visible from
+            // both tabs, and clear of the process table's Block buttons.
             float trialW = 0.0f;
             char badge[64] = {};
-            const char* buyLabel = "Buy a license";
+            const char* buyLabel = "Buy";
             float buyW = 0.0f;
             bool onTrial = license::LastWasTrial();
             if (onTrial) {
@@ -1274,7 +1394,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 if (days <= 0) snprintf(badge, sizeof(badge), "Trial - last day");
                 else snprintf(badge, sizeof(badge), "Trial - %d day%s left", days, days == 1 ? "" : "s");
                 buyW = ImGui::CalcTextSize(buyLabel).x + ImGui::GetStyle().FramePadding.x * 2 + 8;
-                trialW = ImGui::CalcTextSize(badge).x + buyW + ImGui::GetStyle().ItemSpacing.x * 2;
+                trialW = ImGui::CalcTextSize(badge).x + buyW + ImGui::GetStyle().ItemSpacing.x * 2 +
+                         14.0f * dpiScale;
             }
 
             ImGui::SameLine();
@@ -1283,13 +1404,24 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
             if (onTrial) {
                 int days = license::LastDaysLeft();
-                ImVec4 col = (days <= 3) ? ImVec4(0.95f, 0.65f, 0.35f, 1.0f)
-                                         : ImVec4(0.557f, 0.584f, 0.627f, 1.0f);
+                ImVec4 col = (days <= 3) ? theme::Warn()
+                                         : theme::Dim();
+                // A small dot instead of an icon: it reads as a status light
+                // and costs nothing at any DPI.
+                float dot = 8.0f * dpiScale;
+                ImVec2 p = ImGui::GetCursorScreenPos();
+                ImGui::GetWindowDrawList()->AddCircleFilled(
+                    ImVec2(p.x + dot * 0.5f, p.y + ImGui::GetFrameHeight() * 0.5f), dot * 0.5f,
+                    (days <= 3) ? IM_COL32(0xf2, 0xa6, 0x59, 0xFF) : IM_COL32(0x46, 0xe0, 0x76, 0xFF));
+                ImGui::Dummy(ImVec2(dot, ImGui::GetFrameHeight()));
+                ImGui::SameLine(0, 6);
+
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextColored(col, "%s", badge);
                 ImGui::SameLine();
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.55f, 0.30f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.24f, 0.66f, 0.36f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, theme::BuyButton());
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::BuyButtonHover());
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
                 if (ImGui::Button(buyLabel)) {
                     showUpgrade = true;
                     {
@@ -1298,41 +1430,40 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     }
                     keyOp->ok.store(false);
                 }
-                ImGui::PopStyleColor(2);
+                ImGui::PopStyleColor(3);
                 ImGui::SameLine();
             }
-            if (unread > 0) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.20f, 1.0f));
-            if (ImGui::Button(label)) {
+            if (unread > 0) {
+                ImGui::PushStyleColor(ImGuiCol_Button, theme::AlertButton());
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+            }
+            bool alertClicked = (unread > 0) ? ImGui::Button(label) : NeutralButton(label);
+            if (alertClicked) {
                 showAlerts = true;
                 focusAlerts = true;
                 alerts.MarkAllRead();
             }
-            if (unread > 0) ImGui::PopStyleColor();
+            if (unread > 0) ImGui::PopStyleColor(2);
         }
 
-        bool statusOk = monOk && blkOk;
-        ImVec4 statusColor = statusOk ? ImVec4(0.35f, 0.78f, 0.45f, 1.0f) : ImVec4(0.95f, 0.55f, 0.30f, 1.0f);
-        ImGui::PushStyleColor(ImGuiCol_Text, statusColor);
-        CopyableText("status", uiStatus);
-        ImGui::PopStyleColor();
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
+        // Messages that matter on either tab.
         if (!licenseToast.empty()) {
             if (::GetTickCount64() > licenseToastUntil) licenseToast.clear();
-            else ImGui::TextColored(ImVec4(0.38f, 0.85f, 0.52f, 1.0f), "%s", licenseToast.c_str());
+            else ImGui::TextColored(theme::Ok(), "%s", licenseToast.c_str());
         }
-
-        // Renewal warning, only near the end of the term - nobody needs a
-        // countdown for five months, and a permanent nag would just get
-        // tuned out by the time it mattered.
         {
             int days = license::LastDaysLeft();
             // A trial is always inside 14 days, so warning on that basis
-            // would nag from day one - the corner badge already shows the
+            // would nag from day one - the header badge already shows the
             // countdown. Warn late instead.
             int warnBelow = license::LastWasTrial() ? 3 : 14;
             if (days >= 0 && days <= warnBelow) {
-                ImVec4 warn = (days <= 3) ? ImVec4(0.90f, 0.35f, 0.40f, 1.0f)
-                                          : ImVec4(0.95f, 0.65f, 0.35f, 1.0f);
+                ImVec4 warn = (days <= 3) ? theme::Bad()
+                                          : theme::Warn();
                 const char* what = license::LastWasTrial() ? "trial" : "license";
                 if (days == 0)
                     ImGui::TextColored(warn, "Your %s expires today - buy at netvis.cc", what);
@@ -1342,74 +1473,148 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             }
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        if (activeTab == 1) {
+            // ================= SETTINGS =================
+            // Grouped under headings rather than a wall of checkboxes: the
+            // two that change what netvis does to your traffic are worth
+            // separating from the ones that only change how it behaves.
+            auto heading = [&](const char* text) {
+                ImGui::Spacing();
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextUnformatted(text);
+                ImGui::PopStyleColor();
+                ImGui::Spacing();
+            };
 
-        // --- toolbar: ad blocker stat + the two auto-behavior toggles ---
-        // Everything here sits on one line but has three different heights
-        // (bold count, regular label, checkbox frame), and ImGui top-aligns
-        // items within a line - so each is explicitly centered against the
-        // tallest one instead of hanging off the top.
-        {
-            ImGui::PushFont(g_fontBold, 0.0f);
-            float boldH = ImGui::GetTextLineHeight();
-            ImGui::PopFont();
-            float rowH = std::max(boldH, ImGui::GetFrameHeight());
-            float rowY = ImGui::GetCursorPosY();
-            auto centerInRow = [&](float itemH) { ImGui::SetCursorPosY(rowY + (rowH - itemH) * 0.5f); };
+            heading("PROTECTION");
 
             if (blkOk) {
-                centerInRow(ImGui::GetFrameHeight());
                 bool blockerEnabled = blk.Enabled();
-                if (ImGui::Checkbox("Block trackers & malicious domains", &blockerEnabled)) {
+                if (ImGui::Checkbox("Block trackers & malicious domains", &blockerEnabled))
                     blk.SetEnabled(blockerEnabled);
-                }
                 ImGui::SameLine(0, 28);
-            }
-
-            centerInRow(boldH);
-            ImGui::PushFont(g_fontBold, 0.0f);
-            ImGui::TextColored(ImVec4(0.259f, 0.588f, 0.980f, 1.0f), "%lld",
-                                (long long)(blkOk ? blk.BlockedCount() : 0));
-            ImGui::PopFont();
-
-            ImGui::SameLine(0, 8);
-            centerInRow(ImGui::GetTextLineHeight());
-            ImGui::TextUnformatted("malicious sites blocked");
-
-            if (blkOk) {
-                ImGui::SameLine(0, 28);
-                centerInRow(ImGui::GetFrameHeight());
-                if (ImGui::Button("Edit firewall blocklist...")) {
+                if (ActionButton("Edit blocklist...")) {
                     showBlocklist = true;
                     focusBlocklist = true;
                 }
+                ImGui::Indent();
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextUnformatted("System-wide, at the DNS layer - every browser and every app.");
+                ImGui::PopStyleColor();
+                ImGui::Unindent();
+            } else {
+                ImGui::TextColored(theme::Warn(), "Blocker unavailable: %s",
+                                    blkErr.c_str());
             }
-        }
-        if (monOk) {
-            ImGui::Checkbox("Auto-block high-traffic processes", &autoBlockEnabled);
-            // Threshold stays visible and editable whether or not the box is
-            // ticked - you need to set the limit *before* arming something
-            // that cuts programs off the internet, not after.
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80 * dpiScale);
-            ImGui::InputDouble("##autoBlockThreshold", &autoBlockThresholdValue, 0.0, 0.0, "%.2f");
-            if (autoBlockThresholdValue < 0.01) autoBlockThresholdValue = 0.01;
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(90 * dpiScale);
-            ImGui::Combo("threshold##autoBlockUnit", &autoBlockUnitIdx, kUnitLabels, 3);
-        }
-        ImGui::Checkbox("Run in background when window is closed", &runInBackground);
-        ImGui::SameLine(0, 28);
-        ImGui::Checkbox("System notification on every alert", &notifyOnAlert);
-        ImGui::SameLine(0, 28);
-        if (ImGui::Checkbox("Run when Windows starts", &runOnStartup)) {
-            startup::SetEnabled(runOnStartup);
-            runOnStartup = startup::IsEnabled(); // reflect what actually took effect
-        }
-        ImGui::Spacing();
-        ImGui::Spacing();
+
+            ImGui::Spacing();
+            if (monOk) {
+                ImGui::Checkbox("Auto-block high-traffic processes", &autoBlockEnabled);
+                ImGui::Indent();
+                ImGui::SetNextItemWidth(90 * dpiScale);
+                ImGui::InputDouble("##autoBlockThreshold", &autoBlockThresholdValue, 0.0, 0.0, "%.2f");
+                if (autoBlockThresholdValue < 0.01) autoBlockThresholdValue = 0.01;
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(100 * dpiScale);
+                PushComboColors();
+                ImGui::Combo("threshold##autoBlockUnit", &autoBlockUnitIdx, kUnitLabels, 3);
+            PopComboColors();
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextUnformatted("Anything above this gets cut off. Games, calls and browsers are\n"
+                                        "never auto-blocked. Starts off every launch.");
+                ImGui::PopStyleColor();
+                ImGui::Unindent();
+            }
+
+            heading("NETVIS");
+            ImGui::Checkbox("Run in background when window is closed", &runInBackground);
+            ImGui::Checkbox("System notification on every alert", &notifyOnAlert);
+            if (ImGui::Checkbox("Run when Windows starts", &runOnStartup)) {
+                startup::SetEnabled(runOnStartup);
+                runOnStartup = startup::IsEnabled(); // reflect what actually took effect
+                settings.runOnStartup = runOnStartup; // remember the intent, not just the task
+            }
+
+            heading("APPEARANCE");
+            {
+                auto seg = [&](const char* label, theme::Mode m) {
+                    bool active = theme::Current() == m;
+                    ImGui::PushStyleColor(ImGuiCol_Button, active ? theme::TabActive() : theme::TabIdle());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                                           active ? theme::TabActiveHover() : theme::TabIdleHover());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, active ? theme::TabActive() : theme::TabIdleHover());
+                    if (active) ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+                    if (ImGui::Button(label, ImVec2(88 * dpiScale, 0))) {
+                        theme::Apply(m);
+                        settings.themeMode = (int)m;
+                        // Style sizes are scaled at startup for this
+                        // monitor's DPI; re-applying the palette resets them
+                        // to the unscaled defaults, so scale again.
+                        if (dpiScale > 1.01f) ImGui::GetStyle().ScaleAllSizes(dpiScale);
+                    }
+                    ImGui::PopStyleColor(active ? 4 : 3);
+                };
+                seg("Auto", theme::Mode::Auto);
+                ImGui::SameLine(0, 8);
+                seg("Light", theme::Mode::Light);
+                ImGui::SameLine(0, 8);
+                seg("Dark", theme::Mode::Dark);
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextUnformatted("Auto follows the Windows light/dark setting.");
+                ImGui::PopStyleColor();
+            }
+
+            heading("LICENSE");
+            {
+                int days = license::LastDaysLeft();
+                if (license::LastWasTrial()) {
+                    ImGui::Text("Free trial - %d day%s left", days, days == 1 ? "" : "s");
+                    ImGui::SameLine(0, 20);
+                    if (NeutralButton("Buy a license...")) {
+                        showUpgrade = true;
+                        {
+                            std::lock_guard<std::mutex> lock(keyOp->mu);
+                            keyOp->error.clear();
+                        }
+                        keyOp->ok.store(false);
+                    }
+                } else if (days >= 0) {
+                    ImGui::Text("Licensed - %d day%s remaining", days, days == 1 ? "" : "s");
+                } else {
+                    ImGui::TextUnformatted("Licensed");
+                }
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextUnformatted("This computer only. Traffic data never leaves your PC.");
+                ImGui::PopStyleColor();
+            }
+
+            ImGui::End();
+        } else {
+            // ================= PROCESSES =================
+            bool statusOk = monOk && blkOk;
+            ImVec4 statusColor = statusOk ? theme::Ok()
+                                          : theme::Warn();
+            ImGui::PushStyleColor(ImGuiCol_Text, statusColor);
+            CopyableText("status", uiStatus);
+            ImGui::PopStyleColor();
+
+            // The blocked counter only appears when blocking is actually on -
+            // a permanent "0 malicious sites blocked" reads like the feature
+            // is broken rather than switched off. Count and label sit on one
+            // baseline instead of the count hanging above the words.
+            if (blkOk && blk.Enabled()) {
+                ImGui::Spacing();
+                ImGui::AlignTextToFramePadding();
+                ImGui::PushFont(g_fontBold, 0.0f);
+                ImGui::TextColored(theme::Accent(), "%lld",
+                                    (long long)blk.BlockedCount());
+                ImGui::PopFont();
+                ImGui::SameLine(0, 8);
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("malicious sites blocked");
+            }
+
+            ImGui::Spacing();
 
         // Legend + live values ABOVE the graph (so nothing overlaps the
         // plotted area): Download on the left, Upload to its right.
@@ -1422,13 +1627,13 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(p.x, y), ImVec2(p.x + sz, y + sz), col, 2.0f);
                 ImGui::Dummy(ImVec2(sz, lineH));
             };
-            swatch(IM_COL32(0x35, 0xc7, 0x5f, 0xFF));
+            swatch(theme::GraphDownLine());
             ImGui::SameLine(0, 6);
-            ImGui::TextColored(ImVec4(0.38f, 0.90f, 0.56f, 1.0f), "Download %s", FormatRate(graph.CurrentDown()).c_str());
+            ImGui::TextColored(theme::GraphDownText(), "Download %s", FormatRate(graph.CurrentDown()).c_str());
             ImGui::SameLine(0, 28);
-            swatch(IM_COL32(0x66, 0x96, 0xfa, 0xFF));
+            swatch(theme::GraphUpLine());
             ImGui::SameLine(0, 6);
-            ImGui::TextColored(ImVec4(0.56f, 0.70f, 1.00f, 1.0f), "Upload %s", FormatRate(graph.CurrentUp()).c_str());
+            ImGui::TextColored(theme::GraphUpText(), "Upload %s", FormatRate(graph.CurrentUp()).c_str());
         }
         ImGui::Spacing();
         graph.Draw(ImVec2(ImGui::GetContentRegionAvail().x, 90));
@@ -1607,7 +1812,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 } else {
                     ImGui::PushID((int)r.pid);
                     bool blocked = pidMgr.IsBlocked(r.pid);
-                    if (ImGui::SmallButton(blocked ? "Unblock" : "Block")) {
+                    // Blue with a white label, matching the other action
+                    // buttons - this is the one users click most.
+                    ImGui::PushStyleColor(ImGuiCol_Button, theme::ActionButton());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::ActionButtonHover());
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::ActionButtonDown());
+                    ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+                    bool blockClicked = ImGui::SmallButton(blocked ? "Unblock" : "Block");
+                    ImGui::PopStyleColor(4);
+                    if (blockClicked) {
                         std::string err = blocked ? pidMgr.Unblock(r.pid) : pidMgr.Block(r.pid);
                         uiStatus = err.empty()
                                        ? "Capturing traffic - running as Administrator"
@@ -1662,7 +1875,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (limDownVal < 0.01) limDownVal = 0.01;
             ImGui::SameLine();
             ImGui::SetNextItemWidth(rateUnitW);
+            PushComboColors();
             ImGui::Combo("##dnunit", &limDownUnit, kUnitLabels, 3);
+            PopComboColors();
             ImGui::EndDisabled();
 
             ImGui::Checkbox("Limit upload", &limUpOn);
@@ -1673,18 +1888,30 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             if (limUpVal < 0.01) limUpVal = 0.01;
             ImGui::SameLine();
             ImGui::SetNextItemWidth(rateUnitW);
+            PushComboColors();
             ImGui::Combo("##upunit", &limUpUnit, kUnitLabels, 3);
+            PopComboColors();
             ImGui::EndDisabled();
 
             ImGui::Checkbox("For a set time", &limDurOn);
             ImGui::SameLine(valueColX);
             ImGui::BeginDisabled(!limDurOn);
             ImGui::SetNextItemWidth(durValW);
+            // InputInt draws its own -/+ buttons using ImGuiCol_Button, so
+            // they inherit the global default unless it's pushed here. That
+            // is why they stayed dark while everything around them turned
+            // light.
+            PushComboColors();
+            ImGui::PushStyleColor(ImGuiCol_Text, theme::NeutralText());
             ImGui::InputInt("##durval", &limDurValue);
+            ImGui::PopStyleColor();
+            PopComboColors();
             if (limDurValue < 1) limDurValue = 1;
             ImGui::SameLine();
             ImGui::SetNextItemWidth(durUnitW);
+            PushComboColors();
             ImGui::Combo("##durunit", &limDurUnit, kDurationLabels, 3);
+            PopComboColors();
             ImGui::EndDisabled();
 
             ImGui::Spacing();
@@ -1693,7 +1920,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
             bool nothing = !limDownOn && !limUpOn;
             ImGui::BeginDisabled(nothing);
-            if (ImGui::Button("Apply")) {
+            if (NeutralButton("Apply")) {
                 PidBlockManager::LimitSpec spec;
                 spec.limitDown = limDownOn;
                 spec.downBps = (uint64_t)(limDownVal * (double)kUnitMultipliers[limDownUnit]);
@@ -1707,7 +1934,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             }
             ImGui::EndDisabled();
             ImGui::SameLine();
-            if (ImGui::Button("Cancel")) ImGui::CloseCurrentPopup();
+            if (NeutralButton("Cancel")) ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
         }
 
@@ -1787,11 +2014,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::EndTable();
             }
             ImGui::Spacing();
-            if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+            if (NeutralButton("Close")) ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
         }
 
-        ImGui::End();
+            ImGui::End();
+        } // end of the Processes tab
 
         // --- buy / redeem a license while the trial is running ---
         if (showUpgrade) {
@@ -1822,7 +2050,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
                     ImGui::Spacing();
                     ImGui::BeginDisabled(busy);
-                    if (ImGui::Button("Buy at netvis.cc", ImVec2(180 * dpiScale, 0)))
+                    if (NeutralButton("Buy at netvis.cc", ImVec2(180 * dpiScale, 0)))
                         OpenInBrowser("https://netvis.cc/buy");
                     ImGui::EndDisabled();
 
@@ -1847,14 +2075,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                         std::lock_guard<std::mutex> lock(keyOp->mu);
                         if (!keyOp->error.empty()) {
                             ImGui::Spacing();
-                            ImGui::TextColored(ImVec4(0.90f, 0.35f, 0.40f, 1.0f), "%s",
+                            ImGui::TextColored(theme::Bad(), "%s",
                                                 keyOp->error.c_str());
                         }
                     }
 
                     ImGui::Spacing();
                     ImGui::BeginDisabled(busy || !complete);
-                    if (ImGui::Button("Activate", ImVec2(120 * dpiScale, 0)) ||
+                    if (NeutralButton("Activate", ImVec2(120 * dpiScale, 0)) ||
                         (entered && complete && !busy)) {
                         keyOp->busy.store(true);
                         {
@@ -1962,7 +2190,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
                     ImGui::SeparatorText("Controls");
                     bool blocked = pidMgr.IsBlocked(app->pid);
-                    if (ImGui::Button(blocked ? "Unblock" : "Block")) {
+                    if (ActionButton(blocked ? "Unblock" : "Block")) {
                         std::string err = blocked ? pidMgr.Unblock(app->pid) : pidMgr.Block(app->pid);
                         if (!err.empty()) uiStatus = "Block/unblock failed: " + err;
                     }
@@ -1971,7 +2199,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                         openLimitFor(app->pid, app->name);
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button("View connections...")) {
+                    if (ActionButton("View connections...")) {
                         connViewPid = (int)app->pid;
                         connViewName = app->name;
                         openConnView = true;
@@ -1993,7 +2221,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 auto list = alerts.Recent();
                 ImGui::TextDisabled("%zu events - newest first", list.size());
                 ImGui::SameLine();
-                if (ImGui::SmallButton("Clear")) alerts.Clear();
+                if (NeutralButton("Clear")) alerts.Clear();
                 ImGui::Separator();
                 ImGui::Spacing();
 
@@ -2006,9 +2234,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     const auto& a = list[i];
                     ImVec4 color;
                     switch (a.kind) {
-                        case AlertKind::NewListener: color = ImVec4(0.95f, 0.55f, 0.30f, 1.0f); break;
+                        case AlertKind::NewListener: color = theme::Warn(); break;
                         case AlertKind::DnsChanged: color = ImVec4(0.95f, 0.75f, 0.30f, 1.0f); break;
-                        case AlertKind::AutoBlocked: color = ImVec4(0.90f, 0.35f, 0.40f, 1.0f); break;
+                        case AlertKind::AutoBlocked: color = theme::Bad(); break;
                         default: color = ImVec4(0.271f, 0.608f, 1.000f, 1.0f); break;
                     }
                     ImGui::PushID((int)i);
@@ -2047,7 +2275,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                                        "domains with your own entries below.");
 
                 ImGui::Spacing();
-                if (ImGui::Button("Import from text file...")) {
+                if (NeutralButton("Import from text file...")) {
                     char path[MAX_PATH] = {};
                     OPENFILENAMEA ofn = {sizeof(ofn)};
                     ofn.hwndOwner = hwnd;
@@ -2075,7 +2303,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                                                         newDomainBuf, sizeof(newDomainBuf),
                                                         ImGuiInputTextFlags_EnterReturnsTrue);
                 ImGui::SameLine();
-                if (ImGui::Button("Add domain") || addNow) {
+                if (NeutralButton("Add domain") || addNow) {
                     std::string d = ToLowerAscii(newDomainBuf);
                     // trim spaces
                     while (!d.empty() && (d.front() == ' ' || d.front() == '\t')) d.erase(d.begin());
@@ -2107,7 +2335,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                         ImGui::AlignTextToFramePadding();
                         ImGui::TextUnformatted(userBlocklist[i].c_str());
                         ImGui::TableSetColumnIndex(1);
-                        if (ImGui::SmallButton("Remove")) removeIdx = i;
+                        if (NeutralButton("Remove")) removeIdx = i;
                         ImGui::PopID();
                     }
                     if (userBlocklist.empty()) {
@@ -2126,7 +2354,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         ImGui::Render();
-        const float clear_color[4] = {0.06f, 0.06f, 0.08f, 1.0f};
+        float clear_color[4];
+    theme::ClearColor(clear_color);
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -2145,6 +2374,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     settings.autoBlockUnitIdx = autoBlockUnitIdx;
     settings.runInBackground = runInBackground;
     settings.notifyOnAlert = notifyOnAlert;
+    settings.runOnStartup = runOnStartup;
+    settings.themeMode = (int)theme::Current();
     settings.useDefaultBlocklist = useDefaultBlocklist;
     for (const auto& e : alerts.KnownExes()) settings.knownExes.insert(e);
     for (const auto& r : rows) {

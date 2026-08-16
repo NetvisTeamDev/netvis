@@ -730,7 +730,6 @@ func cmdServe(cfg Config, db *sql.DB) {
 		http.Redirect(w, r, cfg.CheckoutURL, http.StatusSeeOther)
 	}), pages, cfg.TrustProxy))
 
-
 	// Release downloads come off the disk, from a downloads/ folder beside
 	// the binary, so publishing a new build is a file copy.
 	//
@@ -748,7 +747,7 @@ func cmdServe(cfg Config, db *sql.DB) {
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           mux,
+		Handler:           securityHeaders(mux, cfg.TLS || cfg.TrustProxy),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -760,6 +759,60 @@ func cmdServe(cfg Config, db *sql.DB) {
 	}
 	fmt.Printf("netvis licensing server on http://%s\n", cfg.Listen)
 	log.Fatal(srv.ListenAndServe())
+}
+
+// securityHeaders wraps every response - website, API and downloads alike -
+// with the set of headers a browser needs in order to refuse the classic
+// attacks on a site like this one.
+//
+// The policy is deliberately strict, and the page was written to fit it
+// rather than the other way round: all script lives in app.js (so no
+// 'unsafe-inline' and no hashes to re-derive on every edit), and the stagger
+// delays that used to be style="" attributes are classes now (so style-src
+// needs no exception either). The one thing that is allowed beyond 'self' is
+// data: for images, which the CSS grain texture uses.
+//
+// https is true when the site is reachable over TLS - either terminated here
+// or, as in production, at Caddy. HSTS is only sent then: promising a browser
+// that a plain-http development server will always be https is a good way to
+// lock yourself out of localhost for a year.
+func securityHeaders(next http.Handler, https bool) http.Handler {
+	const csp = "default-src 'self'; " +
+		"script-src 'self'; " +
+		"style-src 'self'; " +
+		"img-src 'self' data:; " +
+		"font-src 'self'; " +
+		"connect-src 'self'; " +
+		"form-action 'self'; " +
+		"frame-ancestors 'none'; " +
+		"base-uri 'none'; " +
+		"object-src 'none'; " +
+		"upgrade-insecure-requests"
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Content-Security-Policy", csp)
+		// Stops a browser from second-guessing a Content-Type - the reason a
+		// .txt upload can otherwise end up executed as script.
+		h.Set("X-Content-Type-Options", "nosniff")
+		// frame-ancestors above covers modern browsers; this covers the rest.
+		h.Set("X-Frame-Options", "DENY")
+		// Send the full URL to ourselves, only the origin to anyone else, and
+		// nothing at all when downgrading to http.
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		// Nothing here needs a camera, a microphone or a location, so no
+		// embedded content should be able to ask for one in our name.
+		h.Set("Permissions-Policy",
+			"accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), "+
+				"microphone=(), payment=(), usb=(), interest-cohort=()")
+		h.Set("Cross-Origin-Opener-Policy", "same-origin")
+		h.Set("Cross-Origin-Resource-Policy", "same-origin")
+		h.Set("X-Permitted-Cross-Domain-Policies", "none")
+		if https {
+			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // ------------------------------------------------------------ admin CLI
@@ -871,7 +924,6 @@ func cmdUsers(db *sql.DB) {
 	}
 	fmt.Fprintf(os.Stderr, "\n%d machine(s), %d active.\n", total, live)
 }
-
 
 func setRevoked(db *sql.DB, hwid string, revoked bool) {
 	v := 0

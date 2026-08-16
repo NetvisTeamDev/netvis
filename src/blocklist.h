@@ -71,3 +71,48 @@ inline const std::vector<std::string>& KnownDoHIPs() {
     };
     return ips;
 }
+
+// Known DoH resolver HOST NAMES, matched by suffix against the SNI in a TLS
+// ClientHello. This is the IP-independent half of DoH blocking: a resolver
+// can change or add IPs (or a user can run their own), but the connection
+// still announces the hostname in the clear, so matching the name catches
+// endpoints the IP list above never will.
+//
+// Entries are DoH-specific host names, NOT the providers' registrable
+// domains: "dns.google", not "google.com". Suffix matching means an entry
+// also covers its subdomains ("cloudflare-dns.com" -> "mozilla.cloudflare-dns.com"),
+// so the list stays short without ever reaching a provider's main site.
+inline const std::vector<std::string>& KnownDoHHosts() {
+    static const std::vector<std::string> hosts = {
+        "dns.google",                           // Google
+        "cloudflare-dns.com",                   // Cloudflare + mozilla./chrome./security./family.
+        "one.one.one.one",                      // Cloudflare
+        "dns.quad9.net",                        // Quad9 (dns9./dns10./dns11. too)
+        "doh.opendns.com",                      // OpenDNS
+        "doh.familyshield.opendns.com",         // OpenDNS FamilyShield
+        "dns.nextdns.io",                       // NextDNS (per-profile subdomains)
+        "dns.adguard.com", "dns.adguard-dns.com", // AdGuard (old + new domains)
+        "dns-family.adguard.com", "dns-unfiltered.adguard.com",
+        "d.adguard-dns.com",                    // AdGuard per-device subdomains
+        "dns.controld.com", "freedns.controld.com", // ControlD
+        "doh.mullvad.net",                      // Mullvad (not mullvad.net the VPN site)
+        "doh.dns.sb", "dns.sb",                 // DNS.SB
+        "dns0.eu", "zero.dns0.eu", "kids.dns0.eu", // dns0.eu
+        "doh.cleanbrowsing.org",                // CleanBrowsing
+        "doh.libredns.gr",                      // LibreDNS
+        "dns.alidns.com", "doh.pub", "dns.pub", // AliDNS / DNSPod
+        "doh.360.cn",                           // 360 Secure DNS
+        "dns.twnic.tw",                         // Quad101
+        "resolver.dnscrypt.info",               // dnscrypt public
+        "doh.tiar.app",                         // various community resolvers
+        "doh.applied-privacy.net",
+    };
+    return hosts;
+}
+
+// Firefox's "canary" domain. When a resolver answers this with NXDOMAIN,
+// Firefox takes it as a signal to switch its automatic DoH off and go back to
+// the system resolver - which is exactly what we want, because the system
+// resolver's plain-DNS queries are the ones netvis filters. So netvis always
+// NXDOMAINs it while blocking is on, and Firefox quietly stops bypassing us.
+inline const char* FirefoxDoHCanary() { return "use-application-dns.net"; }

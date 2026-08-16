@@ -1,0 +1,19 @@
+{
+  "_comment": "Copy this to config.json and fill it in. config.json is gitignored on purpose - it holds the key that signs licence answers.",
+
+  "listen": "127.0.0.1:8443",
+  "db": "licenses.db",
+
+  "tls": false,
+  "cert_file": "cert.pem",
+  "key_file": "key.pem",
+
+  "rate_limit_per_minute": 30,
+  "trust_proxy": false,
+
+  "polar_organization_id": "",
+  "polar_api_base": "",
+  "checkout_url": "",
+
+  "response_private_key": ""
+}

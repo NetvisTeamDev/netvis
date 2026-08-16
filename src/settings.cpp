@@ -67,7 +67,8 @@ Settings Settings::Load() {
         else if (key == "run_in_background") s.runInBackground = (value == "1");
         else if (key == "notify_on_alert") s.notifyOnAlert = (value == "1");
         else if (key == "use_default_blocklist") s.useDefaultBlocklist = (value == "1");
-        else if (key == "startup_default_applied") s.startupDefaultApplied = (value == "1");
+        else if (key == "run_on_startup") s.runOnStartup = (value == "1");
+        else if (key == "theme") s.themeMode = atoi(value.c_str());
         else if (key == "limit" || key == "lifetime") {
             // "limit=<exe>|<number>"
             auto bar = value.find('|');
@@ -98,7 +99,8 @@ void Settings::Save() const {
     f << "run_in_background=" << (runInBackground ? 1 : 0) << "\n";
     f << "notify_on_alert=" << (notifyOnAlert ? 1 : 0) << "\n";
     f << "use_default_blocklist=" << (useDefaultBlocklist ? 1 : 0) << "\n";
-    f << "startup_default_applied=" << (startupDefaultApplied ? 1 : 0) << "\n";
+    f << "run_on_startup=" << (runOnStartup ? 1 : 0) << "\n";
+    f << "theme=" << themeMode << "\n";
 
     for (const auto& p : pinned) f << "pin=" << p << "\n";
     for (const auto& e : autoBlockExempt) f << "exempt=" << e << "\n";

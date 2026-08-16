@@ -1,6 +1,7 @@
 #include "blocker.h"
 #include "blocklist.h"
 #include "packet_parse.h"
+#include "tls_sni.h"
 #include "app_paths.h"
 #include "log.h"
 
@@ -122,6 +123,7 @@ Blocker::~Blocker() { Close(); }
 
 void Blocker::LoadStaticLists() {
     for (const auto& ip : KnownDoHIPs()) dohIPs_.insert(ip);
+    for (const auto& h : KnownDoHHosts()) dohHosts_.insert(h);
     LoadDomainFile(ExeDir() + "\\allowlist.txt", allowlist_);
 }
 
@@ -134,6 +136,12 @@ void Blocker::RebuildBlocklistLocked() {
         LoadDomainFile(ExeDir() + "\\blocklist.txt", blocklist_);
     }
     for (const auto& d : userDomains_) blocklist_.insert(ToLowerCopy(d));
+
+    // Always block Firefox's DoH canary while the blocker is on, regardless
+    // of the default lists - NXDOMAIN'ing it is what makes Firefox turn its
+    // own DoH off and route back through the plain DNS we filter. Left out of
+    // the check if the user has explicitly allowlisted it.
+    blocklist_.insert(FirefoxDoHCanary());
 }
 
 bool Blocker::IsBlockedDomain(const std::string& domain) {
@@ -165,16 +173,36 @@ std::string Blocker::BuildFilter() const {
     // tcp.DstPort == 53 is included alongside udp: resolvers fall back to
     // DNS-over-TCP whenever a UDP answer comes back truncated, and some
     // clients use it directly - without it that's an easy bypass.
-    ss << "outbound and (udp.DstPort == 53 or tcp.DstPort == 53 or tcp.DstPort == 853 or (tcp.DstPort == 443 and (";
-    bool first = true;
+    //
+    // For 443 we divert two things and nothing else, to keep the intercept
+    // handle off the general HTTPS firehose:
+    //   * TLS ClientHello packets only - `tcp.Payload[0]==0x16` is a TLS
+    //     handshake record and `tcp.Payload[5]==0x01` narrows it to
+    //     ClientHello, so this matches one packet per new HTTPS connection,
+    //     not every data segment. That one packet carries the SNI.
+    //     (WinDivert treats an out-of-range payload index as no-match, so a
+    //     short packet simply doesn't match - no need to guard the length.)
+    //   * known DoH resolver IPs, as a backstop for connections whose
+    //     ClientHello we can't read (session resumption, or a hello split
+    //     across segments). All 443 traffic to those IPs is diverted so it
+    //     can be dropped.
+    ss << "outbound and (udp.DstPort == 53 or tcp.DstPort == 53 or tcp.DstPort == 853 or "
+          "(tcp.DstPort == 443 and ((tcp.Payload[0] == 0x16 and tcp.Payload[5] == 0x01)";
     for (const auto& ip : dohIPs_) {
-        if (!first) ss << " or ";
-        first = false;
-        ss << "ip.DstAddr == " << ip;
+        ss << " or ip.DstAddr == " << ip;
     }
-    if (first) ss << "false"; // no DoH IPs configured - shouldn't happen, but stay valid
     ss << ")))";
     return ss.str();
+}
+
+bool Blocker::ShouldBlockSNI(const std::string& sni, std::string& reason) {
+    if (sni.empty()) return false;
+    std::lock_guard<std::mutex> lock(listsMu_);
+    // A user allowlist entry wins over everything, same as for plain DNS.
+    if (MatchesSuffixSet(sni, allowlist_)) return false;
+    if (MatchesSuffixSet(sni, dohHosts_)) { reason = "[DoH-SNI] " + sni; return true; }
+    if (MatchesSuffixSet(sni, blocklist_)) { reason = "[TLS-SNI] " + sni; return true; }
+    return false;
 }
 
 void Blocker::SetEnabled(bool enabled) {
@@ -203,7 +231,8 @@ bool Blocker::Start(std::string* error, std::vector<std::string> userDomains, bo
         handle_ = nullptr;
         return false;
     }
-    Log("blocker: started, blocklist=%zu allowlist=%zu dohIPs=%zu", blocklist_.size(), allowlist_.size(), dohIPs_.size());
+    Log("blocker: started, blocklist=%zu allowlist=%zu dohIPs=%zu dohHosts=%zu",
+        blocklist_.size(), allowlist_.size(), dohIPs_.size(), dohHosts_.size());
 
     running_.store(true);
     thread_ = std::thread(&Blocker::Run, this);
@@ -320,11 +349,31 @@ void Blocker::HandlePacket(std::vector<uint8_t>& raw, uint32_t len, wd::Address&
         return; // drop
     }
 
-    if (pkt.isTcp && pkt.dstPort == 443 && !pkt.isIPv6) {
-        std::string dstIP = IPv4ToString(raw.data() + 16);
-        if (dohIPs_.count(dstIP)) {
-            RecordBlock("[DNS-over-HTTPS] " + dstIP);
-            return; // drop
+    if (pkt.isTcp && pkt.dstPort == 443) {
+        // Backstop: any 443 traffic to a known resolver IP is DoH (IPv4 only -
+        // the known-IP list is v4, and this is where dst lives in the header).
+        if (!pkt.isIPv6) {
+            std::string dstIP = IPv4ToString(raw.data() + 16);
+            if (dohIPs_.count(dstIP)) {
+                RecordBlock("[DoH-IP] " + dstIP);
+                return; // drop
+            }
+        }
+
+        // The main path: read the SNI out of the ClientHello (works the same
+        // for v4 and v6) and drop known DoH hosts and blocklisted domains.
+        if (pkt.transportLen > 20) {
+            uint32_t tcpHdrLen = (uint32_t)((pkt.transport[12] >> 4) * 4);
+            if (tcpHdrLen >= 20 && pkt.transportLen > tcpHdrLen) {
+                const uint8_t* payload = pkt.transport + tcpHdrLen;
+                uint32_t payloadLen = pkt.transportLen - tcpHdrLen;
+                std::string sni = tls::ExtractSNI(payload, payloadLen);
+                std::string reason;
+                if (ShouldBlockSNI(sni, reason)) {
+                    RecordBlock(reason);
+                    return; // drop the ClientHello - the connection never forms
+                }
+            }
         }
         Reinject(raw, len, addr);
         return;

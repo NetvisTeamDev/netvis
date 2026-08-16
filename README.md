@@ -67,16 +67,39 @@ VS", `cd` into this folder, and run the `cl.exe` command from
 Blocking/limiting is tied to the PID, not the exe path - if a blocked
 process restarts under a new PID you need to re-apply it.
 
-## Traffic generator (test tool)
+## Test harness
 
-`tools/trafficgen/` is a tiny standalone console exe for testing the
-bandwidth monitor and auto-block feature: every random 10-20 seconds it
-bursts ~1 second of real download traffic (from Cloudflare's public
-speed-test endpoint) and then goes quiet again. Build it with
-`tools\trafficgen\build.bat` (same VS toolchain as the main project), run
-`trafficgen.exe`, and watch it show up as a bursty row in netvis - a good
-way to confirm auto-block actually triggers without needing to open a
-real bandwidth-heavy app.
+`tools/netvistest/` is a standalone console exe that exercises the parts of
+netvis that break. Build it with `tools\netvistest\build.bat` (same VS
+toolchain as the main project), then run it with no arguments for a menu, or
+pick a mode directly:
+
+| mode | what it does |
+| --- | --- |
+| `demo` | Measures idle ping, saturates the line, waits for auto-block to cut it, measures again. Prints a before/during/after table. |
+| `hog [secs]` | Real download **and** upload load. Watch the row in the Processes tab. |
+| `ping [host]` | Live latency monitor. |
+| `dns` | Resolves ~24 known tracker domains plus a control group, and reports what got blocked. |
+| `doh` | Tries to reach public DoH resolvers by hostname (exercises the SNI path) plus a control site, and reports what got blocked. |
+| `alerts` | Triggers first-contact and listening-socket alerts. |
+| `limit [secs]` | Measures sustained throughput, to check a speed limit is actually enforced. |
+
+Two deliberate choices worth knowing about:
+
+**The load is real.** It moves real bytes to and from Cloudflare's public
+speed-test endpoint. Nothing simulates latency or fakes a recovery, so the
+numbers `demo` prints are measurements and hold up if a customer runs the
+same test. A staged demo would not survive first contact with a sceptic.
+
+**The ad test resolves domains, it does not show ads.** A program that puts
+advertisements into your OS is adware regardless of intent, and it would be a
+worse test anyway - a rendered ad tells you nothing about why it got through,
+while a resolved domain tells you exactly what the blocklist missed. The
+control group matters as much as the tracker list: a blocklist that also
+kills `github.com` is not a good score, it is a broken connection.
+
+`hog` and `dns` cover what the old `trafficgen` did; `demo` and `limit` cover
+what it could not.
 
 ## Diagnostics
 

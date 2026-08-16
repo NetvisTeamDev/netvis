@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>netvis — bandwidth monitor & firewall for Windows</title>
-<meta name="description" content="See which app is using your connection, and cut it off. Free for 14 days, no card required. Then $25 for 6 months.">
+<title>netvis — see which app is eating your bandwidth, and stop it</title>
+<meta name="description" content="Windows tells you how much data you used. netvis tells you which program used it — and lets you cut it off. Free for 14 days, no card.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="netvis.ico">
 </head>
 <body>
 
-<!-- The netvis logo, inline so the page has no image dependency -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<svg class="defs" aria-hidden="true">
   <symbol id="netvis-logo" viewBox="0 0 96 96">
     <rect x="0" y="0" width="96" height="96" rx="22" fill="#0d1017"/>
     <rect x="0.75" y="0.75" width="94.5" height="94.5" rx="21" fill="none" stroke="#2b3140" stroke-width="1.5"/>
@@ -20,112 +19,326 @@
     <path d="M14 82 L30 76 L44 80 L60 70 L82 76" fill="none" stroke="#6696fa" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="82" cy="30" r="5" fill="#beffd6"/>
   </symbol>
+  <symbol id="ico-discord" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M19.27 5.33A16.3 16.3 0 0 0 15.23 4l-.24.47a12.6 12.6 0 0 1 3.6 1.78A13.6 13.6 0 0 0 12 5.06a13.6 13.6 0 0 0-6.6 1.19 12.6 12.6 0 0 1 3.6-1.78L8.77 4a16.3 16.3 0 0 0-4.04 1.33C2.2 9.06 1.52 12.7 1.86 16.28A16.4 16.4 0 0 0 6.85 18.8l.8-1.1a10.6 10.6 0 0 1-1.7-.82l.42-.32a11.7 11.7 0 0 0 10.06 0l.42.32a10.6 10.6 0 0 1-1.7.82l.8 1.1a16.4 16.4 0 0 0 4.99-2.52c.4-4.15-.68-7.75-2.67-10.95ZM8.68 14.15c-.97 0-1.77-.89-1.77-1.98s.78-1.99 1.77-1.99c1 0 1.79.9 1.77 1.99 0 1.09-.78 1.98-1.77 1.98Zm6.64 0c-.97 0-1.77-.89-1.77-1.98s.78-1.99 1.77-1.99c1 0 1.79.9 1.77 1.99 0 1.09-.77 1.98-1.77 1.98Z"/>
+  </symbol>
+  <symbol id="ico-apple" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M16.36 12.72c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.15-2.76.83-3.48.83-.72 0-1.83-.81-3-.79-1.54.02-2.97.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.35 2.86 2.3 1.15-.04 1.58-.74 2.97-.74 1.39 0 1.78.74 3 .72 1.24-.02 2.02-1.13 2.78-2.24.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.41-3.68ZM14.1 5.96c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.68-1.09 1.77-.95 2.81 1.02.08 2.05-.51 2.68-1.28Z"/>
+  </symbol>
 </svg>
 
-<header class="nav">
-  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;padding:0 24px;">
+<!-- A cursor layer: an aura that tracks the pointer, a ring that lags behind
+     it, and small packets that trail off as you move. Built and driven from
+     script - with no pointer, or with reduced motion asked for, none of it is
+     ever inserted. -->
+<div class="cursorfx" id="cursorfx" aria-hidden="true"></div>
+
+<!-- Reading progress. A single transform-only element, so it costs nothing
+     to animate and gives the page a sense of length. -->
+<div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+<!-- Animated grid + scanning beam behind the hero. Pure CSS/SVG so there's
+     no library to load and nothing to block first paint. -->
+<div class="backdrop" aria-hidden="true">
+  <div class="grid-plane"></div>
+  <div class="beam"></div>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="noise"></div>
+</div>
+
+<header class="nav" id="nav">
+  <div class="wrap navrow">
     <svg class="logo" aria-hidden="true"><use href="#netvis-logo"/></svg>
     <div class="brand">netvis <span>for Windows</span></div>
     <div class="spacer"></div>
     <nav class="links">
+      <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
-      <a href="#download">Download</a>
     </nav>
+    <a class="nav-support" href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">
+      <svg class="ico" aria-hidden="true"><use href="#ico-discord"/></svg>
+      <span>Support</span>
+    </a>
   </div>
 </header>
 
-<main class="wrap">
+<main>
 
-  <section class="hero" id="download">
-    <svg class="icon" aria-label="netvis logo"><use href="#netvis-logo"/></svg>
-    <div class="badge">Free for 14 days · no card required</div>
-    <h1>See your network.<br>Control it.</h1>
-    <p class="tag">A lightweight bandwidth monitor, ad &amp; tracker blocker, and per-process
-       firewall for Windows — in one small app. Try the whole thing for two weeks
-       before you decide.</p>
+  <section class="hero wrap" id="download">
+    <div class="badge reveal">Free for 14 days · no card required</div>
+    <h1 class="reveal d1">Something on your PC is<br><span class="grad">using your internet</span>.</h1>
+    <p class="tag reveal d2">Windows tells you <em>how much</em> data you used.
+       netvis tells you <em>which program</em> used it — and lets you cut it off
+       with one click.</p>
 
-    <div class="cta">
-      <a id="downloadBtn" class="btn btn-buy" href="downloads/netvis-setup.exe" download>
+    <!-- A live trace rather than a static picture of one: the graph keeps
+         moving the way the app's does, so the core idea is visible before
+         anyone reads a word. Driven from app.js. -->
+    <div class="tracewrap reveal d3" aria-hidden="true">
+      <svg class="trace" id="trace" viewBox="0 0 820 120" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="dfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#46e076" stop-opacity="0.34"/>
+            <stop offset="100%" stop-color="#46e076" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="ufill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6696fa" stop-opacity="0.30"/>
+            <stop offset="100%" stop-color="#6696fa" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g id="traceShift">
+          <path id="uArea" fill="url(#ufill)"></path>
+          <path id="dArea" fill="url(#dfill)"></path>
+          <path id="uLine" fill="none" stroke="#6696fa" stroke-width="2" stroke-linejoin="round"></path>
+          <path id="dLine" fill="none" stroke="#46e076" stroke-width="2.4" stroke-linejoin="round"></path>
+        </g>
+      </svg>
+      <div class="readout">
+        <span class="dot dot-down"></span><span class="rd-label">Download</span>
+        <b id="rdDown">0 B/s</b>
+        <span class="dot dot-up"></span><span class="rd-label">Upload</span>
+        <b id="rdUp">0 B/s</b>
+      </div>
+    </div>
+
+    <div class="cta reveal d4">
+      <a id="downloadBtn" class="btn btn-buy shine" href="downloads/netvis-setup.exe" download>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span id="downloadLabel">Start free trial</span>
       </a>
-      <a class="btn btn-primary" href="/buy">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 6h15l-1.5 9h-12L6 6Zm0 0-.7-3H3m6.5 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Buy a license
-      </a>
-      <a class="btn btn-ghost" href="#features">See what it does</a>
+      <a class="btn btn-primary" href="/buy">Buy a license — $25</a>
+    </div>
+    <div class="dl-note" id="dlNote">Windows 10 &amp; 11 · 64-bit · installs in under a minute</div>
+
+    <div class="shot hero-shot reveal d5" id="heroShot">
+      <div class="shot-inner"><img src="shots/main.jpg" alt="netvis showing live bandwidth per process, with a Block button on every row" loading="eager"></div>
     </div>
 
-    <div class="dl-note" id="dlNote">Windows 10 &amp; 11 · 64-bit · requires Administrator</div>
-
-    <!-- The three things someone weighing up a trial actually wants to know. -->
     <div class="trial-strip">
-      <div><strong>Nothing to sign up for</strong><span>No account, no card, no email. Install and it runs.</span></div>
-      <div><strong>The full version</strong><span>Every feature for 14 days. Nothing held back for later.</span></div>
-      <div><strong>Then $25 for 6 months</strong><span>One computer. Buy only if you keep using it.</span></div>
-    </div>
-
-    <div class="shot">
-      <!-- Drop a real screenshot here as screenshot.png to replace the placeholder -->
-      <div class="placeholder" id="shot"><img src="./screenshot.png"/></div>
+      <div class="reveal"><strong>Nothing to sign up for</strong><span>No account, no card, no email.</span></div>
+      <div class="reveal d1"><strong>The full version</strong><span>Every feature for 14 days.</span></div>
+      <div class="reveal d2"><strong>Then $25 for 6 months</strong><span>Buy only if you keep it.</span></div>
     </div>
   </section>
 
-  <section class="features" id="features">
-    <h2>Everything, on one screen</h2>
-    <div class="grid">
-      <div class="card">
-        <div class="dot" style="background:#46e076"></div>
-        <h3>Live bandwidth monitor</h3>
-        <p>A real-time graph plus a per-process table showing exactly which app is using
-           your connection, up and down, right now.</p>
+  <!-- Problem first, product second. Someone who doesn't recognise the
+       problem has no reason to care about the solution. -->
+  <section class="pain wrap" id="how">
+    <h2 class="reveal">You already know the feeling</h2>
+    <div class="pain-grid spot">
+      <div class="pain-card reveal">
+        <div class="pain-icon">?</div>
+        <h3>The connection dies for no reason</h3>
+        <p>Everything crawls for ten minutes, then recovers. You never find out
+           what it was. It happens again next week.</p>
       </div>
-      <div class="card">
-        <div class="dot" style="background:#4c8bf5"></div>
-        <h3>Ad &amp; tracker blocker</h3>
-        <p>Blocks ads and trackers at the DNS level across your whole PC — not just one
-           browser — from a built-in list you can extend.</p>
+      <div class="pain-card reveal d1">
+        <div class="pain-icon">↑</div>
+        <h3>Something is uploading</h3>
+        <p>Your upload light is busy and you're not sending anything. Task Manager
+           shows a number. It doesn't show <em>who</em>.</p>
       </div>
-      <div class="card">
-        <div class="dot" style="background:#e08f3a"></div>
-        <h3>Per-process firewall</h3>
-        <p>Cut any app off the internet with one click, or cap its download and upload
-           speed — permanently or for a set time.</p>
+      <div class="pain-card reveal d2">
+        <div class="pain-icon">!</div>
+        <h3>An update decides for you</h3>
+        <p>A background updater takes the whole line mid-call, mid-upload,
+           mid-deadline. Nobody asked you.</p>
       </div>
-      <div class="card">
-        <div class="dot" style="background:#c75be0"></div>
-        <h3>Connection inspector</h3>
-        <p>See every connection a process holds open — remote address, port, protocol —
-           with hostnames resolved for you.</p>
+    </div>
+    <p class="pain-note reveal">netvis answers the question Windows won't:
+       <strong>which program, right now, and how much</strong>.</p>
+  </section>
+
+  <!-- The concrete scenario. Abstract features don't sell; a call that broke
+       up in front of a client does. -->
+  <section class="latency" id="latency">
+    <div class="wrap latency-inner">
+      <div class="latency-copy reveal reveal-l">
+        <div class="eyebrow">Auto-block</div>
+        <h2>The call is going fine.<br>Then a background updater takes the line.</h2>
+        <p>Your video freezes. The upload stalls. The remote session drops out.
+           By the time you've alt-tabbed and gone looking for the cause, the
+           moment has passed and everyone has seen it.</p>
+        <p>Set a threshold once. netvis watches every process, and the moment
+           anything crosses it, that program is <strong>off the internet</strong> —
+           in the same second, without you touching anything.</p>
+        <ul class="ticks">
+          <li>Your call keeps the bandwidth it needs</li>
+          <li>The greedy updater is cut off, not throttled</li>
+          <li>Calls, browsers and full-screen apps are never auto-blocked</li>
+        </ul>
       </div>
-      <div class="card">
-        <div class="dot" style="background:#e05b6b"></div>
-        <h3>Security alerts</h3>
-        <p>Get told when an app connects for the first time, starts listening for
-           incoming connections, or your DNS changes.</p>
-      </div>
-      <div class="card">
-        <div class="dot" style="background:#2fb2c7"></div>
-        <h3>Runs in the background</h3>
-        <p>Tuck it into the tray and it keeps monitoring, blocking and limiting while
-           staying out of your way.</p>
+      <div class="latency-viz reveal reveal-r d1" aria-hidden="true">
+        <div class="ping-card">
+          <div class="ping-head"><span>Latency</span><span class="ping-bad">without netvis</span></div>
+          <div class="bars bars-bad">
+            <i class="h18"></i><i class="h22"></i><i class="h20"></i><i class="h26"></i>
+            <i class="h88"></i><i class="h96"></i><i class="h82"></i><i class="h90"></i>
+            <i class="h78"></i><i class="h24"></i><i class="h20"></i><i class="h22"></i>
+          </div>
+        </div>
+        <div class="ping-card">
+          <div class="ping-head"><span>Latency</span><span class="ping-good">with auto-block</span></div>
+          <div class="bars bars-good">
+            <i class="h18"></i><i class="h22"></i><i class="h20"></i><i class="h26"></i>
+            <i class="h34"></i><i class="h24"></i><i class="h21"></i><i class="h23"></i>
+            <i class="h20"></i><i class="h24"></i><i class="h20"></i><i class="h22"></i>
+          </div>
+          <div class="cut-label">updater cut here ↑</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="pricing" id="pricing">
-    <h2>Try it, then decide</h2>
-    <div class="plans">
-      <div class="plan">
+  <!-- Each feature shown, not described. The screenshots do the arguing. -->
+  <section class="features wrap" id="features">
+    <h2 class="reveal">Everything, on one screen</h2>
+
+    <div class="feature-row">
+      <div class="feature-copy reveal reveal-l">
+        <div class="eyebrow">Per-process firewall</div>
+        <h3>One click and it's offline</h3>
+        <p>Not a rule to write. Not a wizard. A Block button next to the program's
+           name, and it stops talking to the internet immediately — until you say
+           otherwise.</p>
+        <p class="muted">Right-click any process for details, connections, limits,
+           or to pin it to the top of the list.</p>
+      </div>
+      <div class="feature-shot reveal reveal-r"><img src="shots/context.jpg" alt="Right-click menu on a process" loading="lazy"></div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-copy reveal reveal-r">
+        <div class="eyebrow">Speed limits</div>
+        <h3>Or leave it online, on a leash</h3>
+        <p>Cap download and upload separately, in KB/s or MB/s. Permanently, or
+           for the next 30 minutes while you're in a call.</p>
+        <p class="muted">The limit lifts itself when the time is up. You don't have
+           to remember.</p>
+      </div>
+      <div class="feature-shot reveal reveal-l"><img src="shots/limit.jpg" alt="Setting a traffic limit" loading="lazy"></div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-copy reveal reveal-l">
+        <div class="eyebrow">Connection inspector</div>
+        <h3>Where is it actually sending data?</h3>
+        <p>Open any program and see the split — HTTPS, QUIC, DNS — plus the remote
+           hosts it's talking to, resolved to real names instead of bare IPs.</p>
+        <p class="muted">The moment you look, you learn something about your own PC.</p>
+      </div>
+      <div class="feature-shot reveal reveal-r"><img src="shots/details.jpg" alt="Per-process detail panel" loading="lazy"></div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-copy reveal reveal-r">
+        <div class="eyebrow">System-wide blocking</div>
+        <h3>Ads and trackers, for the whole PC</h3>
+        <p>Blocking happens at the DNS layer, so it covers every browser <em>and</em>
+           every app that isn't a browser. Extensions can't do that.</p>
+        <p class="muted">Ships with a large built-in list. Add your own domains, or
+           import a list you already trust.</p>
+      </div>
+      <div class="feature-shot reveal reveal-l"><img src="shots/blocklist.jpg" alt="Firewall blocklist editor" loading="lazy"></div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-copy reveal reveal-l">
+        <div class="eyebrow">Security alerts</div>
+        <h3>Told the first time, not the hundredth</h3>
+        <p>When a program reaches the internet for the first time, starts accepting
+           incoming connections, or your DNS servers change — you get a notification,
+           even when netvis is in the tray.</p>
+        <p class="muted">Most days it's quiet. The day it isn't, you'll want to know.</p>
+      </div>
+      <div class="feature-shot reveal reveal-r"><img src="shots/alerts.jpg" alt="Security alerts feed" loading="lazy"></div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-copy reveal reveal-r">
+        <div class="eyebrow">Built to stay out of the way</div>
+        <h3>Two tabs. That's the whole program.</h3>
+        <p>Processes is the live view. Settings is every switch netvis has, on one
+           page — protection, notifications, startup, appearance. Nothing is buried
+           three menus deep.</p>
+        <p class="muted">Light, dark, or follow Windows. It remembers what you picked.</p>
+      </div>
+      <div class="feature-shot reveal reveal-l"><img src="shots/settings.jpg" alt="The netvis settings tab" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- Objection handling, right before the price. -->
+  <section class="privacy wrap">
+    <div class="privacy-card reveal">
+      <h2>Your traffic never leaves your computer</h2>
+      <p>netvis analyses everything locally. The sites you visit, the programs you
+         run, the data you move — none of it is uploaded, because there is nowhere
+         for it to go. No account. No telemetry. No analytics.</p>
+      <p class="muted">The only thing that ever leaves is an anonymous hardware ID,
+         once at startup, to check your license.</p>
+    </div>
+  </section>
+
+  <!-- Two reasons to believe there's a person behind this, placed right
+       before the price: you can reach them, and the thing is still moving. -->
+  <section class="community wrap" id="community">
+    <div class="comm-grid">
+      <a class="comm-card comm-discord reveal reveal-l" href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">
+        <div class="comm-top">
+          <svg class="comm-ico" aria-hidden="true"><use href="#ico-discord"/></svg>
+          <span class="comm-tag live"><i class="pulse"></i>Open now</span>
+        </div>
+        <h3>Ask the person who wrote it</h3>
+        <p>No ticket queue, no bot, no "we'll get back to you in 3–5 business days."
+           Join the Discord and you're one message away from the developer.</p>
+        <ul class="comm-list">
+          <li>Help with setup, blocklists and thresholds</li>
+          <li>Report a bug and watch it get fixed</li>
+          <li>Ask for a feature — small tools change fast</li>
+        </ul>
+        <span class="comm-cta">Join the support server<i class="arr">→</i></span>
+      </a>
+
+      <div class="comm-card comm-mac reveal reveal-r d1">
+        <div class="comm-top">
+          <svg class="comm-ico" aria-hidden="true"><use href="#ico-apple"/></svg>
+          <span class="comm-tag soon">In development</span>
+        </div>
+        <h3>netvis is coming to macOS</h3>
+        <p>Same idea, same engine, built native: every process, what it's sending,
+           and a button that stops it. Windows first because that's where the
+           problem is worst — the Mac is next in line.</p>
+        <div class="os-bars">
+          <div class="os-row">
+            <span class="os-name">Windows 10 &amp; 11</span>
+            <span class="os-meter"><i class="fill full"></i></span>
+            <span class="os-state ok">Shipping</span>
+          </div>
+          <div class="os-row">
+            <span class="os-name">macOS</span>
+            <span class="os-meter"><i class="fill part"></i></span>
+            <span class="os-state">In progress</span>
+          </div>
+        </div>
+        <p class="comm-foot">Want first access to the beta? It gets announced in the
+           Discord before anywhere else.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing wrap" id="pricing">
+    <h2 class="reveal">Try it on your own PC first</h2>
+    <p class="pricing-lead reveal d1">You'll know inside an hour whether it tells you
+       something you didn't know. If it doesn't, you've lost nothing.</p>
+    <div class="plans spot">
+      <div class="plan reveal">
         <div class="plan-name">Free trial</div>
         <div class="plan-price">$0</div>
-        <div class="plan-term">14 days, one computer</div>
+        <div class="plan-term">14 days · one computer</div>
         <ul>
           <li>Every feature unlocked</li>
           <li>No card, no account</li>
@@ -133,54 +346,38 @@
         </ul>
         <a class="btn btn-buy plan-cta" href="downloads/netvis-setup.exe" download>Start free trial</a>
       </div>
-      <div class="plan plan-featured">
+      <div class="plan plan-featured reveal d1">
+        <div class="plan-flag">Best value</div>
         <div class="plan-name">License</div>
         <div class="plan-price">$25</div>
-        <div class="plan-term">6 months, one computer</div>
+        <div class="plan-term">6 months · one computer · about $4 a month</div>
         <ul>
           <li>Everything in the trial</li>
           <li>Keeps your settings and blocklist</li>
-          <li>Renew whenever you like</li>
+          <li>Direct support on Discord</li>
+          <li>Buy from inside the app, any time</li>
         </ul>
         <a class="btn btn-primary plan-cta" href="/buy">Buy a license</a>
       </div>
     </div>
-    <p class="pricing-note">Sold through Polar, which handles payment and VAT. Windows 10 and 11, 64-bit.</p>
+    <p class="pricing-note reveal">Windows 10 and 11, 64-bit. macOS in development.</p>
   </section>
 
 </main>
 
 <footer class="foot">
-  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;padding:0 24px;flex-wrap:wrap;">
-    <svg class="logo" style="width:22px;height:22px;border-radius:6px" aria-hidden="true"><use href="#netvis-logo"/></svg>
+  <div class="wrap footrow">
+    <svg class="logo small" aria-hidden="true"><use href="#netvis-logo"/></svg>
     <span>netvis</span>
+    <a class="foot-link" href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">
+      <svg class="ico" aria-hidden="true"><use href="#ico-discord"/></svg>Support
+    </a>
     <span class="spacer"></span>
-    <span class="req">Windows 10 / 11 · 64-bit</span>
+    <span class="req">© 2026 netvis. All rights reserved.</span>
   </div>
 </footer>
 
-<script>
-  // Only offer the download to Windows visitors; on anything else the
-  // button is disabled and the label/note explain why.
-  (function () {
-    var ua = navigator.userAgent || "";
-    var uaData = navigator.userAgentData;
-    var isWindows = uaData
-      ? uaData.platform === "Windows"
-      : /Windows|Win32|Win64|WOW64/i.test(ua);
-
-    if (!isWindows) {
-      var btn = document.getElementById("downloadBtn");
-      btn.classList.add("disabled");
-      btn.removeAttribute("href");
-      btn.removeAttribute("download");
-      btn.setAttribute("aria-disabled", "true");
-      btn.addEventListener("click", function (e) { e.preventDefault(); });
-      document.getElementById("downloadLabel").textContent = "Not available for download";
-      document.getElementById("dlNote").textContent = "netvis is Windows-only. Open this page on a Windows PC to download.";
-    }
-  })();
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
