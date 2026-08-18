@@ -3,12 +3,15 @@ REM Builds netvis-setup.exe from the current netvis.exe.
 REM
 REM Needs Inno Setup 6: https://jrsoftware.org/isdl.php
 REM
-REM Signing is optional here and controlled by two environment variables.
-REM Without them you still get a working installer - just one that shows
-REM the "unknown publisher" warning:
+REM Code signing is handled by sign.bat and is optional. Without a certificate
+REM configured you still get a working installer - just one that shows the
+REM "unknown publisher" warning. To sign, first (once per 2-hour session):
 REM
-REM   set NETVIS_SIGN_SHA1=<thumbprint of your code signing certificate>
-REM   set NETVIS_TIMESTAMP=http://timestamp.sectigo.com
+REM   1. Open SimplySign Desktop and log in.
+REM   2. set NETVIS_SIGN_SHA1=<thumbprint of the Certum certificate>
+REM
+REM See sign.bat for the details. Everything below signs automatically when
+REM that variable is set, and quietly skips signing when it isn't.
 
 setlocal
 
@@ -24,23 +27,19 @@ if not exist "%~dp0..\netvis.exe" (
   exit /b 1
 )
 
-REM Sign the application BEFORE packaging it, so the file inside the
-REM installer is signed too. Signing only the installer leaves the exe on
-REM disk unsigned, and that's the one antivirus software inspects later.
-if defined NETVIS_SIGN_SHA1 (
-  echo Signing netvis.exe...
-  signtool sign /sha1 %NETVIS_SIGN_SHA1% /fd SHA256 /tr %NETVIS_TIMESTAMP% /td SHA256 "%~dp0..\netvis.exe"
-  if errorlevel 1 exit /b 1
-)
+REM Sign the application BEFORE packaging it, so the file INSIDE the installer
+REM is signed too. Signing only the installer leaves the exe on disk unsigned,
+REM and that on-disk exe is the one antivirus inspects after installation.
+call "%~dp0sign.bat" "%~dp0..\netvis.exe"
+if errorlevel 1 exit /b 1
 
 %ISCC% "%~dp0netvis.iss"
 if errorlevel 1 exit /b 1
 
-if defined NETVIS_SIGN_SHA1 (
-  echo Signing the installer...
-  signtool sign /sha1 %NETVIS_SIGN_SHA1% /fd SHA256 /tr %NETVIS_TIMESTAMP% /td SHA256 "%~dp0output\netvis-setup.exe"
-  if errorlevel 1 exit /b 1
-)
+REM Then sign the installer itself, so SmartScreen sees a signed setup.exe
+REM at download time.
+call "%~dp0sign.bat" "%~dp0output\netvis-setup.exe"
+if errorlevel 1 exit /b 1
 
 echo.
 echo Built: %~dp0output\netvis-setup.exe

@@ -16,6 +16,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -34,6 +35,8 @@
 #include "alerts.h"
 #include "settings.h"
 #include "blocklist_store.h"
+#include "conn_kill.h"
+#include "ipban.h"
 #include "startup.h"
 #include "license.h"
 #include "theme.h"
@@ -910,10 +913,31 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     // hidden in the tray) and exit. The mutex is held for the whole process
     // lifetime; Windows releases it automatically on exit.
     g_showMsg = ::RegisterWindowMessageW(L"netvis_show_window_v1");
-    HANDLE instanceMutex = ::CreateMutexW(nullptr, FALSE, L"netvis_single_instance_v1");
+
+    // The background copy is normally started by the scheduled "run at
+    // startup" task, while the copy launched from the Start menu is elevated
+    // through the manifest. Those can be different tokens, and a mutex created
+    // by one with default security can be invisible to the other - so the
+    // second copy wouldn't detect the first and would start a DUPLICATE (two
+    // tray icons, two WinDivert handles fighting over capture). Two fixes:
+    //   - the mutex lives in the Global\ namespace with a null DACL, so any
+    //     token in any session can open it and ERROR_ALREADY_EXISTS is
+    //     reliable regardless of who started the other copy;
+    //   - when it already exists, find the running window and post to it
+    //     directly instead of only broadcasting - a broadcast to a hidden,
+    //     tray-resident window can be dropped, which is why "open it again"
+    //     sometimes did nothing (or looked like a new instance).
+    SECURITY_DESCRIPTOR sd;
+    ::InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+    ::SetSecurityDescriptorDacl(&sd, TRUE, nullptr, FALSE); // null DACL: everyone may open it
+    SECURITY_ATTRIBUTES sa{sizeof(sa), &sd, FALSE};
+    HANDLE instanceMutex = ::CreateMutexW(&sa, FALSE, L"Global\\netvis_single_instance_v1");
     if (instanceMutex && ::GetLastError() == ERROR_ALREADY_EXISTS) {
-        Log("netvis: another instance is already running - signalling it and exiting");
-        ::PostMessage(HWND_BROADCAST, g_showMsg, 0, 0);
+        Log("netvis: another instance is already running - surfacing it and exiting");
+        HWND existing = ::FindWindowW(L"netvis", nullptr);
+        if (existing) ::PostMessageW(existing, g_showMsg, 0, 0);
+        else ::PostMessageW(HWND_BROADCAST, g_showMsg, 0, 0);
+        ::CloseHandle(instanceMutex);
         return 0;
     }
 
@@ -977,6 +1001,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                                  wc.hInstance, nullptr);
     ::SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)iconLarge);
     ::SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
+
+    // Let a second instance's "surface yourself" message reach this window
+    // even if it arrives from a process at a different integrity level -
+    // without this, UIPI silently filters the cross-process post and the
+    // running copy never comes to the front.
+    ::ChangeWindowMessageFilterEx(hwnd, g_showMsg, MSGFLT_ALLOW, nullptr);
 
     if (!CreateDeviceD3D(hwnd)) {
         CleanupDeviceD3D();
@@ -1117,12 +1147,51 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     char newDomainBuf[256] = "";
     std::string blocklistStatus;
 
+    // IPs banned this session on top of the persisted list: the addresses a
+    // blocked domain resolved to at the moment it was added. They aren't
+    // persisted (the domain's DNS block already covers it after a restart,
+    // and its IPs rotate), but while the session runs they stay in the
+    // firewall so a browser can't reconnect to a cached IP over QUIC.
+    // Keyed by the list entry (a domain) so removing that entry can drop
+    // exactly its addresses again. A flat list couldn't be un-banned per
+    // entry, which is half of why bans never lifted.
+    std::unordered_map<std::string, std::vector<std::string>> runtimeBannedIPs;
+
+    // Rewrites the OS firewall ban rules to match the current ban set: every
+    // bare-IP entry the user added to the blocklist, plus this session's
+    // resolved-domain IPs. Runs netsh, which is slow, so it's fired on a
+    // detached thread - ipban serialises the rewrites internally.
+    //
+    // Gated on the blocker being ON: with blocking off, the desired set is
+    // empty, so this CLEARS every rule. That's the other half of the fix -
+    // firewall rules are OS state, independent of netvis's capture handle, so
+    // turning the blocker off did nothing to them and IPs stayed banned. Now
+    // the master switch controls the bans too, and flipping it back on
+    // re-applies them from the lists. Also called on startup, which reconciles
+    // the rules with the saved state and clears anything stale from last run.
+    auto rebuildFirewall = [&]() {
+        std::vector<std::string> ips;
+        if (blkOk && blk.Enabled()) {
+            for (const auto& e : userBlocklist)
+                if (connkill::IsIPLiteral(e)) ips.push_back(e);
+            for (const auto& kv : runtimeBannedIPs)
+                for (const auto& ip : kv.second) ips.push_back(ip);
+        }
+        std::thread([ips]() { ipban::SetBlockedIPs(ips); }).detach();
+    };
+
     // Applies the current user list + default toggle to the blocker and
-    // saves it to disk. Called whenever the blocklist is edited.
+    // saves it to disk. Called whenever the blocklist is edited. IP entries
+    // are harmless in the blocker's domain list (they never match a DNS
+    // question); the firewall is what actually enforces them, via
+    // rebuildFirewall.
     auto applyBlocklist = [&]() {
         blocklist_store::Save(userBlocklist);
         if (blkOk) blk.Reload(userBlocklist, useDefaultBlocklist);
     };
+
+    // Reconcile the firewall with whatever IP entries were loaded from disk.
+    rebuildFirewall();
 
     int detailPid = -1; // process whose detail panel is open, -1 = none
     std::string detailName;
@@ -1195,6 +1264,26 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     runOnStartup = startup::IsEnabled(); // reflect what actually took effect
     Log("netvis: run at startup = %d (task %s)", (int)settings.runOnStartup,
         runOnStartup ? "present" : "missing");
+
+    // Persist the preference toggles the moment they change, not only at a
+    // clean shutdown. The old code saved once, at the very end of the loop -
+    // so any toggle was lost whenever the process didn't exit gracefully: a
+    // reboot killing the tray-resident copy, End Task, or the taskkill in
+    // build_and_run.bat. That's why "run in background" (and the theme, and
+    // the rest) kept reverting. This snapshots just the preferences - not the
+    // lifetime byte counters, which are only accumulated at shutdown, so
+    // calling it mid-session can't double-count them.
+    auto persistPrefs = [&]() {
+        settings.adBlockerEnabled = blkOk ? blk.Enabled() : settings.adBlockerEnabled;
+        settings.autoBlockThreshold = autoBlockThresholdValue;
+        settings.autoBlockUnitIdx = autoBlockUnitIdx;
+        settings.runInBackground = runInBackground;
+        settings.notifyOnAlert = notifyOnAlert;
+        settings.runOnStartup = runOnStartup;
+        settings.themeMode = (int)theme::Current();
+        settings.useDefaultBlocklist = useDefaultBlocklist;
+        settings.Save();
+    };
 
     // Licensing re-checks while the app is already running. The flag is a
     // shared_ptr so the detached worker can safely clear it even if it
@@ -1490,8 +1579,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
             if (blkOk) {
                 bool blockerEnabled = blk.Enabled();
-                if (ImGui::Checkbox("Block trackers & malicious domains", &blockerEnabled))
+                if (ImGui::Checkbox("Block trackers & malicious domains", &blockerEnabled)) {
                     blk.SetEnabled(blockerEnabled);
+                    persistPrefs();
+                    rebuildFirewall(); // off clears the IP bans, on re-applies them
+                }
                 ImGui::SameLine(0, 28);
                 if (ActionButton("Edit blocklist...")) {
                     showBlocklist = true;
@@ -1527,12 +1619,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             }
 
             heading("NETVIS");
-            ImGui::Checkbox("Run in background when window is closed", &runInBackground);
-            ImGui::Checkbox("System notification on every alert", &notifyOnAlert);
+            if (ImGui::Checkbox("Run in background when window is closed", &runInBackground))
+                persistPrefs();
+            if (ImGui::Checkbox("System notification on every alert", &notifyOnAlert))
+                persistPrefs();
             if (ImGui::Checkbox("Run when Windows starts", &runOnStartup)) {
                 startup::SetEnabled(runOnStartup);
                 runOnStartup = startup::IsEnabled(); // reflect what actually took effect
                 settings.runOnStartup = runOnStartup; // remember the intent, not just the task
+                persistPrefs();
             }
 
             heading("APPEARANCE");
@@ -1547,6 +1642,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     if (ImGui::Button(label, ImVec2(88 * dpiScale, 0))) {
                         theme::Apply(m);
                         settings.themeMode = (int)m;
+                        persistPrefs();
                         // Style sizes are scaled at startup for this
                         // monitor's DPI; re-applying the palette resets them
                         // to the unscaled defaults, so scale again.
@@ -2267,8 +2363,36 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                                     "Stored in Program Files\\netvis\\blocklist.db.");
                 ImGui::Spacing();
 
+                // The whole list does nothing while the master switch is off,
+                // which is the usual reason "I added a domain but it still
+                // loads". Say so, loudly, right where they're editing.
+                if (blkOk && !blk.Enabled()) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, theme::Warn());
+                    ImGui::TextWrapped("Blocking is currently OFF. These domains won't be blocked until you "
+                                        "turn on \"Block trackers & malicious domains\" in Settings.");
+                    ImGui::PopStyleColor();
+                    ImGui::SameLine();
+                    if (ActionButton("Turn on")) {
+                        blk.SetEnabled(true);
+                        persistPrefs();
+                        rebuildFirewall(); // re-apply the IP bans now blocking is on
+                    }
+                    ImGui::Spacing();
+                }
+
+                // A domain already open in a browser keeps its live connection
+                // until the tab is reloaded - blocking stops new lookups and
+                // new connections at once (the DNS cache is flushed on every
+                // change), but it can't tear down a page that's already up.
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::TextWrapped("Changes apply immediately. If a site is already open, reload the tab "
+                                    "(Ctrl+Shift+R) - an existing connection stays up until then.");
+                ImGui::PopStyleColor();
+                ImGui::Spacing();
+
                 if (ImGui::Checkbox("Use built-in malicious-domain database", &useDefaultBlocklist)) {
                     applyBlocklist();
+                    persistPrefs();
                 }
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("Merge netvis's bundled list of ~100k known ad/tracker/malware\n"
@@ -2290,6 +2414,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                         for (auto& d : imported)
                             if (have.insert(d).second) { userBlocklist.push_back(d); added++; }
                         applyBlocklist();
+                        rebuildFirewall(); // pick up any bare-IP entries in the import
                         blocklistStatus = "Imported " + std::to_string(added) + " new domain(s).";
                     }
                 }
@@ -2299,7 +2424,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
                 ImGui::Spacing();
                 ImGui::SetNextItemWidth(-140);
-                bool addNow = ImGui::InputTextWithHint("##newdomain", "add a domain, e.g. ads.example.com",
+                bool addNow = ImGui::InputTextWithHint("##newdomain", "add a domain or IP, e.g. ads.example.com or 203.0.113.5",
                                                         newDomainBuf, sizeof(newDomainBuf),
                                                         ImGuiInputTextFlags_EnterReturnsTrue);
                 ImGui::SameLine();
@@ -2310,8 +2435,45 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     while (!d.empty() && (d.back() == ' ' || d.back() == '\t' || d.back() == '\r')) d.pop_back();
                     if (!d.empty() &&
                         std::find(userBlocklist.begin(), userBlocklist.end(), d) == userBlocklist.end()) {
+                        // An entry is either a bare address or a domain. Both
+                        // end up banned at the IP level and have their live
+                        // connections torn down; a domain additionally gets
+                        // DNS-blocked so its future (rotating) IPs never
+                        // resolve either. rebuildFirewall() reads the ban set
+                        // from userBlocklist (IP entries) + runtimeBannedIPs,
+                        // so we only have to feed those.
+                        std::vector<uint32_t> ipsToKill;
+
+                        if (connkill::IsIPLiteral(d)) {
+                            // The literal itself is banned once it's in the
+                            // list; resolve it (a no-op for text->v4) so the
+                            // TCP reset below has something to match.
+                            connkill::ResolveHostIPv4(d, ipsToKill);
+                        } else {
+                            // Resolve BEFORE blocking - once listed, netvis
+                            // NXDOMAINs its own lookup. Capture www. too, and
+                            // remember the IPs under this entry so removing it
+                            // later un-bans exactly them.
+                            connkill::ResolveHostIPv4(d, ipsToKill);
+                            connkill::ResolveHostIPv4("www." + d, ipsToKill);
+                            auto& bucket = runtimeBannedIPs[d];
+                            for (uint32_t ip : ipsToKill) {
+                                std::string s = connkill::IPv4ToString(ip);
+                                if (!s.empty()) bucket.push_back(s);
+                            }
+                        }
+
                         userBlocklist.push_back(d);
-                        applyBlocklist();
+                        applyBlocklist();     // DNS block (domains) + persist
+                        rebuildFirewall();    // ban every collected IP at the firewall
+
+                        // Close what's open right now: RST the IPv4 TCP flows
+                        // immediately; the firewall handles the rest (UDP/QUIC,
+                        // IPv6, and any new attempt).
+                        int killed = connkill::ResetConnectionsTo(ipsToKill);
+                        blocklistStatus = "Banned " + d;
+                        if (killed > 0) blocklistStatus += " and closed " + std::to_string(killed) + " connection(s)";
+                        blocklistStatus += ".";
                     }
                     newDomainBuf[0] = '\0';
                 }
@@ -2345,8 +2507,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     }
                     ImGui::EndTable();
                     if (removeIdx >= 0) {
+                        // Forget this entry's remembered addresses too, so its
+                        // firewall rules actually lift - whether it was a bare
+                        // IP (dropped from userBlocklist below) or a domain
+                        // (whose resolved IPs live in runtimeBannedIPs).
+                        const std::string& gone = userBlocklist[removeIdx];
+                        runtimeBannedIPs.erase(gone);
                         userBlocklist.erase(userBlocklist.begin() + removeIdx);
                         applyBlocklist();
+                        rebuildFirewall();
                     }
                 }
             }

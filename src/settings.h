@@ -32,7 +32,11 @@ struct Settings {
     // it on is one click.
     double autoBlockThreshold = 1.0;
     int autoBlockUnitIdx = 1;
-    bool runInBackground = false;
+    // Default on: netvis is a monitor/blocker that's meant to keep working
+    // after you close the window - it also starts with Windows, so quitting
+    // outright on the close button is the surprising behaviour, not staying
+    // resident. Closing hides to the tray; "Exit" from the tray really quits.
+    bool runInBackground = true;
     bool notifyOnAlert = true;
     bool useDefaultBlocklist = true; // whether to merge the built-in malicious-domain database
     // Whether the user wants netvis to start with Windows. The scheduled

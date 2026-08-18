@@ -105,6 +105,18 @@ Filename: "{sys}\sc.exe"; Parameters: "stop WinDivert"; \
 Filename: "{sys}\sc.exe"; Parameters: "delete WinDivert"; \
     Flags: runhidden; RunOnceId: "DelWinDivert"
 
+; netvis bans IPs with Windows Firewall rules named "netvis-ban-*". These
+; live in the firewall, not the program folder, so they must be deleted here
+; or an uninstalled netvis would keep blocking those addresses forever.
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""netvis-ban-out-v4"""; \
+    Flags: runhidden; RunOnceId: "DelBanOut4"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""netvis-ban-in-v4"""; \
+    Flags: runhidden; RunOnceId: "DelBanIn4"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""netvis-ban-out-v6"""; \
+    Flags: runhidden; RunOnceId: "DelBanOut6"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""netvis-ban-in-v6"""; \
+    Flags: runhidden; RunOnceId: "DelBanIn6"
+
 [Code]
 // Running the setup again when netvis is already installed offers to remove
 // it, rather than silently reinstalling over the top. People keep the

@@ -39,8 +39,8 @@ const char* const kServer = "https://netvis.cc";
 // proves nothing. But a fake server can't produce a signature that matches
 // this key, so its "yes" is rejected all the same. Forging one means
 // recovering the private key, not owning the connection.
-const char* const kServerPublicKey = "5fcad6123500f71ca0563e5135d8fedbce5bb6b700433aad732c5e2a454846"
-"4aea794a114c085c77cb6e36d01e6972388220794664d09984eb1dddb5a6d628ad";
+const char* const kServerPublicKey = "e746070e7324e8594a9ca17cc1eca966947d63a2ec641787aba8bbeb3e5f"
+"df54a92f65e63d32903cd7ac962382e72474f63e8588dbee765ca6781e3437319e28";
 namespace {
 
 std::wstring Widen(const std::string& s) {
