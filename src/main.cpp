@@ -1858,7 +1858,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         bool needResort = false;
-        if (ImGui::BeginTable("apps", 5,
+        // Table id bumped ("apps" -> "apps_v2") on purpose: an older build saved
+        // a different column order in imgui.ini (Downloaded ended up first). A
+        // fresh id ignores that stale layout so columns render in the order
+        // declared below - App, PID, Downloaded, Uploaded, Block - with
+        // Downloaded sitting right next to Uploaded.
+        if (ImGui::BeginTable("apps_v2", 5,
                                ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
                                    ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable,
                                ImGui::GetContentRegionAvail())) {

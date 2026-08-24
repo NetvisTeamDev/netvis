@@ -49,6 +49,30 @@ if exist "%SERVERFILE%" (
 echo Server: !SERVER!    ^(edit %SERVERFILE% to change^)
 echo(
 
+REM ---- 1b. passwordless SSH: type your password at most ONCE, ever ---------
+REM Windows' OpenSSH can't share one login across the several scp/ssh calls a
+REM deploy makes, so without a key you'd retype your password 4 times. Instead
+REM we set up an SSH key: generate one if missing, and install it on the server
+REM the first time (that's the single password prompt). Every deploy after this
+REM - and the rest of THIS one - authenticates with the key, no password.
+set "SSHKEY=%USERPROFILE%\.ssh\id_ed25519"
+if not exist "%USERPROFILE%\.ssh" mkdir "%USERPROFILE%\.ssh" >nul 2>&1
+if not exist "%SSHKEY%" (
+  echo No SSH key yet - generating one ^(one-time^)...
+  ssh-keygen -t ed25519 -N "" -f "%SSHKEY%" >nul
+)
+REM Does the key already get us in without a password? (quick, no prompt)
+ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new !SERVER! "exit" >nul 2>&1
+if errorlevel 1 (
+  echo(
+  echo Installing your SSH key on the server. Enter your password ONE last time:
+  type "%SSHKEY%.pub" | ssh -o StrictHostKeyChecking=accept-new !SERVER! "umask 077; mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && sort -u ~/.ssh/authorized_keys -o ~/.ssh/authorized_keys"
+  REM Verify it now works passwordlessly; if not, we carry on and the later
+  REM steps will just prompt as before rather than failing outright.
+  ssh -o BatchMode=yes -o ConnectTimeout=8 !SERVER! "exit" >nul 2>&1 && (echo Key installed - no more password prompts.) || (echo Could not confirm key auth; you may still be prompted below.)
+  echo(
+)
+
 REM ---- 2. build the licensing tool (used to sign updates) ------------------
 pushd licensing
 go build -o licensing.exe . || (popd & echo [X] building licensing.exe failed & goto :fail)
