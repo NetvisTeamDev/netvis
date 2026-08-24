@@ -13,6 +13,7 @@
 //     hijack looks like
 #pragma once
 #include <atomic>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <mutex>
@@ -34,8 +35,12 @@ struct Alert {
     AlertKind kind;
     std::string title;
     std::string detail;
-    std::string timestamp; // "HH:MM:SS"
-    uint32_t pid = 0;      // 0 when not process-specific
+    std::string timestamp; // "HH:MM:SS", the exact time, shown on hover
+    // Unix time the alert was raised. The feed shows how long ago that was
+    // rather than a wall-clock reading, which means it needs to subtract,
+    // which means it needs the number and not just the formatted string.
+    int64_t at = 0;
+    uint32_t pid = 0; // 0 when not process-specific
 };
 
 class Alerts {

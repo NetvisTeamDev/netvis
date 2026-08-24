@@ -139,8 +139,19 @@ void Alerts::CheckConnections() {
 
             if (!listening) {
                 if (seenExes_.insert(lexe).second && !firstScan) {
-                    pending.push_back({AlertKind::FirstConnection, exe + " connected to the internet",
-                                        "First time this app has been seen making a connection.", pid});
+                    // Written for someone who did not ask for a network
+                    // event feed and is being shown one anyway. It says what
+                    // happened, whether that is normally fine, and what
+                    // would make it worth a second look - in that order,
+                    // because the first question anybody has about an alert
+                    // is whether they need to care.
+                    pending.push_back({AlertKind::FirstConnection,
+                                       exe + " used the internet for the first time",
+                                       "netvis has not seen " + exe +
+                                           " connect before. That is normal for an app you have "
+                                           "just installed or opened for the first time. If you "
+                                           "do not recognise it, it is worth a look.",
+                                       pid});
                 }
                 continue;
             }
@@ -148,9 +159,18 @@ void Alerts::CheckConnections() {
             uint16_t port = PortFromDword(row.dwLocalPort);
             std::string key = lexe + ":" + std::to_string(port);
             if (seenListeners_.insert(key).second && !firstScan) {
-                char detail[160];
-                snprintf(detail, sizeof(detail), "Accepting incoming connections on TCP port %u.", port);
-                pending.push_back({AlertKind::NewListener, exe + " started listening", detail, pid});
+                // "Started listening" is precise and means nothing to most
+                // people. What it means in practice is that other machines
+                // can now start a conversation with this one, which is the
+                // part worth saying out loud.
+                char detail[320];
+                snprintf(detail, sizeof(detail),
+                         "%s opened port %u, so other devices on the network can now connect to "
+                         "it. File sharing, media streaming and development servers all do this. "
+                         "If you do not recognise %s, it is worth checking.",
+                         exe.c_str(), port, exe.c_str());
+                pending.push_back({AlertKind::NewListener,
+                                   exe + " is accepting incoming connections", detail, pid});
             }
         }
         // The first pass just records the existing state of the machine -
@@ -177,7 +197,15 @@ void Alerts::CheckDnsServers() {
     }
 
     if (!initialised || current == previous) return;
-    Push(AlertKind::DnsChanged, "DNS servers changed", previous + "  ->  " + current, 0);
+    // The old message was the two readings with an arrow between them,
+    // which assumes the reader knows what a DNS server is and what it would
+    // mean for one to change. Both servers are still named - that is the
+    // detail anyone troubleshooting actually needs - but the sentence around
+    // them now says what they are for.
+    Push(AlertKind::DnsChanged, "Your DNS servers changed",
+         "Your PC now uses " + current + " to look up website addresses, instead of " + previous +
+             ". This usually means you joined a different network or connected to a VPN.",
+         0);
 }
 
 void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_t pid) {
@@ -186,6 +214,7 @@ void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_
     a.title = std::move(title);
     a.detail = std::move(detail);
     a.timestamp = NowHHMMSS();
+    a.at = (int64_t)time(nullptr);
     a.pid = pid;
     Log("alert: %s - %s", a.title.c_str(), a.detail.c_str());
 

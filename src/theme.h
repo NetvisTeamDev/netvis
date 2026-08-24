@@ -80,6 +80,10 @@ inline ImU32 GraphGrid(bool mid) {
     return mid ? IM_COL32(255, 255, 255, 26) : IM_COL32(255, 255, 255, 12);
 }
 inline ImU32 GraphCrosshair() { return IsLight() ? IM_COL32(0, 0, 0, 75) : IM_COL32(255, 255, 255, 60); }
+// The axis labels on the graph - the maximum on the top gridline, and the
+// two ends of the time span. Quiet on purpose: they are there to be read
+// when looked for, not to compete with the traffic.
+inline ImU32 GraphAxisText()  { return IsLight() ? IM_COL32(0, 0, 0, 105) : IM_COL32(255, 255, 255, 90); }
 inline ImU32 GraphHeadGlow()  { return IsLight() ? IM_COL32(0x1a, 0x9a, 0x4a, 0x40) : IM_COL32(0x46, 0xe0, 0x76, 0x50); }
 inline ImU32 GraphHeadDot()   { return IsLight() ? IM_COL32(0x0f, 0x6b, 0x33, 0xFF) : IM_COL32(0xbe, 0xff, 0xd6, 0xFF); }
 inline ImVec4 GraphDownText() { return IsLight() ? ImVec4(0.06f, 0.45f, 0.22f, 1.0f) : ImVec4(0.38f, 0.90f, 0.56f, 1.0f); }

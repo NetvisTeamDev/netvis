@@ -33,6 +33,7 @@
 #include "connlist.h"
 #include "hostcache.h"
 #include "alerts.h"
+#include "alerts_feed.h"
 #include "settings.h"
 #include "blocklist_store.h"
 #include "conn_kill.h"
@@ -1627,15 +1628,26 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             // Grouped under headings rather than a wall of checkboxes: the
             // two that change what netvis does to your traffic are worth
             // separating from the ones that only change how it behaves.
+            //
+            // Bold, and larger than the rows underneath. They used to be
+            // drawn in the same size as the checkboxes and in a fainter
+            // colour, which is the wrong way round: a heading that is
+            // quieter than its contents stops separating them and becomes
+            // one more line of grey text in the list.
+            //
+            // The size is scaled by dpiScale because the fonts here are
+            // loaded in pixels at a fixed size (see g_fontBold, loaded at
+            // 20 * dpiScale). A bare 24 would come out smaller than the body
+            // text on any display above 125%.
             auto heading = [&](const char* text) {
-                ImGui::Spacing();
-                ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
+                ImGui::PushFont(g_fontBold, 24.0f * dpiScale);
                 ImGui::TextUnformatted(text);
-                ImGui::PopStyleColor();
-                ImGui::Spacing();
+                ImGui::PopFont();
+                ImGui::Dummy(ImVec2(0, 6.0f * dpiScale));
             };
 
-            heading("PROTECTION");
+            heading("Protection");
 
             if (blkOk) {
                 bool blockerEnabled = blk.Enabled();
@@ -1678,7 +1690,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::Unindent();
             }
 
-            heading("NETVIS");
+            heading("netvis");
             if (ImGui::Checkbox("Run in background when window is closed", &runInBackground))
                 persistPrefs();
             if (ImGui::Checkbox("System notification on every alert", &notifyOnAlert))
@@ -1690,7 +1702,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 persistPrefs();
             }
 
-            heading("APPEARANCE");
+            heading("Appearance");
             {
                 auto seg = [&](const char* label, theme::Mode m) {
                     bool active = theme::Current() == m;
@@ -1720,7 +1732,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::PopStyleColor();
             }
 
-            heading("UPDATES");
+            heading("Updates");
             {
                 std::lock_guard<std::mutex> lk(upd->mu);
                 bool busy = upd->busy.load();
@@ -1768,7 +1780,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 }
             }
 
-            heading("LICENSE");
+            heading("License");
             {
                 int days = license::LastDaysLeft();
                 if (license::LastWasTrial()) {
@@ -2544,39 +2556,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 focusAlerts = false;
             }
             if (ImGui::Begin("Alerts", &showAlerts)) {
-                auto list = alerts.Recent();
-                ImGui::TextDisabled("%zu events - newest first", list.size());
-                ImGui::SameLine();
-                if (NeutralButton("Clear")) alerts.Clear();
-                ImGui::Separator();
-                ImGui::Spacing();
-
-                if (list.empty()) {
-                    ImGui::TextDisabled("Nothing yet. netvis will report apps connecting for the first\n"
-                                         "time, processes that start listening for incoming connections,\n"
-                                         "and changes to your DNS servers.");
-                }
-                for (size_t i = 0; i < list.size(); i++) {
-                    const auto& a = list[i];
-                    ImVec4 color;
-                    switch (a.kind) {
-                        case AlertKind::NewListener: color = theme::Warn(); break;
-                        case AlertKind::DnsChanged: color = ImVec4(0.95f, 0.75f, 0.30f, 1.0f); break;
-                        case AlertKind::AutoBlocked: color = theme::Bad(); break;
-                        default: color = ImVec4(0.271f, 0.608f, 1.000f, 1.0f); break;
-                    }
-                    ImGui::PushID((int)i);
-                    ImGui::TextColored(color, "%s", a.timestamp.c_str());
-                    ImGui::SameLine();
-                    ImGui::PushFont(g_fontBold, 0.0f);
-                    ImGui::TextUnformatted(a.title.c_str());
-                    ImGui::PopFont();
-                    ImGui::Indent();
-                    ImGui::TextWrapped("%s", a.detail.c_str());
-                    ImGui::Unindent();
-                    ImGui::Spacing();
-                    ImGui::PopID();
-                }
+                // The feed itself lives in alerts_feed.h, which is pure
+                // ImGui and so can be compiled and exercised off-Windows -
+                // see the note at the top of that file. It never touches
+                // the alert list; it reports that Clear was pressed and
+                // this decides what that means.
+                if (alertsfeed::Draw(alerts.Recent(), g_fontBold)) alerts.Clear();
             }
             ImGui::End();
         }
