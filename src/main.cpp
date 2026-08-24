@@ -37,6 +37,7 @@
 #include "blocklist_store.h"
 #include "conn_kill.h"
 #include "ipban.h"
+#include "updater.h"
 #include "startup.h"
 #include "license.h"
 #include "theme.h"
@@ -1312,6 +1313,26 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     else if (!blkOk) uiStatus = "Ad blocker failed: " + blkErr;
     else uiStatus = "Capturing traffic - running as Administrator";
 
+    // Auto-update. A background check ~10s after launch (so it never delays
+    // startup), plus a manual "Check for updates" in Settings. All the network
+    // and crypto happen on worker threads; the UI only reads this shared
+    // state. Applying an update launches the signed installer, which stops
+    // this process itself - so there's no in-app "restart" to coordinate.
+    struct UpdateState {
+        std::mutex mu;
+        std::atomic<bool> busy{false};
+        updater::Release rel;
+        std::string status;
+    };
+    auto upd = std::make_shared<UpdateState>();
+    std::thread([upd] {
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        updater::Release r = updater::Check();
+        std::lock_guard<std::mutex> lk(upd->mu);
+        upd->rel = r;
+        if (r.newer) upd->status = "Update available: " + r.version;
+    }).detach();
+
     bool done = false;
     while (!done) {
         g_runInBackground = runInBackground; // let WndProc see the current choice
@@ -1658,6 +1679,54 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
                 ImGui::TextUnformatted("Auto follows the Windows light/dark setting.");
                 ImGui::PopStyleColor();
+            }
+
+            heading("UPDATES");
+            {
+                std::lock_guard<std::mutex> lk(upd->mu);
+                bool busy = upd->busy.load();
+                ImGui::PushStyleColor(ImGuiCol_Text, theme::Dim());
+                ImGui::Text("Version %s", updater::CurrentVersion());
+                ImGui::PopStyleColor();
+
+                ImGui::BeginDisabled(busy);
+                if (NeutralButton("Check for updates")) {
+                    upd->busy.store(true);
+                    upd->status = "Checking...";
+                    std::thread([upd] {
+                        updater::Release r = updater::Check();
+                        std::lock_guard<std::mutex> lk(upd->mu);
+                        upd->rel = r;
+                        upd->status = !r.checked ? "Couldn't reach the update server."
+                                      : r.newer  ? ("Update available: " + r.version)
+                                                 : "You're up to date.";
+                        upd->busy.store(false);
+                    }).detach();
+                }
+                if (upd->rel.newer) {
+                    ImGui::SameLine();
+                    std::string label = "Download & install " + upd->rel.version;
+                    if (ActionButton(label.c_str())) {
+                        updater::Release rel = upd->rel;
+                        upd->busy.store(true);
+                        upd->status = "Downloading and verifying...";
+                        std::thread([upd, rel] {
+                            std::string err;
+                            bool ok = updater::Apply(rel, &err);
+                            std::lock_guard<std::mutex> lk(upd->mu);
+                            upd->status = ok ? "Verified - the installer is taking over..."
+                                             : ("Update failed: " + err);
+                            upd->busy.store(false);
+                        }).detach();
+                    }
+                }
+                ImGui::EndDisabled();
+
+                if (!upd->status.empty()) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, theme::Faint());
+                    ImGui::TextWrapped("%s", upd->status.c_str());
+                    ImGui::PopStyleColor();
+                }
             }
 
             heading("LICENSE");

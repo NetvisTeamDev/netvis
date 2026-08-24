@@ -41,6 +41,13 @@ const char* const kServer = "https://netvis.cc";
 // recovering the private key, not owning the connection.
 const char* const kServerPublicKey = "e746070e7324e8594a9ca17cc1eca966947d63a2ec641787aba8bbeb3e5f"
 "df54a92f65e63d32903cd7ac962382e72474f63e8588dbee765ca6781e3437319e28";
+
+// Public half of the update-signing key. Replace this with the output of
+// `licensing genupdatekeys` (its private half stays on your release machine).
+// This is still a placeholder test value - the updater will reject every
+// manifest until it is set to a real key you hold the private half of.
+const char* const kUpdatePublicKey = "cc8264eea819a086aff56951d1f1691ec8238a6b1e2c7fa1ef99d5"
+	"6ede81ac5beff46dea513a0821df4137012c148ffcedfc623fd381d51b73784ea7cb33ff4b";
 namespace {
 
 std::wstring Widen(const std::string& s) {
@@ -153,9 +160,10 @@ std::string RandomNonce() {
 }
 
 // Verifies an ECDSA P-256 signature (raw r||s) over SHA-256 of `message`,
-// against the compiled-in public key.
-bool VerifySignature(const std::string& message, const std::string& sigHex) {
-    std::vector<BYTE> pub = FromHex(kServerPublicKey);
+// against a given public key (X||Y hex). Parameterised on the key so the same
+// routine serves both the licensing key and the separate update key.
+bool verifyImpl(const std::string& message, const std::string& sigHex, const std::string& pubKeyHex) {
+    std::vector<BYTE> pub = FromHex(pubKeyHex);
     std::vector<BYTE> sig = FromHex(sigHex);
     if (pub.size() != 64 || sig.size() != 64) return false;
 
@@ -310,6 +318,13 @@ const std::string& ServerURL() {
     return url;
 }
 
+// Public wrapper around the file-local verify, so the updater (which uses a
+// different key) can share the exact same ECDSA P-256 implementation.
+bool VerifyDetached(const std::string& message, const std::string& sigHex,
+                    const std::string& pubKeyHex) {
+    return verifyImpl(message, sigHex, pubKeyHex);
+}
+
 namespace {
 std::atomic<int> g_lastDaysLeft{-1};
 std::atomic<bool> g_lastWasTrial{false};
@@ -363,7 +378,7 @@ Result AuthenticateEx() {
             out.status = Status::NotLicensed;
             return out;
         }
-        if (!VerifySignature(message, sig)) {
+        if (!VerifyDetached(message, sig, kServerPublicKey)) {
             Log("license: signature check failed - rejecting");
             out.status = Status::NotLicensed;
             return out;

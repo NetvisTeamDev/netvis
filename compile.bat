@@ -94,7 +94,7 @@ REM generates its own as well and the two collide.
 link.exe /nologo /MANIFEST:NO /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup /OUT:netvis.exe ^
   obj\main.obj obj\monitor.obj obj\netmap.obj obj\procname.obj obj\windivert_shim.obj ^
   obj\blocker.obj obj\pidblock.obj obj\winicon.obj obj\icon_cache.obj obj\log.obj obj\connlist.obj obj\hostcache.obj ^
-  obj\alerts.obj obj\settings.obj obj\blocklist_store.obj obj\startup.obj obj\license.obj obj\conn_kill.obj obj\ipban.obj ^
+  obj\alerts.obj obj\settings.obj obj\blocklist_store.obj obj\startup.obj obj\license.obj obj\conn_kill.obj obj\ipban.obj obj\updater.obj ^
   obj\imgui.obj obj\imgui_draw.obj obj\imgui_tables.obj obj\imgui_widgets.obj ^
   obj\imgui_impl_win32.obj obj\imgui_impl_dx11.obj ^
   obj\netvis.res ^

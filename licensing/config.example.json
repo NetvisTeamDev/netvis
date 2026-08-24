@@ -15,5 +15,8 @@
   "polar_api_base": "",
   "checkout_url": "",
 
-  "response_private_key": ""
+  "response_private_key": "",
+
+  "_comment_discord": "Optional. A Discord webhook URL to get pinged on trials, activations and Buy clicks, plus an hourly traffic digest. Keep it secret - anyone with it can post to your channel.",
+  "discord_webhook": ""
 }

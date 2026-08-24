@@ -41,6 +41,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -108,6 +109,12 @@ type Config struct {
 	// mint licenses. Empty means answers go out unsigned, which any client
 	// built with a public key will refuse.
 	ResponsePrivateKey string `json:"response_private_key"`
+
+	// Discord webhook that gets notified of trials, activations and Buy
+	// clicks, plus an hourly traffic digest. Secret - anyone with the URL can
+	// post to your channel - so it stays in config.json, never in the source.
+	// Empty disables notifications entirely.
+	DiscordWebhook string `json:"discord_webhook"`
 }
 
 func loadConfig() Config {
@@ -374,6 +381,7 @@ type server struct {
 	db      *sql.DB
 	cfg     Config
 	signKey *ecdsa.PrivateKey // nil when no key is configured
+	notify  *notifier         // Discord notifications; a no-op when unconfigured
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -553,6 +561,9 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("%s hwid=%s os=%s until=%s", status, req.HWID, normOS(req.OS), expiry)
+	atomic.AddInt64(&s.notify.sales, 1)
+	s.notify.send("✅ License activated",
+		"Status: **"+status+"**\nOS: **"+normOS(req.OS)+"**\nMachine: `"+tail(req.HWID, 8)+"`", colGold)
 	days := 0
 	if exp, ok := parseExpiry(expiry); ok {
 		days = daysLeft(exp)
@@ -616,6 +627,9 @@ func (s *server) handleTrial(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("trial started hwid=%s os=%s until=%s", hwid, normOS(req.OS), expiry)
+	atomic.AddInt64(&s.notify.trials, 1)
+	s.notify.send("🎉 Free trial started",
+		"OS: **"+normOS(req.OS)+"**\nMachine: `"+tail(hwid, 8)+"`", colGreen)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok": true, "status": "trial", "expires_at": expiry, "days_left": trialDays,
 	})
@@ -688,7 +702,7 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 }
 
 func cmdServe(cfg Config, db *sql.DB) {
-	s := &server{db: db, cfg: cfg}
+	s := &server{db: db, cfg: cfg, notify: newNotifier(cfg.DiscordWebhook)}
 	if cfg.ResponsePrivateKey != "" {
 		key, err := parseSigningKey(cfg.ResponsePrivateKey)
 		if err != nil {
@@ -717,7 +731,15 @@ func cmdServe(cfg Config, db *sql.DB) {
 		log.Fatalf("website: %v", err)
 	}
 	pages := newLimiter(300)
-	mux.Handle("/", rateLimited(http.FileServer(http.FS(site)), pages, cfg.TrustProxy))
+	fileServer := http.FileServer(http.FS(site))
+	mux.Handle("/", rateLimited(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Count only real page loads for the digest, not every css/js/image
+		// request a page pulls in.
+		if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html") {
+			s.notify.pageView(clientIP(r, cfg.TrustProxy))
+		}
+		fileServer.ServeHTTP(w, r)
+	}), pages, cfg.TrustProxy))
 
 	// The Buy button. Sends people to Polar, which handles payment, VAT,
 	// and emailing them the key.
@@ -727,6 +749,7 @@ func cmdServe(cfg Config, db *sql.DB) {
 				http.StatusServiceUnavailable)
 			return
 		}
+		s.notify.send("🛒 Buy clicked", "Someone clicked Buy a license.", colBlue)
 		http.Redirect(w, r, cfg.CheckoutURL, http.StatusSeeOther)
 	}), pages, cfg.TrustProxy))
 
@@ -742,7 +765,36 @@ func cmdServe(cfg Config, db *sql.DB) {
 			http.NotFound(w, r)
 			return
 		}
+		// Count .exe fetches (the installer) for the digest; ignore other bits.
+		if strings.HasSuffix(r.URL.Path, ".exe") {
+			s.notify.countDownload()
+		}
 		downloads.ServeHTTP(w, r)
+	}), pages, cfg.TrustProxy))
+
+	// Auto-update files, served from an updates/ folder beside the binary:
+	//   updates/windows/{update.json, update.json.sig, netvis-windows-<ver>.exe}
+	//   updates/macos/{update.json, update.json.sig, netvis-macos-<ver>.dmg}
+	//
+	// Two things matter here. First, byte-for-byte: the manifest signature
+	// covers the exact bytes of update.json, so the file server hands them
+	// back unchanged (Go's FileServer never rewrites a body) and nothing in
+	// front of it may either - keep /updates/ out of any gzip/transform rule.
+	// Second, caching: the manifest is short-lived so a new release is seen
+	// quickly, while the versioned build (its name changes every release) can
+	// be cached forever. Directory listings are off, same as downloads.
+	updates := http.StripPrefix("/updates/", http.FileServer(http.Dir("updates")))
+	mux.Handle("/updates/", rateLimited(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		if strings.HasSuffix(r.URL.Path, ".json") || strings.HasSuffix(r.URL.Path, ".sig") {
+			w.Header().Set("Cache-Control", "public, max-age=300")
+		} else {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		}
+		updates.ServeHTTP(w, r)
 	}), pages, cfg.TrustProxy))
 
 	srv := &http.Server{
@@ -1017,6 +1069,19 @@ func main() {
 		usage()
 		return
 	}
+
+	// Release-side tooling: signs update manifests with a key that lives only
+	// on this machine. Handled before the DB/config open so it can run on a
+	// build machine that has neither.
+	switch os.Args[1] {
+	case "genupdatekeys":
+		cmdGenUpdateKeys(os.Args[2:])
+		return
+	case "signupdate":
+		cmdSignUpdate(os.Args[2:])
+		return
+	}
+
 	cfg := loadConfig()
 	db := openDB(cfg.DB)
 	defer db.Close()

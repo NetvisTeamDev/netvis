@@ -4,6 +4,12 @@
 # nothing can reach it except through here.
 
 netvis.cc, www.netvis.cc {
-	encode gzip
+	# Compress everything EXCEPT the update files. An update manifest is
+	# signed over its exact bytes; gzip is reversible so it would technically
+	# survive, but keeping /updates/ verbatim end-to-end removes any doubt and
+	# matches how the macOS side is set up. The build artifacts are already
+	# compressed, so gzip buys nothing there anyway.
+	@notupdates not path /updates/*
+	encode @notupdates gzip
 	reverse_proxy 127.0.0.1:8443
 }

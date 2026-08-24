@@ -34,5 +34,14 @@ licensing/*.pem
 licensing/licensing-linux
 licensing/keys*.txt
 
+# The auto-update signing key. Its private half must never leave the release
+# machine - anyone holding it, plus the download path, could push a malicious
+# update. deploy_server.txt just holds your SSH login; no reason to commit it.
+licensing/update_private_key.txt
+deploy_server.txt
+
+# Generated release output (manifest + signed build), rebuilt each release.
+licensing/updates/
+
 # Release binaries that are published rather than built ---------------------
 licensing/website/downloads/*.exe
