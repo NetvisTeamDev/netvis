@@ -549,8 +549,14 @@ void DrawSplashFrame(ImGuiIO& io, float dpiScale, const char* message) {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(io.DisplaySize);
+    // Anchor to the main viewport (the host window). With multi-viewport on,
+    // window coordinates are global desktop space, so a plain (0,0)+DisplaySize
+    // window would land at the desktop origin and get split into its own OS
+    // window instead of filling the host.
+    ImGuiViewport* hostVp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(hostVp->Pos);
+    ImGui::SetNextWindowSize(hostVp->Size);
+    ImGui::SetNextWindowViewport(hostVp->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(40, 34));
     ImGui::Begin("splash", nullptr,
                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -593,6 +599,10 @@ void DrawSplashFrame(ImGuiIO& io, float dpiScale, const char* message) {
     g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
     g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
     g_pSwapChain->Present(1, 0);
 }
 
@@ -710,8 +720,10 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGuiViewport* hostVp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(hostVp->Pos);
+        ImGui::SetNextWindowSize(hostVp->Size);
+        ImGui::SetNextWindowViewport(hostVp->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(40, 34));
         ImGui::Begin("activate", nullptr,
                       ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -884,6 +896,10 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
         g_pSwapChain->Present(1, 0);
     }
 }
@@ -1050,6 +1066,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // Multi-viewport: any window (the per-app details panel, the limit and
+    // connections dialogs) can be dragged out of the main window and becomes
+    // its own OS window - free to move to another monitor or grow past the
+    // main window's edges. Must be set before the backends initialise so they
+    // wire up their platform interface.
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Dear ImGui's built-in font is a small bitmap font, which looks
     // pixelated/blurry at normal UI sizes once it's scaled. Load the real
@@ -1077,6 +1099,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
     theme::Apply(static_cast<theme::Mode>(Settings::Load().themeMode));
     if (dpiScale > 1.01f) ImGui::GetStyle().ScaleAllSizes(dpiScale);
+
+    // A popped-out window is a real OS window sitting on the desktop, so the
+    // rounded corners and slightly translucent background that look right
+    // inside the app look wrong out there. Square the corners and make the
+    // background fully opaque once viewports are on.
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGuiStyle& vstyle = ImGui::GetStyle();
+        vstyle.WindowRounding = 0.0f;
+        vstyle.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
@@ -1248,7 +1280,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
     bool sortAscending = false;
     int connViewPid = -1;
     std::string connViewName;
-    bool openConnView = false;
+    bool openConnView = false; // one-shot trigger to open the window
+    bool connWinOpen = false;  // whether the (modeless) connections window is showing
     std::vector<ConnInfo> connViewRows;
     double connViewLastRefresh = 0.0;
     bool resolveHostnames = true;
@@ -1444,8 +1477,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(io.DisplaySize);
+        // Anchor the main UI to the host window's viewport. Without this, in
+        // multi-viewport mode the fullscreen window is positioned in global
+        // desktop coordinates and ImGui splits it off into its own borderless
+        // OS window (leaving the real host window empty and unmovable).
+        ImGuiViewport* hostVp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(hostVp->Pos);
+        ImGui::SetNextWindowSize(hostVp->Size);
+        ImGui::SetNextWindowViewport(hostVp->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 18));
         // NoBringToFrontOnFocus matters: this window is fullscreen and
         // redrawn every frame, so without it, clicking anywhere in the
@@ -2001,10 +2040,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         if (needResort) SortRows(rows, sortColumn, sortAscending, pinnedProcs);
 
         if (openLimitModal) {
-            ImGui::OpenPopup("Set traffic limit");
-            openLimitModal = false;
-        }
-        if (ImGui::BeginPopupModal("Set traffic limit", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            // Modeless window (not a modal): the parent stays fully usable while
+            // this is open, and it can be dragged out into its own OS window.
+            // openLimitModal stays true for as long as the window is open; the
+            // X (via &openLimitModal) or the buttons below clear it.
+            if (ImGui::Begin("Set traffic limit", &openLimitModal, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::PushFont(g_fontBold, 0.0f);
             ImGui::Text("Limit %s (PID %d)", limitModalName.c_str(), limitModalPid);
             ImGui::PopFont();
@@ -2083,34 +2124,44 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             ImGui::Separator();
             ImGui::Spacing();
 
-            bool nothing = !limDownOn && !limUpOn;
-            ImGui::BeginDisabled(nothing);
+            // Applying with neither cap checked means "remove the limit" -
+            // the natural way to clear an existing one from this dialog. So
+            // Apply is always enabled: it clears the limit when nothing is
+            // set, or applies the caps otherwise.
             if (NeutralButton("Apply")) {
-                PidBlockManager::LimitSpec spec;
-                spec.limitDown = limDownOn;
-                spec.downBps = (uint64_t)(limDownVal * (double)kUnitMultipliers[limDownUnit]);
-                spec.limitUp = limUpOn;
-                spec.upBps = (uint64_t)(limUpVal * (double)kUnitMultipliers[limUpUnit]);
-                spec.hasDuration = limDurOn;
-                spec.durationSecs = limDurValue * kDurationSeconds[limDurUnit];
-                std::string err = pidMgr.SetLimit((uint32_t)limitModalPid, spec);
-                uiStatus = err.empty() ? uiStatus : ("Limit failed: " + err);
-                ImGui::CloseCurrentPopup();
+                if (!limDownOn && !limUpOn) {
+                    pidMgr.ClearLimit((uint32_t)limitModalPid);
+                } else {
+                    PidBlockManager::LimitSpec spec;
+                    spec.limitDown = limDownOn;
+                    spec.downBps = (uint64_t)(limDownVal * (double)kUnitMultipliers[limDownUnit]);
+                    spec.limitUp = limUpOn;
+                    spec.upBps = (uint64_t)(limUpVal * (double)kUnitMultipliers[limUpUnit]);
+                    spec.hasDuration = limDurOn;
+                    spec.durationSecs = limDurValue * kDurationSeconds[limDurUnit];
+                    std::string err = pidMgr.SetLimit((uint32_t)limitModalPid, spec);
+                    uiStatus = err.empty() ? uiStatus : ("Limit failed: " + err);
+                }
+                openLimitModal = false;
             }
-            ImGui::EndDisabled();
             ImGui::SameLine();
-            if (NeutralButton("Cancel")) ImGui::CloseCurrentPopup();
-            ImGui::EndPopup();
+            if (NeutralButton("Cancel")) openLimitModal = false;
+            }
+            ImGui::End();
         }
 
         if (openConnView) {
-            ImGui::OpenPopup("View connections");
             openConnView = false;
+            connWinOpen = true;
             connViewRows = ConnectionsForPid((uint32_t)connViewPid);
             connViewLastRefresh = ImGui::GetTime();
+            ImGui::SetNextWindowSize(ImVec2(600, 380), ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         }
-        ImGui::SetNextWindowSize(ImVec2(600, 380), ImGuiCond_FirstUseEver);
-        if (ImGui::BeginPopupModal("View connections", nullptr)) {
+        if (connWinOpen) {
+            // Modeless too, so you can watch a process's connections live while
+            // still using the main window - and pop it out to another monitor.
+            if (ImGui::Begin("View connections", &connWinOpen)) {
             ImGui::PushFont(g_fontBold, 0.0f);
             ImGui::Text("%s (PID %d)", connViewName.c_str(), connViewPid);
             ImGui::PopFont();
@@ -2179,8 +2230,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 ImGui::EndTable();
             }
             ImGui::Spacing();
-            if (NeutralButton("Close")) ImGui::CloseCurrentPopup();
-            ImGui::EndPopup();
+            if (NeutralButton("Close")) connWinOpen = false;
+            }
+            ImGui::End();
         }
 
             ImGui::End();
@@ -2189,7 +2241,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         // --- buy / redeem a license while the trial is running ---
         if (showUpgrade) {
             ImGui::SetNextWindowSize(ImVec2(460 * dpiScale, 0), ImGuiCond_Appearing);
-            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(),
                                      ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
             if (ImGui::Begin("Buy a license", &showUpgrade,
                               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -2285,7 +2337,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 if ((int)r.pid == detailPid) { app = &r; break; }
 
             bool open = true;
-            ImGui::SetNextWindowSize(ImVec2(560, 460), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(560, 600), ImGuiCond_FirstUseEver);
+            // Never let this window be so small that the connections table gets
+            // squeezed to a line or two - enforce a sensible minimum even if a
+            // smaller size was remembered from a previous session.
+            ImGui::SetNextWindowSizeConstraints(ImVec2(500, 560), ImVec2(100000.0f, 100000.0f));
             if (focusDetail) {
                 ImGui::SetNextWindowFocus();
                 focusDetail = false;
@@ -2317,38 +2373,138 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                     if (typeTotal == 0) {
                         ImGui::TextDisabled("(nothing captured yet)");
                     } else {
+                        // Each row is hand-drawn: label on the left, a rounded
+                        // bar in the middle, and the amount + percent as their
+                        // own text on the right - never printed on top of the
+                        // bar, which is what made the old ProgressBar look busy.
+                        // A per-type colour keeps multiple bars distinct.
+                        static const ImU32 kBarCols[] = {
+                            IM_COL32(0x46, 0xe0, 0x76, 0xFF), // green
+                            IM_COL32(0x4c, 0x8b, 0xf5, 0xFF), // blue
+                            IM_COL32(0xf5, 0xb3, 0x42, 0xFF), // gold
+                            IM_COL32(0xa7, 0x8b, 0xfa, 0xFF), // purple
+                            IM_COL32(0x38, 0xbd, 0xf8, 0xFF), // cyan
+                            IM_COL32(0xf8, 0x71, 0x71, 0xFF), // red
+                        };
+                        ImDrawList* dl = ImGui::GetWindowDrawList();
+                        float fullW = ImGui::GetContentRegionAvail().x;
+                        float nameW = 0.0f;
+                        for (size_t i = 0; i < (size_t)TrafficType::COUNT; i++)
+                            if (app->byType[i] > 0)
+                                nameW = std::max(nameW, ImGui::CalcTextSize(TrafficTypeName((TrafficType)i)).x);
+                        nameW += 16.0f;
+                        float valW = ImGui::CalcTextSize("0000.0 KB   100%").x;
+                        float gap = 12.0f;
+                        float barH = ImGui::GetTextLineHeight() * 0.62f;
+                        float rowH = ImGui::GetTextLineHeight() + 12.0f;
+                        ImU32 track = theme::IsLight() ? IM_COL32(0, 0, 0, 26) : IM_COL32(255, 255, 255, 20);
+                        ImU32 cName = ImGui::GetColorU32(theme::NeutralText());
+                        ImU32 cPct = ImGui::GetColorU32(theme::Dim());
+                        int colorIdx = 0;
                         for (size_t i = 0; i < (size_t)TrafficType::COUNT; i++) {
                             if (app->byType[i] == 0) continue;
                             float frac = (float)((double)app->byType[i] / (double)typeTotal);
-                            ImGui::Text("%-15s", TrafficTypeName((TrafficType)i));
-                            ImGui::SameLine(150);
-                            ImGui::ProgressBar(frac, ImVec2(-1, ImGui::GetTextLineHeight()),
-                                                (FormatBytes(app->byType[i]) + "  " +
-                                                 std::to_string((int)(frac * 100 + 0.5f)) + "%").c_str());
+                            ImU32 col = kBarCols[colorIdx++ % (int)(sizeof(kBarCols) / sizeof(kBarCols[0]))];
+                            ImVec2 p = ImGui::GetCursorScreenPos();
+                            float ty = p.y + (rowH - ImGui::GetTextLineHeight()) * 0.5f;
+                            dl->AddText(ImVec2(p.x, ty), cName, TrafficTypeName((TrafficType)i));
+
+                            float barX = p.x + nameW;
+                            float barW = fullW - nameW - valW - gap;
+                            if (barW < 48.0f) barW = 48.0f;
+                            float by = p.y + (rowH - barH) * 0.5f;
+                            float rnd = barH * 0.5f;
+                            dl->AddRectFilled(ImVec2(barX, by), ImVec2(barX + barW, by + barH), track, rnd);
+                            float fw = barW * frac;
+                            if (fw < barH) fw = barH; // keep a visible pill for tiny shares
+                            dl->AddRectFilled(ImVec2(barX, by), ImVec2(barX + fw, by + barH), col, rnd);
+                            // a soft highlight across the top half gives the bar depth
+                            dl->AddRectFilled(ImVec2(barX, by), ImVec2(barX + fw, by + barH * 0.5f),
+                                               IM_COL32(255, 255, 255, 28), rnd);
+
+                            std::string amt = FormatBytes(app->byType[i]);
+                            char pct[16];
+                            snprintf(pct, sizeof(pct), "%d%%", (int)(frac * 100 + 0.5f));
+                            float rightX = p.x + fullW;
+                            float pw = ImGui::CalcTextSize(pct).x;
+                            float aw = ImGui::CalcTextSize(amt.c_str()).x;
+                            dl->AddText(ImVec2(rightX - pw, ty), cPct, pct);
+                            dl->AddText(ImVec2(rightX - pw - 10.0f - aw, ty), cName, amt.c_str());
+                            ImGui::Dummy(ImVec2(fullW, rowH));
                         }
                     }
                     ImGui::Spacing();
 
                     ImGui::SeparatorText("Remote hosts");
                     auto conns = ConnectionsForPid((uint32_t)detailPid);
-                    // Collapse to unique remote addresses - a browser can
-                    // hold a dozen sockets to the same host and listing
-                    // each one separately says nothing extra.
-                    std::vector<std::string> hosts;
+                    // Collapse to unique remote addresses with a hit count - a
+                    // browser can hold a dozen sockets to one host, and the
+                    // count is more useful than a dozen identical rows.
+                    struct HostAgg { std::string ip; int count; };
+                    std::vector<HostAgg> aggs;
                     for (const auto& c : conns) {
                         if (c.remoteAddr.empty() || c.remoteAddr == "0.0.0.0" || c.remoteAddr == "::") continue;
-                        if (std::find(hosts.begin(), hosts.end(), c.remoteAddr) == hosts.end())
-                            hosts.push_back(c.remoteAddr);
+                        bool found = false;
+                        for (auto& a : aggs)
+                            if (a.ip == c.remoteAddr) { a.count++; found = true; break; }
+                        if (!found) aggs.push_back({c.remoteAddr, 1});
                     }
-                    if (hosts.empty()) {
+                    if (aggs.empty()) {
                         ImGui::TextDisabled("(no active remote connections)");
                     } else {
-                        for (const auto& ip : hosts) {
-                            std::string full;
-                            std::string shown = ip;
-                            if (hostCache.Get(ip, &full) == HostCache::Status::Resolved) shown = ShortenHostname(full);
-                            ImGui::BulletText("%s", shown.c_str());
-                            if (ImGui::IsItemHovered() && shown != ip) ImGui::SetTooltip("%s\n%s", full.c_str(), ip.c_str());
+                        // Cap the table's height and let it scroll inside, so a
+                        // process with many connections can't push the Controls
+                        // buttons off the bottom of the panel. Room is reserved
+                        // below for the "Controls" heading + one button row.
+                        float footer = ImGui::GetFrameHeightWithSpacing() +
+                                       ImGui::GetTextLineHeightWithSpacing() +
+                                       ImGui::GetStyle().ItemSpacing.y * 2.0f;
+                        float tblH = ImGui::GetContentRegionAvail().y - footer;
+                        // Always show a few rows' worth even when space is tight;
+                        // the window scrolls if the table + Controls don't both fit.
+                        float minH = ImGui::GetFrameHeightWithSpacing() * 4.0f;
+                        if (tblH < minH) tblH = minH;
+                        if (ImGui::BeginTable("rhosts", 3,
+                                ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter |
+                                    ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY,
+                                ImVec2(0.0f, tblH))) {
+                            ImGui::TableSetupScrollFreeze(0, 1); // keep the header while scrolling
+                            ImGui::TableSetupColumn("Host", ImGuiTableColumnFlags_WidthStretch);
+                            ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+                            ImGui::TableSetupColumn("Connections", ImGuiTableColumnFlags_WidthFixed, 118.0f);
+                            ImGui::PushFont(g_fontBold, 0.0f);
+                            ImGui::TableHeadersRow();
+                            ImGui::PopFont();
+                            int hostRow = 0;
+                            for (const auto& a : aggs) {
+                                std::string full;
+                                HostCache::Status st = hostCache.Get(a.ip, &full);
+                                bool loopback = a.ip.rfind("127.", 0) == 0 || a.ip == "::1";
+                                ImGui::TableNextRow();
+                                ImGui::PushID(hostRow++);
+                                // Every cell is a read-only field the user can
+                                // select and copy from.
+                                ImGui::TableSetColumnIndex(0);
+                                if (loopback) {
+                                    CopyableText("rhost", "localhost");
+                                } else if (st == HostCache::Status::Resolved) {
+                                    CopyableText("rhost", ShortenHostname(full));
+                                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s\n%s", full.c_str(), a.ip.c_str());
+                                } else if (st == HostCache::Status::NoName) {
+                                    // Lookup finished with no PTR record - show the
+                                    // address itself instead of "resolving..."
+                                    // forever (localhost and LAN IPs land here).
+                                    CopyableText("rhost", a.ip);
+                                } else {
+                                    ImGui::TextDisabled("resolving...");
+                                }
+                                ImGui::TableSetColumnIndex(1);
+                                CopyableText("rip", a.ip);
+                                ImGui::TableSetColumnIndex(2);
+                                CopyableText("rconns", std::to_string(a.count));
+                                ImGui::PopID();
+                            }
+                            ImGui::EndTable();
                         }
                     }
                     ImGui::Spacing();
@@ -2360,7 +2516,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                         if (!err.empty()) uiStatus = "Block/unblock failed: " + err;
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button(pidMgr.IsLimited(app->pid) ? "Change limit..." : "Limit traffic...")) {
+                    if (ActionButton(pidMgr.IsLimited(app->pid) ? "Change limit..." : "Limit traffic...")) {
                         openLimitFor(app->pid, app->name);
                     }
                     ImGui::SameLine();
@@ -2597,6 +2753,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+        // Draw any windows the user popped out into their own OS windows.
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
 
         HRESULT hr = g_pSwapChain->Present(1, 0);
         g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);

@@ -72,9 +72,47 @@ bool Monitor::Start(std::string* error) {
     // regardless of what we do with our copy.
     handle_ = api_.Open("true", wd::LAYER_NETWORK, 0, wd::FLAG_SNIFF);
     if (handle_ == INVALID_HANDLE_VALUE) {
-        if (error) *error = "WinDivertOpen failed - run as Administrator, and make sure "
-                             "WinDivert.dll/WinDivert64.sys are next to the exe.";
-        Log("monitor: Start failed: %s", error ? error->c_str() : "?");
+        // WinDivertOpen fails for several distinct reasons, and reporting all
+        // of them as "run as Administrator" sends people (who often already
+        // ARE admin) chasing the wrong thing. Read the real error and say what
+        // actually happened - the driver-signature / driver-blocked cases are
+        // common in VMs and with Memory Integrity on, and have nothing to do
+        // with elevation.
+        DWORD e = GetLastError();
+        if (error) {
+            switch (e) {
+            case ERROR_ACCESS_DENIED: // 5
+                *error = "netvis needs Administrator. Right-click it and choose "
+                         "\"Run as administrator\".";
+                break;
+            case ERROR_FILE_NOT_FOUND: // 2
+                *error = "WinDivert.dll / WinDivert64.sys are missing next to netvis.exe - "
+                         "reinstall netvis.";
+                break;
+            case ERROR_INVALID_IMAGE_HASH: // 577
+                *error = "Windows blocked the WinDivert driver's signature (577). This is "
+                         "usually Memory Integrity (Core Isolation) or Secure Boot: turn "
+                         "Memory Integrity off in Windows Security > Device security > Core "
+                         "isolation, reboot, then start netvis.";
+                break;
+            case ERROR_DRIVER_BLOCKED: // 1275
+                *error = "Windows blocked the WinDivert kernel driver (1275). This is common "
+                         "in virtual machines and when Memory Integrity or some anti-virus is "
+                         "on - the driver netvis needs can't load in this environment. Turn "
+                         "off Memory Integrity / allow the driver, or run on a real machine.";
+                break;
+            case ERROR_DRIVER_FAILED_PRIOR_UNLOAD: // 654
+                *error = "A previous WinDivert driver is still unloading. Reboot and start "
+                         "netvis again.";
+                break;
+            default:
+                *error = "WinDivert couldn't start (error " + std::to_string((unsigned long)e) +
+                         "). Make sure you're Administrator and that the WinDivert files sit "
+                         "next to netvis.exe.";
+                break;
+            }
+        }
+        Log("monitor: Start failed: WinDivertOpen err=%lu", (unsigned long)e);
         handle_ = nullptr;
         return false;
     }

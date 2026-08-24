@@ -7,7 +7,13 @@
 ; publish. Everything the app needs is inside it.
 
 #define AppName    "netvis"
-#define AppVersion "1.0.0"
+; The version is passed in by build_installer.bat, read straight from
+; src\version.h, so the installer and the exe can never disagree (a mismatch is
+; what makes auto-update loop forever). The literal below is only a fallback for
+; building the .iss by hand.
+#ifndef AppVersion
+  #define AppVersion "1.0.1"
+#endif
 #define Publisher  "netvis"
 #define AppURL     "https://netvis.cc"
 #define ExeName    "netvis.exe"
@@ -171,9 +177,17 @@ procedure StopNetvis();
 var
   ResultCode: Integer;
 begin
-  Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM netvis.exe /F',
+  // Close the tray app, THEN stop the WinDivert kernel driver it was using.
+  // Order matters: while netvis holds a WinDivert handle the driver won't
+  // stop, and while the driver is running WinDivert64.sys stays locked and
+  // can't be replaced - which is exactly the "DeleteFile failed; Access is
+  // denied" an in-place update hits when it tries to overwrite the .sys.
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM netvis.exe /F /T',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  Sleep(700);
+  Sleep(800);
+  Exec(ExpandConstant('{sys}\sc.exe'), 'stop WinDivert', '', SW_HIDE,
+       ewWaitUntilTerminated, ResultCode);
+  Sleep(1500); // sc returns when the stop is requested, not once it completes
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -183,18 +197,11 @@ begin
 end;
 
 function InitializeUninstall(): Boolean;
-var
-  ResultCode: Integer;
 begin
-  // Close the tray app first, then stop the driver it was using. Order
-  // matters: while netvis holds a WinDivert handle the driver won't stop,
-  // and while the driver is running WinDivert64.sys stays locked and can't
-  // be deleted - which is how an uninstall ends up demanding a reboot or
-  // leaving files behind.
+  // StopNetvis now closes the app AND stops the WinDivert driver, which is
+  // what frees WinDivert64.sys so the folder can be removed without a reboot
+  // or leftover files.
   StopNetvis();
-  Exec(ExpandConstant('{sys}\sc.exe'), 'stop WinDivert', '', SW_HIDE,
-       ewWaitUntilTerminated, ResultCode);
-  Sleep(1200); // sc returns as soon as the stop is requested, not once it's done
   Result := True;
 end;
 

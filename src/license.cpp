@@ -42,10 +42,10 @@ const char* const kServer = "https://netvis.cc";
 const char* const kServerPublicKey = "e746070e7324e8594a9ca17cc1eca966947d63a2ec641787aba8bbeb3e5f"
 "df54a92f65e63d32903cd7ac962382e72474f63e8588dbee765ca6781e3437319e28";
 
-// Public half of the update-signing key. Replace this with the output of
-// `licensing genupdatekeys` (its private half stays on your release machine).
-// This is still a placeholder test value - the updater will reject every
-// manifest until it is set to a real key you hold the private half of.
+// Public half of the update-signing key. Its private half lives in
+// licensing/update_private_key.txt on the release machine (gitignored) and is
+// what `deploy.bat` signs each update.json with. This value matches that key,
+// so the updater accepts updates you sign and rejects anything else.
 const char* const kUpdatePublicKey = "cc8264eea819a086aff56951d1f1691ec8238a6b1e2c7fa1ef99d5"
 	"6ede81ac5beff46dea513a0821df4137012c148ffcedfc623fd381d51b73784ea7cb33ff4b";
 namespace {

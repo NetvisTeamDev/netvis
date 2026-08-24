@@ -4,4 +4,4 @@
 // both on every release - the updater compares the manifest's version against
 // this string to decide whether a newer build exists.
 #pragma once
-#define NETVIS_VERSION "1.0.0"
+#define NETVIS_VERSION "1.0.1"

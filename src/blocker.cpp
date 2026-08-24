@@ -226,8 +226,21 @@ bool Blocker::Start(std::string* error, std::vector<std::string> userDomains, bo
     std::string filter = BuildFilter();
     handle_ = api_.Open(filter.c_str(), wd::LAYER_NETWORK, 0, 0); // intercepting
     if (handle_ == INVALID_HANDLE_VALUE) {
-        if (error) *error = "WinDivertOpen (blocker) failed - run as Administrator.";
-        Log("blocker: Start failed");
+        DWORD e = GetLastError();
+        if (error) {
+            if (e == ERROR_ACCESS_DENIED)
+                *error = "the ad blocker needs Administrator.";
+            else if (e == ERROR_DRIVER_BLOCKED)
+                *error = "Windows blocked the WinDivert driver (1275) - common in VMs or with "
+                         "Memory Integrity on.";
+            else if (e == ERROR_INVALID_IMAGE_HASH)
+                *error = "Windows blocked the WinDivert driver signature (577) - turn off Memory "
+                         "Integrity / Core Isolation and reboot.";
+            else
+                *error = "WinDivert (blocker) couldn't start (error " +
+                         std::to_string((unsigned long)e) + ").";
+        }
+        Log("blocker: Start failed: WinDivertOpen err=%lu", (unsigned long)e);
         handle_ = nullptr;
         return false;
     }
