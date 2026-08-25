@@ -146,11 +146,9 @@ void Alerts::CheckConnections() {
                     // because the first question anybody has about an alert
                     // is whether they need to care.
                     pending.push_back({AlertKind::FirstConnection,
-                                       exe + " used the internet for the first time",
-                                       "netvis has not seen " + exe +
-                                           " connect before. That is normal for an app you have "
-                                           "just installed or opened for the first time. If you "
-                                           "do not recognise it, it is worth a look.",
+                                       exe + " connected for the first time",
+                                       "Normal for something newly installed. Worth a look if you "
+                                       "don't recognise it.",
                                        pid});
                 }
                 continue;
@@ -163,12 +161,12 @@ void Alerts::CheckConnections() {
                 // people. What it means in practice is that other machines
                 // can now start a conversation with this one, which is the
                 // part worth saying out loud.
-                char detail[320];
+                char detail[200];
                 snprintf(detail, sizeof(detail),
-                         "%s opened port %u, so other devices on the network can now connect to "
-                         "it. File sharing, media streaming and development servers all do this. "
-                         "If you do not recognise %s, it is worth checking.",
-                         exe.c_str(), port, exe.c_str());
+                         "Opened port %u — other devices on the network can now reach it. "
+                         "Common for file sharing and dev servers. Check it if you don't "
+                         "recognise it.",
+                         port);
                 pending.push_back({AlertKind::NewListener,
                                    exe + " is accepting incoming connections", detail, pid});
             }
@@ -203,8 +201,7 @@ void Alerts::CheckDnsServers() {
     // detail anyone troubleshooting actually needs - but the sentence around
     // them now says what they are for.
     Push(AlertKind::DnsChanged, "Your DNS servers changed",
-         "Your PC now uses " + current + " to look up website addresses, instead of " + previous +
-             ". This usually means you joined a different network or connected to a VPN.",
+         "Now using " + current + " (was " + previous + "). Usually a new network or a VPN.",
          0);
 }
 

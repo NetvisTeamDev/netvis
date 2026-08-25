@@ -237,9 +237,8 @@ inline bool Draw(const std::vector<Alert>& list, ImFont* boldFont) {
         ImGui::PopFont();
         ImGui::Spacing();
         ImGui::PushStyleColor(ImGuiCol_Text, theme::Dim());
-        ImGui::TextWrapped("netvis will tell you here when an app uses the internet for the first "
-                           "time, when something starts accepting incoming connections, and when "
-                           "your DNS servers change.");
+        ImGui::TextWrapped("You'll see an alert here when an app connects for the first time, "
+                           "starts accepting incoming connections, or your DNS servers change.");
         ImGui::PopStyleColor();
         ImGui::PopTextWrapPos();
         return clearRequested;
