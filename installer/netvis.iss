@@ -189,7 +189,11 @@ begin
   // stop, and while the driver is running WinDivert64.sys stays locked and
   // can't be replaced - which is exactly the "DeleteFile failed; Access is
   // denied" an in-place update hits when it tries to overwrite the .sys.
-  Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM netvis.exe /F /T',
+  //
+  // NO /T here: the auto-update launches this installer as a child of netvis,
+  // so /T (kill the whole process tree) would take the installer down with it.
+  // Killing netvis.exe by image name only leaves the installer running.
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM netvis.exe /F',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Sleep(800);
   Exec(ExpandConstant('{sys}\sc.exe'), 'stop WinDivert', '', SW_HIDE,
