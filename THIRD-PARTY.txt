@@ -1,0 +1,89 @@
+Third-party software in netvis for Windows
+==========================================
+
+netvis is built on the work below. Each component's full licence text is
+installed alongside netvis.exe and is in this repository at the path given.
+
+Everything else netvis uses is part of Windows - Win32, Direct3D 11, IP
+Helper, WinINet - and is covered by your Windows licence, not by anything
+here.
+
+
+WinDivert 2.2.2
+---------------
+The packet capture and filtering driver. netvis sees per-process traffic,
+blocks processes and enforces speed limits through it; without it netvis
+cannot capture at all.
+
+Copyright (c) Basil Alkhateeb (basil00)
+Licence: netvis uses WinDivert under the GNU Lesser General Public
+         License version 3. WinDivert is dual-licensed under the LGPLv3 or
+         the GPLv2, at the user's choice; we elect the LGPLv3.
+Source:  https://github.com/basil00/WinDivert
+Text:    LICENSE-WinDivert.txt (contains the LGPLv3, GPLv3 and GPLv2)
+
+What the LGPL asks of us, and how netvis satisfies it:
+
+  * WinDivert is used as an unmodified, separately distributed library.
+    We ship WinDivert.dll and WinDivert64.sys exactly as published in the
+    official WinDivert 2.2.2 release, and this is checkable rather than
+    merely asserted - the files are byte-for-byte identical to the x64
+    binaries in WinDivert-2.2.2-A.zip:
+
+        WinDivert.dll
+        c1e060ee19444a259b2162f8af0f3fe8c4428a1c6f694dce20de194ac8d7d9a2
+
+        WinDivert64.sys
+        8da085332782708d8767bcace5327a6ec7283c17cfb85e40b03cd2323a90ddc2
+
+    (WinDivert64.sys carries the author's Authenticode signature, as
+    Windows requires of a kernel driver. WinDivert.dll is unsigned in the
+    official release too - that is upstream's choice, not a modification.)
+
+    If netvis ever ships a changed WinDivert, the modified source has to be
+    published under the LGPL. Re-run the hashes above before each release
+    and the question answers itself.
+
+  * It is dynamically loaded, not statically linked. netvis resolves every
+    WinDivert entry point at runtime through LoadLibrary and GetProcAddress
+    - see src/windivert_shim.cpp - so netvis is a work that *uses* the
+    library rather than one built from it.
+
+  * A user may replace it. Because the DLL is loaded by name from the
+    install directory, anyone can substitute their own build of WinDivert -
+    including a modified one - by replacing WinDivert.dll next to
+    netvis.exe. Nothing in netvis pins it to a particular binary or
+    signature.
+
+  * The licence travels with the software. LICENSE-WinDivert.txt is
+    installed next to the executable, not left behind in a source tree.
+
+If netvis ever needs to modify, rename or re-brand WinDivert, none of the
+above applies any more and a commercial WinDivert licence is the route -
+the author sells one. As long as it ships unmodified and dynamically
+loaded, the LGPLv3 covers it and costs nothing.
+
+
+Dear ImGui 1.93.0
+-----------------
+An immediate-mode user interface library. netvis draws its entire interface
+with it, including the Win32 and Direct3D 11 backends under
+external/imgui/backends.
+
+Copyright (c) 2014-2026 Omar Cornut
+Licence: MIT
+Source:  https://github.com/ocornut/imgui
+Text:    LICENSE-DearImGui.txt (external/imgui/LICENSE.txt in the repository)
+
+Dear ImGui includes portions of the stb libraries by Sean Barrett
+(imstb_rectpack.h, imstb_textedit.h, imstb_truetype.h), which are released
+into the public domain and are also covered by the MIT licence above as
+distributed with Dear ImGui.
+
+
+Why this file exists
+--------------------
+Both licences grant netvis everything it needs, including the right to sell
+it. Between them they ask for two things: that the notices travel with the
+software, and that WinDivert stay replaceable. Neither costs anything. Not
+doing them is the only way either licence becomes a problem.

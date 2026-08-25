@@ -84,6 +84,15 @@ Source: "..\WinDivert.dll";    DestDir: "{app}"; Flags: ignoreversion
 Source: "..\WinDivert64.sys";  DestDir: "{app}"; Flags: ignoreversion
 Source: "..\blocklist.txt";    DestDir: "{app}"; Flags: ignoreversion
 Source: "..\netvis.ico";       DestDir: "{app}"; Flags: ignoreversion
+; Third-party licence text. Both licences require their notice to be
+; distributed with the software, and the installer is what reaches a user -
+; a licence file left in the source tree satisfies nothing. WinDivert's is
+; also what makes the LGPL's "you may replace this library" meaningful:
+; it tells the reader what they are entitled to do with the DLL sitting
+; next to it.
+Source: "..\THIRD-PARTY.txt";          DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE-WinDivert.txt";    DestDir: "{app}"; Flags: ignoreversion
+Source: "..\external\imgui\LICENSE.txt"; DestDir: "{app}"; DestName: "LICENSE-DearImGui.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}";        Filename: "{app}\{#ExeName}"
