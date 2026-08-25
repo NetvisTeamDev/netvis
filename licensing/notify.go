@@ -109,8 +109,7 @@ func (n *notifier) appLaunched(hwid string) {
 	}
 	atomic.AddInt64(&n.launched, 1)
 	if _, seen := n.launchSeen.LoadOrStore(hwid, true); !seen {
-		n.send("🚀 App launched (new machine)",
-			"A machine ran netvis for the first time.\nMachine: `"+tail(hwid, 8)+"`", colTeal)
+		n.send("🚀 Opened on a new device", "`"+tail(hwid, 8)+"`", colTeal)
 	}
 }
 

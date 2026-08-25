@@ -562,8 +562,8 @@ func (s *server) handleValidate(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("%s hwid=%s os=%s until=%s", status, req.HWID, normOS(req.OS), expiry)
 	atomic.AddInt64(&s.notify.sales, 1)
-	s.notify.send("✅ License activated",
-		"Status: **"+status+"**\nOS: **"+normOS(req.OS)+"**\nMachine: `"+tail(req.HWID, 8)+"`", colGold)
+	s.notify.send("💰 Sale — license activated",
+		"`"+tail(req.HWID, 8)+"` · "+normOS(req.OS), colGold)
 	days := 0
 	if exp, ok := parseExpiry(expiry); ok {
 		days = daysLeft(exp)
@@ -628,8 +628,8 @@ func (s *server) handleTrial(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("trial started hwid=%s os=%s until=%s", hwid, normOS(req.OS), expiry)
 	atomic.AddInt64(&s.notify.trials, 1)
-	s.notify.send("🎉 Free trial started",
-		"OS: **"+normOS(req.OS)+"**\nMachine: `"+tail(hwid, 8)+"`", colGreen)
+	s.notify.send("🎉 Trial started",
+		"`"+tail(hwid, 8)+"` · "+normOS(req.OS), colGreen)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok": true, "status": "trial", "expires_at": expiry, "days_left": trialDays,
 	})
@@ -753,7 +753,7 @@ func cmdServe(cfg Config, db *sql.DB) {
 				http.StatusServiceUnavailable)
 			return
 		}
-		s.notify.send("🛒 Buy clicked", "Someone clicked Buy a license.", colBlue)
+		s.notify.send("🛒 Buy clicked", "", colBlue)
 		http.Redirect(w, r, cfg.CheckoutURL, http.StatusSeeOther)
 	}), pages, cfg.TrustProxy))
 
