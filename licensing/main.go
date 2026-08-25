@@ -646,6 +646,10 @@ func (s *server) handleAuthentificate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Every launch hits this endpoint, before any trial exists, so it's the
+	// one place that sees whether a downloaded copy is actually being run.
+	s.notify.appLaunched(hwid)
+
 	var osName, at, expiresAt string
 	var revoked, isTrial int
 	err := s.db.QueryRow(

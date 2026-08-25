@@ -276,22 +276,22 @@
     }, TICK);
   }
 
-  // ---- Windows-only download --------------------------------------------
+  // ---- download works on every device -----------------------------------
+  // The installer is a Windows app, but the download itself should never be
+  // blocked: someone browsing on a phone or a Mac still needs to be able to
+  // grab it (or the link) and open it on their Windows PC. So we keep the
+  // button live everywhere and only adjust the wording to set expectations.
   var ua = navigator.userAgent || "";
   var uaData = navigator.userAgentData;
   var isWindows = uaData ? uaData.platform === "Windows"
                          : /Windows|Win32|Win64|WOW64/i.test(ua);
   if (!isWindows) {
-    var btn = document.getElementById("downloadBtn");
-    btn.classList.add("disabled");
-    btn.removeAttribute("href");
-    btn.removeAttribute("download");
-    btn.setAttribute("aria-disabled", "true");
     var isMac = uaData ? uaData.platform === "macOS" : /Mac OS X|Macintosh/i.test(ua);
-    document.getElementById("downloadLabel").textContent = isMac ? "Coming to macOS" : "Windows only";
-    document.getElementById("dlNote").textContent = isMac
-      ? "The macOS build is still in development — join the Discord and you'll hear the moment the beta opens."
-      : "netvis is Windows-only for now. Open this page on a Windows PC to download.";
-    btn.addEventListener("click", function (e) { e.preventDefault(); });
+    var lbl = document.getElementById("downloadLabel");
+    if (lbl) lbl.textContent = "Download for Windows";
+    var note = document.getElementById("dlNote");
+    if (note) note.textContent = isMac
+      ? "netvis is a Windows app (a macOS build is in development). This downloads the Windows installer — open it on a Windows 10 or 11 PC."
+      : "netvis is a Windows app. This downloads the Windows installer — open it on your Windows 10 or 11 PC.";
   }
 })();

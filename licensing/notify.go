@@ -31,6 +31,7 @@ const (
 	colGold  = 15844367 // sale / activation
 	colBlue  = 3447003  // buy clicked
 	colGrey  = 9807270  // digest
+	colTeal  = 1752220  // app launched
 )
 
 // Named dEmbed (not "embed") because this package already imports the "embed"
@@ -46,8 +47,9 @@ type notifier struct {
 	url   string
 	queue chan dEmbed
 
-	pv, uniq, trials, sales, buys, downloads int64 // atomics, drained by the digest
-	seen                                     sync.Map
+	pv, uniq, trials, sales, buys, downloads, launched int64 // atomics, drained by the digest
+	seen                                               sync.Map
+	launchSeen                                         sync.Map // persistent: one "new machine" ping per hwid
 }
 
 func newNotifier(url string) *notifier {
@@ -95,6 +97,23 @@ func (n *notifier) countDownload() {
 	}
 }
 
+// appLaunched records that a machine actually started netvis. The client calls
+// /authentificate on every launch - even a fresh install that hasn't started a
+// trial yet - so this is the signal that answers "people download it, but do
+// they run it?". The hourly digest gets the count; the first time any machine
+// is ever seen it also gets an instant ping, so a new person running netvis
+// shows up in real time next to the download that (hopefully) preceded it.
+func (n *notifier) appLaunched(hwid string) {
+	if !n.enabled() {
+		return
+	}
+	atomic.AddInt64(&n.launched, 1)
+	if _, seen := n.launchSeen.LoadOrStore(hwid, true); !seen {
+		n.send("🚀 App launched (new machine)",
+			"A machine ran netvis for the first time.\nMachine: `"+tail(hwid, 8)+"`", colTeal)
+	}
+}
+
 func (n *notifier) worker() {
 	for e := range n.queue {
 		n.post(e)
@@ -130,15 +149,17 @@ func (n *notifier) digestLoop() {
 		pv := atomic.SwapInt64(&n.pv, 0)
 		uq := atomic.SwapInt64(&n.uniq, 0)
 		dl := atomic.SwapInt64(&n.downloads, 0)
+		la := atomic.SwapInt64(&n.launched, 0)
 		tr := atomic.SwapInt64(&n.trials, 0)
 		sl := atomic.SwapInt64(&n.sales, 0)
 		n.seen = sync.Map{} // reset unique tracking each window (also bounds memory)
-		if pv == 0 && dl == 0 && tr == 0 && sl == 0 {
+		if pv == 0 && dl == 0 && la == 0 && tr == 0 && sl == 0 {
 			continue // nothing happened - stay quiet
 		}
 		desc := "Page views: **" + strconv.FormatInt(pv, 10) + "** (" +
 			strconv.FormatInt(uq, 10) + " unique)\nDownloads: **" +
-			strconv.FormatInt(dl, 10) + "**\nTrials: **" +
+			strconv.FormatInt(dl, 10) + "**\nLaunches: **" +
+			strconv.FormatInt(la, 10) + "**\nTrials: **" +
 			strconv.FormatInt(tr, 10) + "**   Activations: **" +
 			strconv.FormatInt(sl, 10) + "**"
 		n.post(dEmbed{Title: "📊 Last hour", Description: desc, Color: colGrey,

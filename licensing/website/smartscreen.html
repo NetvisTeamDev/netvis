@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>netvis — the Windows “unrecognized app” notice, explained</title>
+<meta name="description" content="When you first run netvis, Windows may show a blue SmartScreen notice. Here's what it means, why it's safe, and how to continue in two clicks.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="netvis.ico">
+</head>
+<body>
+
+<svg class="defs" aria-hidden="true">
+  <symbol id="netvis-logo" viewBox="0 0 96 96">
+    <rect x="0" y="0" width="96" height="96" rx="22" fill="#0d1017"/>
+    <rect x="0.75" y="0.75" width="94.5" height="94.5" rx="21" fill="none" stroke="#2b3140" stroke-width="1.5"/>
+    <path d="M14 74 L28 60 L40 66 L52 40 L64 56 L82 30 L82 78 L14 78 Z" fill="#35c75f" fill-opacity="0.28"/>
+    <path d="M14 74 L28 60 L40 66 L52 40 L64 56 L82 30" fill="none" stroke="#46e076" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M14 82 L30 76 L44 80 L60 70 L82 76" fill="none" stroke="#6696fa" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="82" cy="30" r="5" fill="#beffd6"/>
+  </symbol>
+  <symbol id="ico-discord" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M19.27 5.33A16.3 16.3 0 0 0 15.23 4l-.24.47a12.6 12.6 0 0 1 3.6 1.78A13.6 13.6 0 0 0 12 5.06a13.6 13.6 0 0 0-6.6 1.19 12.6 12.6 0 0 1 3.6-1.78L8.77 4a16.3 16.3 0 0 0-4.04 1.33C2.2 9.06 1.52 12.7 1.86 16.28A16.4 16.4 0 0 0 6.85 18.8l.8-1.1a10.6 10.6 0 0 1-1.7-.82l.42-.32a11.7 11.7 0 0 0 10.06 0l.42.32a10.6 10.6 0 0 1-1.7.82l.8 1.1a16.4 16.4 0 0 0 4.99-2.52c.4-4.15-.68-7.75-2.67-10.95ZM8.68 14.15c-.97 0-1.77-.89-1.77-1.98s.78-1.99 1.77-1.99c1 0 1.79.9 1.77 1.99 0 1.09-.78 1.98-1.77 1.98Zm6.64 0c-.97 0-1.77-.89-1.77-1.98s.78-1.99 1.77-1.99c1 0 1.79.9 1.77 1.99 0 1.09-.77 1.98-1.77 1.98Z"/>
+  </symbol>
+</svg>
+
+<div class="backdrop" aria-hidden="true">
+  <div class="grid-plane"></div>
+  <div class="beam"></div>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="noise"></div>
+</div>
+
+<header class="nav solid" id="nav">
+  <div class="wrap navrow">
+    <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+      <svg class="logo" aria-hidden="true"><use href="#netvis-logo"/></svg>
+      <span class="brand">netvis <span>for Windows</span></span>
+    </a>
+    <div class="spacer"></div>
+    <nav class="links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#pricing">Pricing</a>
+    </nav>
+    <a class="nav-support" href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">
+      <svg class="ico" aria-hidden="true"><use href="#ico-discord"/></svg>
+      <span>Support</span>
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="wrap guide">
+    <div class="badge">Installing netvis</div>
+    <h1>The Windows “unrecognized app” notice, explained</h1>
+    <p class="guide-lead">The first time you run a newly released program, Windows may show a
+       blue screen before it opens. Here's exactly what it means, why netvis is safe to run,
+       and how to continue.</p>
+
+    <div class="guide-mock" aria-hidden="true">
+      <div class="gm-title">Windows protected your PC</div>
+      <div class="gm-body">Microsoft Defender SmartScreen prevented an unrecognized app from
+        starting. Running this app might put your PC at risk.</div>
+      <div class="gm-more">More info</div>
+    </div>
+
+    <div class="privacy-card guide-card">
+      <h2>What it actually means</h2>
+      <p>This screen is <strong>not</strong> Windows telling you the app is dangerous. Microsoft
+         Defender SmartScreen shows it for any program it hasn't yet seen run on a large number of
+         computers. Every new and independent app starts out “unrecognized” — the notice is about
+         <em>familiarity</em>, not safety.</p>
+      <p class="muted">As more people install netvis, Windows builds up recognition for it, and the
+         notice stops appearing for everyone. New releases can briefly show it again — that's normal.</p>
+    </div>
+
+    <h2 class="guide-h2">How to continue — two clicks</h2>
+    <ol class="steps">
+      <li><span class="step-n">1</span><span>On the blue screen, click <strong>More info</strong>.</span></li>
+      <li><span class="step-n">2</span><span>Click <strong>Run anyway</strong>. The installer opens and runs normally.</span></li>
+    </ol>
+
+    <div class="privacy-card guide-card">
+      <h2>Why netvis is safe to run</h2>
+      <ul class="ticks">
+        <li>Your traffic never leaves your computer — no account, no telemetry, no analytics.</li>
+        <li>The installer is the same file for everyone, served over HTTPS from netvis.cc.</li>
+        <li>It uninstalls cleanly and leaves nothing behind unless you ask it to.</li>
+        <li>There's a real person behind it — reach the developer directly on Discord.</li>
+      </ul>
+    </div>
+
+    <div class="cta guide-cta">
+      <a class="btn btn-buy" href="downloads/netvis-setup.exe" download>Download netvis</a>
+      <a class="btn btn-primary" href="index.html">Back to home</a>
+    </div>
+    <p class="guide-foot">Still unsure? <a href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">Ask on the Discord</a> — happy to help.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap footrow">
+    <svg class="logo small" aria-hidden="true"><use href="#netvis-logo"/></svg>
+    <span>netvis</span>
+    <a class="foot-link" href="https://discord.gg/3KJju2mC7E" target="_blank" rel="noopener noreferrer">
+      <svg class="ico" aria-hidden="true"><use href="#ico-discord"/></svg>Support
+    </a>
+    <span class="spacer"></span>
+    <span class="req">© 2026 netvis. All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>

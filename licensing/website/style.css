@@ -281,6 +281,13 @@ a { color: inherit; text-decoration: none; }
 }
 .btn.disabled::after { display: none; }
 .dl-note { margin-top: 14px; font-size: 14px; color: var(--text-dim); min-height: 20px; }
+.dl-safenote {
+  display: inline-block; margin-top: 10px; max-width: 560px;
+  font-size: 13px; line-height: 1.5; color: var(--text-dim);
+  text-decoration: none; border-bottom: 1px dashed var(--border);
+  padding-bottom: 2px; transition: color .15s ease, border-color .15s ease;
+}
+.dl-safenote:hover { color: var(--text); border-color: var(--accent); }
 
 .trial-strip {
   margin: 44px auto 0; max-width: 840px;
@@ -580,3 +587,32 @@ a { color: inherit; text-decoration: none; }
   .reveal-l, .reveal-r { transform: translateY(24px); }
   .readout { flex-wrap: wrap; row-gap: 4px; }
 }
+
+/* ---- SmartScreen guide page ------------------------------------------- */
+.guide { max-width: 760px; padding-top: 120px; padding-bottom: 80px; }
+.guide h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; margin: 14px 0 0; }
+.guide-lead { font-size: 18px; line-height: 1.6; color: var(--text-dim); margin: 18px 0 34px; max-width: 640px; }
+.guide-h2 { font-size: 22px; margin: 40px 0 18px; }
+.guide-card { margin: 26px 0; }
+.guide-card h2 { font-size: 20px; margin: 0 0 12px; }
+
+/* A restrained mock of the actual Windows dialog, so people recognise it. */
+.guide-mock {
+  background: #0a3d91; color: #fff; border-radius: 14px;
+  padding: 26px 28px; margin: 8px 0 30px; max-width: 560px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+}
+.guide-mock .gm-title { font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+.guide-mock .gm-body { font-size: 15px; line-height: 1.55; color: #dbe6fb; }
+.guide-mock .gm-more { font-size: 14px; margin-top: 16px; text-decoration: underline; opacity: .9; }
+
+.steps { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 14px; max-width: 620px; }
+.steps li { display: flex; align-items: flex-start; gap: 14px; font-size: 16px; line-height: 1.5; }
+.step-n {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700; font-size: 15px;
+  background: var(--accent); color: #fff;
+}
+.guide-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+.guide-foot { margin-top: 22px; color: var(--text-dim); font-size: 15px; }
+.guide-foot a { color: var(--accent); }

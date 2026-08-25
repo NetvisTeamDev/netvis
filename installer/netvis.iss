@@ -91,8 +91,15 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}";  Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
+; Interactive install: the usual "Start netvis now" checkbox on the last page.
 Filename: "{app}\{#ExeName}"; Description: "Start {#AppName} now"; \
     Flags: nowait postinstall skipifsilent runascurrentuser
+; Silent install (this is how the in-app auto-update runs Setup): relaunch
+; netvis automatically. Without this, an update closes the app to swap files
+; and never reopens it, so the user is left staring at a closed program and
+; assumes the update broke it. WizardSilent is true only for /SILENT runs, so
+; the two entries never both fire.
+Filename: "{app}\{#ExeName}"; Flags: nowait runascurrentuser; Check: WizardSilent
 
 [UninstallRun]
 ; The scheduled task that starts netvis at logon isn't a file, so removing
