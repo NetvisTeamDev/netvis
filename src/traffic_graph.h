@@ -359,9 +359,9 @@ public:
             // blur wherever the graph changed direction - that is, at every
             // spike.
             dl->AddPolyline(backCurve.data(), (int)backCurve.size(), downBehind ? downLine : upLine,
-                            ImDrawFlags_None, 1.8f);
+                            1.8f, ImDrawFlags_None);
             dl->AddPolyline(frontCurve.data(), (int)frontCurve.size(), downBehind ? upLine : downLine,
-                            ImDrawFlags_None, 1.8f);
+                            1.8f, ImDrawFlags_None);
 
             // Soft glow dot on the newest download point - a small "live"
             // cue at the leading edge of the graph.
