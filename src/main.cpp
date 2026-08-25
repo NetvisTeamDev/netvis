@@ -218,6 +218,21 @@ bool ActionButton(const char* label, ImVec2 size = ImVec2(0, 0)) {
     return clicked;
 }
 
+// The single most important button in the whole app: the free-trial CTA on
+// the first-run screen. Green and white so it reads unmistakably as "click
+// this to start", instead of as grey chrome sitting next to the licence-key
+// box (which was quietly costing us most of our trials - people saw the key
+// field, assumed they needed one they didn't have, and closed the app).
+bool PrimaryCTA(const char* label, ImVec2 size = ImVec2(0, 0)) {
+    ImGui::PushStyleColor(ImGuiCol_Button, theme::BuyButton());
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme::BuyButtonHover());
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme::BuyButton());
+    ImGui::PushStyleColor(ImGuiCol_Text, theme::OnAccent());
+    bool clicked = ImGui::Button(label, size);
+    ImGui::PopStyleColor(4);
+    return clicked;
+}
+
 // Ordinary button with the theme's colours stated explicitly rather than
 // inherited. Same reason as ActionButton: anything that falls back to the
 // global default is one missed palette entry away from being unreadable.
@@ -809,10 +824,12 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
                                 "The full version. No card, no account.");
                 ImGui::Dummy(ImVec2(0, 14.0f * dpiScale));
 
-                float tw = 260.0f * dpiScale;
+                float tw = 320.0f * dpiScale;
                 centerNext(tw);
                 ImGui::BeginDisabled(busy);
-                if (NeutralButton("Start free trial", ImVec2(tw, 0))) {
+                ImGui::PushFont(g_fontBold, 0.0f);
+                if (PrimaryCTA(busy ? "Starting your trial..." : "Start free trial",
+                               ImVec2(tw, 48.0f * dpiScale))) {
                     phase = Phase::Activating;
                     {
                         std::lock_guard<std::mutex> lock(shared->mu);
@@ -820,6 +837,7 @@ bool RunLicenseGate(ImGuiIO& io, float dpiScale) {
                     }
                     startTrial();
                 }
+                ImGui::PopFont();
                 ImGui::EndDisabled();
 
                 ImGui::Dummy(ImVec2(0, 18.0f * dpiScale));
