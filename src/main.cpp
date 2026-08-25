@@ -1870,14 +1870,17 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         bool needResort = false;
-        // Table id bumped ("apps" -> "apps_v2") on purpose: an older build saved
-        // a different column order in imgui.ini (Downloaded ended up first). A
-        // fresh id ignores that stale layout so columns render in the order
-        // declared below - App, PID, Downloaded, Uploaded, Block - with
-        // Downloaded sitting right next to Uploaded.
+        // NoSavedSettings is the real fix for "the classic table problem": ImGui
+        // otherwise remembers each column's display order in imgui.ini, and an
+        // older build had saved Downloaded as the first column - so it kept
+        // showing up first no matter what the code declared. With saved settings
+        // off, the table ALWAYS renders in the order declared below - App, PID,
+        // Downloaded, Uploaded, Block - with Downloaded right next to Uploaded.
+        // (Trade-off: manual column-width tweaks reset on restart, which is fine.)
         if (ImGui::BeginTable("apps_v2", 5,
                                ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
-                                   ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable,
+                                   ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable |
+                                   ImGuiTableFlags_NoSavedSettings,
                                ImGui::GetContentRegionAvail())) {
             ImGui::TableSetupColumn("App", ImGuiTableColumnFlags_WidthStretch, 2.2f);
             ImGui::TableSetupColumn("PID", ImGuiTableColumnFlags_WidthFixed, 70);
