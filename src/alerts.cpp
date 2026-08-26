@@ -116,6 +116,7 @@ void Alerts::CheckConnections() {
         AlertKind kind;
         std::string title, detail;
         uint32_t pid;
+        std::string exe;
     };
     std::vector<Pending> pending;
 
@@ -146,10 +147,8 @@ void Alerts::CheckConnections() {
                     // because the first question anybody has about an alert
                     // is whether they need to care.
                     pending.push_back({AlertKind::FirstConnection,
-                                       exe + " connected for the first time",
-                                       "Normal for something newly installed. Worth a look if you "
-                                       "don't recognise it.",
-                                       pid});
+                                       exe + " connected to the internet",
+                                       "", pid, lexe});
                 }
                 continue;
             }
@@ -161,14 +160,10 @@ void Alerts::CheckConnections() {
                 // people. What it means in practice is that other machines
                 // can now start a conversation with this one, which is the
                 // part worth saying out loud.
-                char detail[200];
-                snprintf(detail, sizeof(detail),
-                         "Opened port %u — other devices on the network can now reach it. "
-                         "Common for file sharing and dev servers. Check it if you don't "
-                         "recognise it.",
-                         port);
-                pending.push_back({AlertKind::NewListener,
-                                   exe + " is accepting incoming connections", detail, pid});
+                char title[160];
+                snprintf(title, sizeof(title), "%s is accepting connections on port %u",
+                         exe.c_str(), port);
+                pending.push_back({AlertKind::NewListener, title, "", pid, lexe});
             }
         }
         // The first pass just records the existing state of the machine -
@@ -177,7 +172,7 @@ void Alerts::CheckConnections() {
         firstScanDone_ = true;
     }
 
-    for (auto& p : pending) Push(p.kind, std::move(p.title), std::move(p.detail), p.pid);
+    for (auto& p : pending) Push(p.kind, std::move(p.title), std::move(p.detail), p.pid, std::move(p.exe));
 }
 
 void Alerts::CheckDnsServers() {
@@ -205,7 +200,7 @@ void Alerts::CheckDnsServers() {
          0);
 }
 
-void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_t pid) {
+void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_t pid, std::string exe) {
     Alert a;
     a.kind = kind;
     a.title = std::move(title);
@@ -213,6 +208,7 @@ void Alerts::Push(AlertKind kind, std::string title, std::string detail, uint32_
     a.timestamp = NowHHMMSS();
     a.at = (int64_t)time(nullptr);
     a.pid = pid;
+    a.exe = std::move(exe);
     Log("alert: %s - %s", a.title.c_str(), a.detail.c_str());
 
     if (onAlert_) onAlert_(a); // outside the lock - the handler may do slow UI/shell work

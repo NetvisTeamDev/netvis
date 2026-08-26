@@ -40,7 +40,8 @@ struct Alert {
     // rather than a wall-clock reading, which means it needs to subtract,
     // which means it needs the number and not just the formatted string.
     int64_t at = 0;
-    uint32_t pid = 0; // 0 when not process-specific
+    uint32_t pid = 0;    // 0 when not process-specific
+    std::string exe;     // lowercased exe name, for the app icon in the feed ("" for non-process alerts)
 };
 
 class Alerts {
@@ -77,7 +78,7 @@ private:
     void Run();
     void CheckConnections();
     void CheckDnsServers();
-    void Push(AlertKind kind, std::string title, std::string detail, uint32_t pid);
+    void Push(AlertKind kind, std::string title, std::string detail, uint32_t pid, std::string exe = "");
 
     std::atomic<bool> running_{false};
     std::thread thread_;

@@ -23,6 +23,7 @@
 #pragma once
 #include <cstdio>
 #include <ctime>
+#include <functional>
 #include <string>
 
 #include "imgui.h"
@@ -105,7 +106,9 @@ inline void KindPill(const KindStyle& style, float fontSize) {
 // one event and the next. A card gives each event an edge, and the colour
 // goes on a strip down its side where it labels the whole entry rather than
 // tinting one field of it.
-inline void DrawCard(const Alert& a, long long now, ImFont* boldFont) {
+inline void DrawCard(const Alert& a, long long now, ImFont* boldFont,
+                     const std::function<ImTextureID(const std::string&)>& iconFor,
+                     ImTextureID netvisIcon) {
     const ImGuiStyle& style = ImGui::GetStyle();
     const KindStyle kind = StyleFor(a.kind);
     const float rounding = 10.0f;
@@ -127,7 +130,30 @@ inline void DrawCard(const Alert& a, long long now, ImFont* boldFont) {
 
     ImGui::Dummy(ImVec2(0.0f, pad.y - style.ItemSpacing.y));
     ImGui::Indent(pad.x + accentW);
-    const float contentW = width - (pad.x + accentW) - pad.x;
+    float contentW = width - (pad.x + accentW) - pad.x;
+
+    // Process alerts (a new app connecting, or one that starts listening) show
+    // that app's icon, with a small netvis logo badged over its top-left
+    // corner - so at a glance you see WHICH app, and that netvis is what
+    // caught it. Non-process alerts (DNS) have no exe and get no icon.
+    ImTextureID appIcon = a.exe.empty() ? (ImTextureID)0 : iconFor(a.exe);
+    const float iconBox = 34.0f;
+    const float badgeSz = 16.0f;
+    float gutter = 0.0f;
+    if (appIcon) {
+        ImVec2 ip(cardMin.x + pad.x + accentW, cardMin.y + pad.y);
+        dl->AddImage(appIcon, ip, ImVec2(ip.x + iconBox, ip.y + iconBox));
+        if (netvisIcon) {
+            ImVec2 b0(ip.x - 4.0f, ip.y - 4.0f), b1(b0.x + badgeSz, b0.y + badgeSz);
+            // A dark rounded backing so the badge reads on any app icon.
+            dl->AddRectFilled(ImVec2(b0.x - 1.0f, b0.y - 1.0f), ImVec2(b1.x + 1.0f, b1.y + 1.0f),
+                              IM_COL32(10, 12, 16, 255), badgeSz * 0.5f);
+            dl->AddImage(netvisIcon, b0, b1);
+        }
+        gutter = iconBox + 12.0f;
+        ImGui::Indent(gutter);
+        contentW -= gutter;
+    }
 
     // Kind on the left, how long ago on the right. Both are labels about
     // the entry rather than part of its message, so they share a line above
@@ -150,12 +176,9 @@ inline void DrawCard(const Alert& a, long long now, ImFont* boldFont) {
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
 
-    ImGui::PushStyleColor(ImGuiCol_Text, theme::Dim());
-    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + contentW);
-    ImGui::TextWrapped("%s", a.detail.c_str());
-    ImGui::PopTextWrapPos();
-    ImGui::PopStyleColor();
-
+    // No description line on the card - alerts are title-only now, short and
+    // to the point. Any extra detail (e.g. which DNS servers) shows on hover.
+    if (gutter > 0.0f) ImGui::Unindent(gutter);
     ImGui::Unindent(pad.x + accentW);
     ImGui::Dummy(ImVec2(0.0f, pad.y - style.ItemSpacing.y));
 
@@ -177,6 +200,7 @@ inline void DrawCard(const Alert& a, long long now, ImFont* boldFont) {
     // caught someone's eye.
     if (hovered) {
         ImGui::BeginTooltip();
+        if (!a.detail.empty()) ImGui::TextUnformatted(a.detail.c_str());
         ImGui::Text("At %s", a.timestamp.c_str());
         if (a.pid) ImGui::Text("PID %u", a.pid);
         ImGui::EndTooltip();
@@ -188,7 +212,9 @@ inline void DrawCard(const Alert& a, long long now, ImFont* boldFont) {
 // Draws the whole feed into whatever is currently being laid out - the
 // caller owns the window. Returns true if the user asked to clear it, which
 // the caller acts on, so this function never mutates the alert list itself.
-inline bool Draw(const std::vector<Alert>& list, ImFont* boldFont) {
+inline bool Draw(const std::vector<Alert>& list, ImFont* boldFont,
+                 const std::function<ImTextureID(const std::string&)>& iconFor,
+                 ImTextureID netvisIcon) {
     bool clearRequested = false;
     const long long now = (long long)time(nullptr);
 
@@ -249,7 +275,7 @@ inline bool Draw(const std::vector<Alert>& list, ImFont* boldFont) {
     ImGui::BeginChild("alertsfeed", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
     for (size_t i = 0; i < list.size(); i++) {
         ImGui::PushID((int)i);
-        detail::DrawCard(list[i], now, boldFont);
+        detail::DrawCard(list[i], now, boldFont, iconFor, netvisIcon);
         ImGui::PopID();
         ImGui::Dummy(ImVec2(0.0f, 2.0f));
     }

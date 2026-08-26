@@ -2582,7 +2582,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
                 // see the note at the top of that file. It never touches
                 // the alert list; it reports that Clear was pressed and
                 // this decides what that means.
-                if (alertsfeed::Draw(alerts.Recent(), g_fontBold)) alerts.Clear();
+                if (alertsfeed::Draw(alerts.Recent(), g_fontBold,
+                        [&](const std::string& exe) -> ImTextureID {
+                            return (ImTextureID)(intptr_t)icons.Get(exe, "");
+                        },
+                        (ImTextureID)g_appIconSRV))
+                    alerts.Clear();
             }
             ImGui::End();
         }
